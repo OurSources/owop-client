@@ -1,9 +1,61 @@
 <!DOCTYPE html>
 <html>
-<head><title>World of Pixels</title><meta charset="UTF-8"><link rel="icon" href="/favicon.ico" type="image/x-icon"></head>
-<body>
-<canvas id="canvas" style="position: absolute; top: 0px; left: 0px; cursor: none;"></canvas>
-</body>
-<script type="text/javascript" src="/client.js"></script>
-<script type="text/javascript" src="/windowing.js"></script>
+  <head>
+    <title>World of Pixels</title>
+    <meta charset="UTF-8">
+    <link rel="icon" href="favicon.ico" type="image/x-icon">
+    <style>
+      html, body {
+        width: 100%;
+        height: 100%;
+      }
+      
+      body {
+        margin: 0;
+        overflow: hidden;
+        background-image: url(unloaded.png);
+      }
+      
+      #chunks {
+        position: relative;
+        image-rendering: auto;
+        image-rendering: crisp-edges;
+        image-rendering: pixelated;
+      }
+      
+      #chunks > canvas {
+        position: absolute;
+        cursor: url(cursor.png) 0 0, pointer;
+      }
+      
+      #chat {
+        position: absolute;
+        left: 0;
+        bottom: 0;
+        width: 300px;
+        height: 40%;
+        display: flex;
+        flex-direction: column;
+      }
+      
+      #chat-messages {
+        flex: 1;
+        margin: 0;
+        padding: 0;
+      }
+      
+      #chat-input {
+        flex: 0;
+      }
+    </style>
+    <script type="text/javascript" src="main.js"></script>
+    <script type="text/javascript" src="networking.js"></script>
+  </head>
+  <body>
+    <div id="chunks"></div>
+    <div id="chat">
+      <ul id="chat-messages"></ul>
+      <input id="chat-input" type="text" placeholder="Chat here">
+    </div>
+  </body>
 </html>
