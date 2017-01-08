@@ -140,6 +140,9 @@ WorldOfPixels.net.connect = function() {
         for (var l=9; l<777; l++) {
           ndata[l - 9] = data[l];
         }
+        if (!([chunkX, chunkY].join() in this.chunks)) {
+          this.chunks[[chunkX, chunkY]] = new Chunk(chunkX, chunkY);
+        }
         this.chunks[[chunkX, chunkY]].load(ndata);
         break;
     }
