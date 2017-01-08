@@ -6,7 +6,7 @@
  *   IE support by adding .cur cursors
  */
 
-var WorldOfPixels = {};
+var WorldOfPixels = WorldOfPixels || {};
 
 WorldOfPixels.options = {
   serverAddress: "ws://www.ourworldofpixels.com:443", // The server address that websockets connect to
@@ -46,9 +46,10 @@ WorldOfPixels.updateCamera = function() {
     }
   }
   
+  /* Possible fix for subpixel (blurry) rendering: round the camera position? */
+
   document.getElementById("viewport").style.zoom = 100 * this.camera.zoom + "%";
-  document.getElementById("viewport").style.left = -this.camera.x + "px";
-  document.getElementById("viewport").style.top = -this.camera.y + "px";
+  document.getElementById("viewport").style.transform = "translate(" + (-this.camera.x) + "px," + (-this.camera.y) + "px)";
   document.body.style.backgroundPosition = -this.camera.x + "px " + -this.camera.y + "px";
 };
 
@@ -141,55 +142,6 @@ WorldOfPixels.loadChunk = function(x, y) {
 };
 
 
-
-function Player(x, y, r, g, b, tool, id) {
-  this.x = this.nx = x;
-  this.y = this.ny = y;
-  this.r = r;
-  this.g = g;
-  this.b = b;
-  this.tool = tool;
-  this.element = document.createElement("div");
-  this.img = document.createElement("img");
-  this.img.src = tool === 0 ? "cursor.png" : (tool == 1 ? "move.png" : "pipette.png");
-  var idElement = document.createElement("span");
-  idElement.innerHTML = id;
-  idElement.style.backgroundColor = "rgb(" + (((id + 75387) * 67283 + 53143) % 256) + ", " + (((id + 9283) * 4673 + 7483) % 256) + ", " + (id * 3000 % 256) + ")";
-  this.element.appendChild(this.img);
-  this.element.appendChild(idElement);
-  this.element.style.left = x + "px";
-  this.element.style.top = y + "px";
-  document.getElementById("cursors").appendChild(this.element);
-}
-
-Player.prototype.getX = function() {
-  return this.x;
-};
-
-Player.prototype.getY = function() {
-  return this.y;
-};
-
-Player.prototype.update = function(x, y, r, g, b, tool) {
-  this.x = this.nx;
-  this.y = this.ny;
-  this.nx = x;
-  this.ny = y;
-  this.r = r;
-  this.g = g;
-  this.b = b;
-  this.tool = tool;
-  this.element.style.left = x + "px";
-  this.element.style.top = y + "px";
-  this.img.src = tool === 0 ? "cursor.png" : (tool == 1 ? "move.png" : "pipette.png");
-};
-
-Player.prototype.disconnect = function() {
-  document.getElementById("cursors").removeChild(this.element);
-};
-
-
-
 WorldOfPixels.chatMessage = function(text) {
   var message = document.createElement("li");
   var span = document.createElement("span");
@@ -230,7 +182,8 @@ WorldOfPixels.resize = function() {
 }.bind(WorldOfPixels);
 
 WorldOfPixels.init = function() {
-  if (window.location.hostname.indexOf("cursors.me") != -1 || window.location.hostname.indexOf("yourworldofpixels.com") != -1) {
+  if (window.location.hostname.indexOf("cursors.me") != -1 ||
+      window.location.hostname.indexOf("yourworldofpixels.com") != -1) {
     // Redirects to the main url if played on an alternative url.
     window.location.href = "http://www.ourworldofpixels.com/";
     return;
@@ -240,31 +193,27 @@ WorldOfPixels.init = function() {
   window.requestAnimationFrame =
     window.requestAnimationFrame ||
     window.mozRequestAnimationFrame ||
-	  window.webkitRequestAnimationFrame ||
-	  window.msRequestAnimationFrame ||
-		function(f) {
-		  setTimeout(f, 1000 / this.options.fps);
-		};
-	
-	if (typeof Uint8Array === "undefined") {
-	  Uint8Array = Array;
-	}
-	
-	if (typeof Uint8Array.prototype.join === "undefined") {
-	  Uint8Array.prototype.join = function(e) {
-  		if(typeof e === "undefined"){
-  			e = ',';
-  		} else if(typeof e !== "string"){
-  			e = e.toString();
-  		}
-  		var str = "";
-  		var i = 0;
-  		do {
-  			str += this[i] + e;
-  		} while(++i < this.length - 1);
-  		return str + this[i];
-  	};
-	}
+    window.webkitRequestAnimationFrame ||
+    window.msRequestAnimationFrame ||
+    function(f) {
+      setTimeout(f, 1000 / this.options.fps);
+    };
+  
+  if (typeof Uint8Array.prototype.join === "undefined") {
+    Uint8Array.prototype.join = function(e) {
+      if(typeof e === "undefined"){
+        e = ',';
+      } else if(typeof e !== "string"){
+        e = e.toString();
+      }
+      var str = "";
+      var i = 0;
+      do {
+        str += this[i] + e;
+      } while(++i < this.length - 1);
+      return str + this[i];
+    };
+  }
 	
   
   

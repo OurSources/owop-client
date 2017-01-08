@@ -1,3 +1,4 @@
+var WorldOfPixels = WorldOfPixels || {};
 WorldOfPixels.net = {};
 
 WorldOfPixels.net.stoi = function(string, max) {

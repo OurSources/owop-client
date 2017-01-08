@@ -21,10 +21,15 @@
         image-rendering: auto;
         image-rendering: crisp-edges;
         image-rendering: pixelated;
+        transition: transform .1s linear;
       }
       
       #cursors {
         zoom: 6.25%;
+      }
+
+      .cursor {
+        transition: transform .07s linear;
       }
       
       #chunks > canvas {
@@ -75,6 +80,7 @@
     </style>
     <script type="text/javascript" src="main.js"></script>
     <script type="text/javascript" src="networking.js"></script>
+    <script type="text/javascript" src="player.js"></script>
   </head>
   <body>
     <div id="viewport">
