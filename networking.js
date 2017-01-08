@@ -38,13 +38,24 @@ WorldOfPixels.net.requestChunk = function(x, y) {
   this.net.connection.send(array);
 }.bind(WorldOfPixels);
 
+WorldOfPixels.net.sendUpdates = function() {
+  if (this.mouse.lastX != this.camera.x * 16 + this.mouse.x || this.mouse.lastY != this.camera.y * 16 + this.mouse.y) {
+    // Send mouse position
+    var array = new ArrayBuffer(12);
+    var dv = new DataView(array);
+    dv.setInt32(0, this.camera.x * 16 + this.mouse.x, true);
+    dv.setInt32(4, this.camera.y * 16 + this.mouse.y, true);
+		dv.setUint8(8, 0);
+		dv.setUint8(9, 0);
+		dv.setUint8(10, 0);
+		dv.setUint8(11, 0);
+    this.net.connection.send(array);
+  }
+}.bind(WorldOfPixels);
+
 WorldOfPixels.net.sendMessage = function(message) {
   this.net.connection.send(message + String.fromCharCode(10));
 }.bind(WorldOfPixels);
-
-WorldOfPixels.net.sendUpdates = function() {
-  
-};
 
 WorldOfPixels.net.connect = function() {
   this.net.connection = new WebSocket(this.options.serverAddress);
@@ -118,7 +129,6 @@ WorldOfPixels.net.connect = function() {
   				var dpid = dv.getUint32(1 + off + k * 4, true);
   				if(dpid in this.net.players){
   				  this.net.players[dpid].disconnect();
-  					delete this.net.players[dpid];
   				}
   			}
         break;

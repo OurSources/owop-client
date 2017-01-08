@@ -20,6 +20,20 @@ WorldOfPixels.options = {
 
 WorldOfPixels.keysDown = [];
 
+WorldOfPixels.mouse = {
+  x: 0,
+  y: 0,
+  lastX: 0,
+  lastY: 0
+};
+
+window.addEventListener("mousemove", function(event) {
+  this.mouse.lastX = this.camera.x * 16 + this.mouse.x;
+  this.mouse.lastY = this.camera.y * 16 + this.mouse.y;
+  this.mouse.x = event.pageX * 16 / this.camera.zoom;
+  this.mouse.y = event.pageY * 16 / this.camera.zoom;
+}.bind(WorldOfPixels));
+
 
 WorldOfPixels.camera = {
   x: -32,
@@ -30,10 +44,10 @@ WorldOfPixels.camera = {
 WorldOfPixels.updateCamera = function() {
   for (var i in this.chunks) {
     if (
-      this.chunks[i].x < Math.floor(this.camera.x/16) ||
-      this.chunks[i].x > this.camera.x/16 + window.innerWidth/this.camera.zoom/16 ||
-      this.chunks[i].y < Math.floor(this.camera.y/16) ||
-      this.chunks[i].y > this.camera.y/16 + window.innerHeight/this.camera.zoom/16
+      this.chunks[i].x < Math.floor(this.camera.x/16) - 1 ||
+      this.chunks[i].x > this.camera.x/16 + window.innerWidth/this.camera.zoom/16 + 1 ||
+      this.chunks[i].y < Math.floor(this.camera.y/16) - 1 ||
+      this.chunks[i].y > this.camera.y/16 + window.innerHeight/this.camera.zoom/16 + 1
     ) {
       this.chunks[i].remove();
     }
@@ -49,7 +63,7 @@ WorldOfPixels.updateCamera = function() {
   /* Possible fix for subpixel (blurry) rendering: round the camera position? */
 
   document.getElementById("viewport").style.zoom = 100 * this.camera.zoom + "%";
-  document.getElementById("viewport").style.transform = "translate(" + (-this.camera.x) + "px," + (-this.camera.y) + "px)";
+  document.getElementById("viewport").style.transform = "translate(" + (-Math.round(this.camera.x)) + "px," + (-Math.round(this.camera.y)) + "px)";
   document.body.style.backgroundPosition = -this.camera.x + "px " + -this.camera.y + "px";
 };
 
