@@ -1,5 +1,6 @@
 /*
  * TODO:
+ *   Smooth mouse move transitions
  *   Scroll with middle mouse button
  *   Mabye bookmarks
  *   IE support by adding .cur cursors
@@ -11,7 +12,8 @@ WorldOfPixels.options = {
   serverAddress: "ws://www.ourworldofpixels.com:443", // The server address that websockets connect to
   fps: 30, // Fps used if requestAnimationFrame is not supported
   netUpdateSpeed: 20, // How many times per second to send updates to server
-  tickSpeed: 30 // How many times per second to run a tick
+  tickSpeed: 30, // How many times per second to run a tick
+  movementSpeed: 32
 };
 
 
@@ -22,7 +24,7 @@ WorldOfPixels.keysDown = [];
 WorldOfPixels.camera = {
   x: -32,
   y: -32,
-  zoom: 8
+  zoom: 12
 };
 
 WorldOfPixels.updateCamera = function() {
@@ -34,7 +36,6 @@ WorldOfPixels.updateCamera = function() {
       this.chunks[i].y > this.camera.y/16 + window.innerHeight/this.camera.zoom/16
     ) {
       this.chunks[i].remove();
-      delete this.chunks[i];
     }
   }
   for (var x=Math.floor(this.camera.x/16) - 1; x<this.camera.x/16 + window.innerWidth/this.camera.zoom/16 + 1; x++) {
@@ -45,27 +46,54 @@ WorldOfPixels.updateCamera = function() {
     }
   }
   
-  document.getElementById("chunks").style.zoom = 100 * this.camera.zoom + "%";
-  document.getElementById("chunks").style.left = -this.camera.x + "px";
-  document.getElementById("chunks").style.top = -this.camera.y + "px";
+  document.getElementById("viewport").style.zoom = 100 * this.camera.zoom + "%";
+  document.getElementById("viewport").style.left = -this.camera.x + "px";
+  document.getElementById("viewport").style.top = -this.camera.y + "px";
+  document.body.style.backgroundPosition = -this.camera.x + "px " + -this.camera.y + "px";
+};
+
+
+
+WorldOfPixels.isVisible = function(x, y) {
+  
 };
 
 
 
 WorldOfPixels.chunks = {};
 
-function Chunk(x, y, data) {
+function Chunk(x, y) {
+  this.loaded = false;
   this.x = x;
   this.y = y;
-  this.data = data || new Uint8Array(16 * 16 * 3);
-  this.canvas = document.createElement("canvas");
-  this.canvas.width = 16;
-  this.canvas.height = 16;
-  this.canvas.style.left = this.x * 16 + "px";
-  this.canvas.style.top = this.y * 16 + "px";
-  this.draw();
-  document.getElementById("chunks").appendChild(this.canvas);
+  this.data = new Uint8Array(16 * 16 * 3);
+  // If chunk gets tile updates while not loaded, add them here
+  this.updatedWhileNotLoaded = [];
+  // If chunk was deleted before loaded
+  this.deleted = false;
 }
+
+// This is called when chunk data is recieved from server
+Chunk.prototype.load = function(data) {
+  if (!this.deleted) {
+    data.forEach(function(dataValue, index) {
+      // If tile was not changed while loading
+      if (!this.updatedWhileNotLoaded.includes([index%16, Math.floor(index/16)].join())) {
+        this.data[index] = dataValue;
+      }
+    }.bind(this));
+    this.canvas = document.createElement("canvas");
+    this.canvas.width = 16;
+    this.canvas.height = 16;
+    this.canvas.style.left = this.x * 16 + "px";
+    this.canvas.style.top = this.y * 16 + "px";
+    this.draw();
+    document.getElementById("chunks").appendChild(this.canvas);
+    this.loaded = true;
+  } else {
+    delete WorldOfPixels.chunks[[this.x, this.y]];
+  }
+};
 
 Chunk.prototype.draw = function() {
   var ctx = this.canvas.getContext("2d");
@@ -79,12 +107,34 @@ Chunk.prototype.draw = function() {
   ctx.putImageData(imageData, 0, 0);
 };
 
+Chunk.prototype.update = function(x, y, color) {
+  this.data[(y * 16 + x) * 3] = color[0];
+  this.data[(y * 16 + x) * 3 + 1] = color[1];
+  this.data[(y * 16 + x) * 3 + 2] = color[2];
+  if (this.loaded) {
+    var ctx = this.canvas.getContext("2d");
+    var imageData = ctx.createImageData(1, 1);
+    imageData.data[0] = color[0];
+    imageData.data[1] = color[1];
+    imageData.data[2] = color[2];
+    imageData.data[3] = 255;
+    ctx.putImageData(imageData, x, y);
+  } else if (!this.updatedWhileNotLoaded.includes([x, y].join())) {
+    this.updatedWhileNotLoaded.push([x, y].join());
+  }
+};
+
 Chunk.prototype.remove = function() {
-  this.canvas.parentNode.removeChild(this.canvas);
+  if (this.loaded) {
+    this.canvas.parentNode.removeChild(this.canvas);
+    delete WorldOfPixels.chunks[[this.x, this.y]];
+  } else {
+    this.deleted = true;
+  }
 };
 
 WorldOfPixels.loadChunk = function(x, y) {
-  this.chunks[[x, y]] = {};
+  this.chunks[[x, y]] = new Chunk(x, y);
   if (this.net.connection) {
     this.net.requestChunk(x, y);
   }
@@ -92,24 +142,35 @@ WorldOfPixels.loadChunk = function(x, y) {
 
 
 
-function Cursor(x, y, r, g, b, tool, id) {
+function Player(x, y, r, g, b, tool, id) {
   this.x = this.nx = x;
   this.y = this.ny = y;
   this.r = r;
   this.g = g;
   this.b = b;
   this.tool = tool;
+  this.element = document.createElement("div");
+  this.img = document.createElement("img");
+  this.img.src = tool === 0 ? "cursor.png" : (tool == 1 ? "move.png" : "pipette.png");
+  var idElement = document.createElement("span");
+  idElement.innerHTML = id;
+  idElement.style.backgroundColor = "rgb(" + (((id + 75387) * 67283 + 53143) % 256) + ", " + (((id + 9283) * 4673 + 7483) % 256) + ", " + (id * 3000 % 256) + ")";
+  this.element.appendChild(this.img);
+  this.element.appendChild(idElement);
+  this.element.style.left = x + "px";
+  this.element.style.top = y + "px";
+  document.getElementById("cursors").appendChild(this.element);
 }
 
-Cursor.prototype.getX = function() {
+Player.prototype.getX = function() {
   return this.x;
 };
 
-Cursor.prototype.getY = function() {
+Player.prototype.getY = function() {
   return this.y;
 };
 
-Cursor.prototype.update = function(x, y, r, g, b, tool) {
+Player.prototype.update = function(x, y, r, g, b, tool) {
   this.x = this.nx;
   this.y = this.ny;
   this.nx = x;
@@ -118,6 +179,24 @@ Cursor.prototype.update = function(x, y, r, g, b, tool) {
   this.g = g;
   this.b = b;
   this.tool = tool;
+  this.element.style.left = x + "px";
+  this.element.style.top = y + "px";
+  this.img.src = tool === 0 ? "cursor.png" : (tool == 1 ? "move.png" : "pipette.png");
+};
+
+Player.prototype.disconnect = function() {
+  document.getElementById("cursors").removeChild(this.element);
+};
+
+
+
+WorldOfPixels.chatMessage = function(text) {
+  var message = document.createElement("li");
+  var span = document.createElement("span");
+  span.innerHTML = text;
+  message.appendChild(span);
+  document.getElementById("chat-messages").appendChild(message);
+  document.getElementById("chat-messages").scrollTop = document.getElementById("chat-messages").scrollHeight;
 };
 
 
@@ -125,19 +204,19 @@ Cursor.prototype.update = function(x, y, r, g, b, tool) {
 WorldOfPixels.tick = function() {
   var cameraMoved = false;
   if (this.keysDown.includes(38)) { // Up
-    this.camera.y -= 32 / this.options.tickSpeed;
+    this.camera.y -= this.options.movementSpeed / this.options.tickSpeed;
     cameraMoved = true;
   }
   if (this.keysDown.includes(37)) { // Left
-    this.camera.x -= 32 / this.options.tickSpeed;
+    this.camera.x -= this.options.movementSpeed / this.options.tickSpeed;
     cameraMoved = true;
   }
   if (this.keysDown.includes(40)) { // Down
-    this.camera.y += 32 / this.options.tickSpeed;
+    this.camera.y += this.options.movementSpeed / this.options.tickSpeed;
     cameraMoved = true;
   }
   if (this.keysDown.includes(39)) { // Right
-    this.camera.x += 32 / this.options.tickSpeed;
+    this.camera.x += this.options.movementSpeed / this.options.tickSpeed;
     cameraMoved = true;
   }
   if (cameraMoved) {
@@ -147,7 +226,7 @@ WorldOfPixels.tick = function() {
 
 
 WorldOfPixels.resize = function() {
-  
+  this.updateCamera();
 }.bind(WorldOfPixels);
 
 WorldOfPixels.init = function() {
