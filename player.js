@@ -129,14 +129,14 @@ function Player(x, y, r, g, b, tool, id) {
   this.b = b;
   this.tool = tool;
   this.id = id;
-  switch(this.tool) {
-    case 0:
-      this.fx = new Fx(0, Math.floor(this.x / 16), Math.floor(this.y / 16), {color: [this.r, this.g, this.b]});
-      break;
-    case 3:
-      this.fx = new Fx(2, Math.floor(this.x / 256) * 16, Math.floor(this.y / 256) * 16, {});
-  }
   if (this.id != WorldOfPixels.net.id) {
+    switch(this.tool) {
+      case 0:
+        this.fx = new Fx(0, Math.floor(this.x / 16), Math.floor(this.y / 16), {color: [this.r, this.g, this.b]});
+        break;
+      case 3:
+        this.fx = new Fx(2, Math.floor(this.x / 256) * 16, Math.floor(this.y / 256) * 16, {});
+    }
     this.element = document.createElement("div");
     this.img = document.createElement("img");
     this.img.src = WorldOfPixels.tools[this.tool].cursor;
@@ -168,41 +168,41 @@ Player.prototype.update = function(x, y, r, g, b, tool) {
   this.r = r;
   this.g = g;
   this.b = b;
-  if (this.fx) {
-    switch(this.tool) {
-      case 0:
-        this.fx.update(Math.floor(this.x / 16), Math.floor(this.y / 16), {color: [this.r, this.g, this.b]});
-        break;
-      case 3:
-        this.fx.update(Math.floor(this.x / 256) * 16, Math.floor(this.y / 256) * 16, {});
-        break;
-    }
-  }
   if (this.id != WorldOfPixels.net.id) {
-    this.element.style.transform = "translate(" + x + "px," + y + "px)";
-  }
-  if(tool != this.tool){
-    this.tool = tool;
-    if (this.id != WorldOfPixels.net.id) {
-      this.img.src = WorldOfPixels.tools[this.tool].cursor;
-      this.img.style.left = WorldOfPixels.tools[this.tool].offset[0] + "px";
-      this.img.style.top = WorldOfPixels.tools[this.tool].offset[1] + "px";
-    }
     if (this.fx) {
-      this.fx.delete();
+      switch(this.tool) {
+        case 0:
+          this.fx.update(Math.floor(this.x / 16), Math.floor(this.y / 16), {color: [this.r, this.g, this.b]});
+          break;
+        case 3:
+          this.fx.update(Math.floor(this.x / 256) * 16, Math.floor(this.y / 256) * 16, {});
+          break;
+      }
     }
-    switch(this.tool) {
-      case 0:
-        this.fx = new Fx(0, Math.floor(this.x / 16), Math.floor(this.y / 16), {color: [this.r, this.g, this.b]});
-        break;
-      case 1:
-        this.fx = undefined;
-        break;
-      case 2:
-        this.fx = undefined;
-        break;
-      case 3:
-        this.fx = new Fx(2, Math.floor(this.x / 256) * 16, Math.floor(this.y / 256) * 16, {});
+    this.element.style.transform = "translate(" + x + "px," + y + "px)";
+    if(tool != this.tool){
+      this.tool = tool;
+      if (this.id != WorldOfPixels.net.id) {
+        this.img.src = WorldOfPixels.tools[this.tool].cursor;
+        this.img.style.left = WorldOfPixels.tools[this.tool].offset[0] + "px";
+        this.img.style.top = WorldOfPixels.tools[this.tool].offset[1] + "px";
+      }
+      if (this.fx) {
+        this.fx.delete();
+      }
+      switch(this.tool) {
+        case 0:
+          this.fx = new Fx(0, Math.floor(this.x / 16), Math.floor(this.y / 16), {color: [this.r, this.g, this.b]});
+          break;
+        case 1:
+          this.fx = undefined;
+          break;
+        case 2:
+          this.fx = undefined;
+          break;
+        case 3:
+          this.fx = new Fx(2, Math.floor(this.x / 256) * 16, Math.floor(this.y / 256) * 16, {});
+      }
     }
   }
 };

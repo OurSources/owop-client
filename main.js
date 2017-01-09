@@ -216,7 +216,8 @@ WorldOfPixels.init = function() {
     };
   }
 	
-  
+  this.clientFx = new Fx(0, 0, 0, {color: [0, 0, 0]});
+  this.lastTool = 0;
   
   window.addEventListener("resize", this.resize);
   window.addEventListener("keydown", function(event) {
@@ -254,10 +255,38 @@ WorldOfPixels.init = function() {
     this.mouse.x = event.pageX * 16 / this.camera.zoom;
     this.mouse.y = event.pageY * 16 / this.camera.zoom;
     
+    var tileX = Math.floor(this.camera.x + (event.pageX / this.camera.zoom));
+    var tileY = Math.floor(this.camera.y + (event.pageY / this.camera.zoom));
+    if (this.toolSelected != this.lastTool) {
+      if (this.clientFx) {
+        this.clientFx.delete();
+      }
+      this.clientFx = undefined;
+      this.lastTool = this.toolSelected;
+      switch(this.toolSelected) {
+        case 0:
+          this.clientFx = new Fx(0, tileX, tileY, {color: this.palette[this.paletteIndex]});
+          break;
+        case 3:
+          this.clientFx = new Fx(2, Math.floor(tileX / 16) * 16, Math.floor(tileY / 16) * 16, {});
+          break;
+      }
+    }
+    if (this.clientFx) {
+      switch(this.toolSelected) {
+        case 0:
+          this.clientFx.update(tileX, tileY, {color: this.palette[this.paletteIndex]});
+          break;
+        case 3:
+          this.clientFx.update(Math.floor(tileX / 16) * 16, Math.floor(tileY / 16) * 16, {});
+          break;
+      }
+    }
+    
     if (event.buttons !== 0 && this.mouse.validClick) {
       this.tools[this.toolSelected].click(event.pageX, event.pageY, event.buttons, true);
     }
-    document.getElementById("xy-display").innerHTML = "X: " + Math.floor(this.camera.x + (this.mouse.x * 0.75 / this.camera.zoom)) + ", Y: " + Math.floor(this.camera.y + (this.mouse.y * 0.75 / this.camera.zoom));
+    document.getElementById("xy-display").innerHTML = "X: " + Math.floor(this.camera.x + (this.mouse.x / this.camera.zoom)) + ", Y: " + Math.floor(this.camera.y + (this.mouse.y / this.camera.zoom));
   }.bind(this));
   window.addEventListener("mouseup", function(event) {
     this.mouse.validClick = false;
