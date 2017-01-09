@@ -79,46 +79,31 @@ WorldOfPixels.getPixel = function(x, y) {
   }
 }.bind(WorldOfPixels);
 
-WorldOfPixels.isVisible = function(x, y) {
-  
-};
+WorldOfPixels.isVisible = function(x, y, w, h) {
+  return x + w >= this.camera.x && y + h >= this.camera.y &&
+    x <= this.camera.x + window.innerWidth / this.camera.zoom && y <= this.camera.y + window.innerHeight / this.camera.zoom;
+}.bind(WorldOfPixels);
 
 
 
 WorldOfPixels.chunks = {};
 
-function Chunk(x, y) {
+WorldOfPixels.chunksLoading = [];
+
+function Chunk(x, y, data) {
   this.loaded = false;
   this.x = x;
   this.y = y;
-  this.data = new Uint8Array(16 * 16 * 3);
-  // If chunk gets tile updates while not loaded, add them here
-  this.updatedWhileNotLoaded = [];
-  // If chunk was deleted before loaded
-  this.deleted = false;
+  this.data = data;
+  this.canvas = document.createElement("canvas");
+  this.canvas.width = 16;
+  this.canvas.height = 16;
+  this.canvas.style.left = this.x * 16 + "px";
+  this.canvas.style.top = this.y * 16 + "px";
+  this.draw();
+  document.getElementById("chunks").appendChild(this.canvas);
+  this.loaded = true;
 }
-
-// This is called when chunk data is recieved from server
-Chunk.prototype.load = function(data) {
-  if (!this.deleted) {
-    data.forEach(function(dataValue, index) {
-      // If tile was not changed while loading
-      if (!this.updatedWhileNotLoaded.includes([index%16, Math.floor(index/16)].join())) {
-        this.data[index] = dataValue;
-      }
-    }.bind(this));
-    this.canvas = document.createElement("canvas");
-    this.canvas.width = 16;
-    this.canvas.height = 16;
-    this.canvas.style.left = this.x * 16 + "px";
-    this.canvas.style.top = this.y * 16 + "px";
-    this.draw();
-    document.getElementById("chunks").appendChild(this.canvas);
-    this.loaded = true;
-  } else {
-    delete WorldOfPixels.chunks[[this.x, this.y]];
-  }
-};
 
 Chunk.prototype.draw = function() {
   var ctx = this.canvas.getContext("2d");
@@ -136,32 +121,24 @@ Chunk.prototype.update = function(x, y, color) {
   this.data[(y * 16 + x) * 3] = color[0];
   this.data[(y * 16 + x) * 3 + 1] = color[1];
   this.data[(y * 16 + x) * 3 + 2] = color[2];
-  if (this.loaded) {
-    var ctx = this.canvas.getContext("2d");
-    var imageData = ctx.createImageData(1, 1);
-    imageData.data[0] = color[0];
-    imageData.data[1] = color[1];
-    imageData.data[2] = color[2];
-    imageData.data[3] = 255;
-    ctx.putImageData(imageData, x, y);
-  } else if (!this.updatedWhileNotLoaded.includes([x, y].join())) {
-    this.updatedWhileNotLoaded.push([x, y].join());
-  }
+  var ctx = this.canvas.getContext("2d");
+  var imageData = ctx.createImageData(1, 1);
+  imageData.data[0] = color[0];
+  imageData.data[1] = color[1];
+  imageData.data[2] = color[2];
+  imageData.data[3] = 255;
+  ctx.putImageData(imageData, x, y);
 };
 
 Chunk.prototype.remove = function() {
-  if (this.loaded) {
-    this.canvas.parentNode.removeChild(this.canvas);
-    delete WorldOfPixels.chunks[[this.x, this.y]];
-  } else {
-    this.deleted = true;
-  }
+  this.canvas.parentNode.removeChild(this.canvas);
+  delete WorldOfPixels.chunks[[this.x, this.y]];
 };
 
 WorldOfPixels.loadChunk = function(x, y) {
-  this.chunks[[x, y]] = new Chunk(x, y);
-  if (this.net.connection) {
+  if (this.net.connection && !this.chunksLoading.includes([x, y].join())) {
     this.net.requestChunk(x, y);
+    this.chunksLoading.push([x, y].join());
   }
 };
 

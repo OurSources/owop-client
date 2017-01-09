@@ -128,9 +128,9 @@ WorldOfPixels.net.connect = function() {
   				var br = dv.getUint8(2 + off + j * 11 + 8);
   				var bg = dv.getUint8(2 + off + j * 11 + 9);
   				var bb = dv.getUint8(2 + off + j * 11 + 10);
-  				/*if(isvisible(bpx << 4, bpy << 4, 16, 16)){
-  					fx.push([bpx, bpy, nt, 0xFFFFFF - ((br << 16) + (bg << 8) + bb)]);
-  				}*/
+  				if(this.isVisible(bpx, bpy, 1, 1)) {
+  					new Fx(1, bpx, bpy, {color: 0xFFFFFF - ((br << 16) + (bg << 8) + bb)});
+  				}
   				if ([bpx >> 4, bpy >> 4] in this.chunks) {
   					this.chunks[[bpx >> 4, bpy >> 4]].update(bpx & 0xF, bpy & 0xF, [br, bg, bb]);
   				}
@@ -152,10 +152,13 @@ WorldOfPixels.net.connect = function() {
         for (var l=9; l<777; l++) {
           ndata[l - 9] = data[l];
         }
-        if (!([chunkX, chunkY].join() in this.chunks)) {
-          this.chunks[[chunkX, chunkY]] = new Chunk(chunkX, chunkY);
+        if (!this.chunksLoading.includes([chunkX, chunkY].join())) {
+          console.log("eraser");
+          new Fx(3, chunkX * 16, chunkY * 16, {});
+        } else {
+          this.chunksLoading.splice(this.chunksLoading.indexOf([chunkX, chunkY].join()), 1);
         }
-        this.chunks[[chunkX, chunkY]].load(ndata);
+        this.chunks[[chunkX, chunkY]] = new Chunk(chunkX, chunkY, ndata);
         break;
       case 3: // Teleport
     		this.camera.x = dv.getInt32(1, true) - (window.innerWidth / this.camera.zoom / 2.5);
