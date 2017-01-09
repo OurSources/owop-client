@@ -1,7 +1,44 @@
 var WorldOfPixels = WorldOfPixels || {};
 WorldOfPixels.tools = [];
 WorldOfPixels.toolSelected = 0;
-WorldOfPixels.placeColor = [0, 0, 0];
+WorldOfPixels.paletteIndex = 0;
+WorldOfPixels.palette = [new Uint8Array([0, 0, 0]), new Uint8Array([255, 0, 0]), new Uint8Array([0, 255, 0]), new Uint8Array([0, 0, 255])];
+
+WorldOfPixels.updatePalette = function() {
+  document.getElementById("palette-colors").innerHTML = "";
+  var colorClick = function(index) {
+    return function() {
+      this.paletteIndex = index;
+      this.updatePaletteIndex();
+    }.bind(this);
+  }.bind(this);
+  for (var i=0; i<WorldOfPixels.palette.length; i++) {
+    var element = document.createElement("div");
+    element.style.backgroundColor = "rgb(" + this.palette[i][0] + ", " + this.palette[i][1] + ", " + this.palette[i][2] + ")";
+    element.onclick = colorClick(i);
+    document.getElementById("palette-colors").appendChild(element);
+  }
+  this.updatePaletteIndex();
+}.bind(WorldOfPixels);
+
+WorldOfPixels.updatePaletteIndex = function() {
+  document.getElementById("palette-colors").style.transform = "translateY(" + (-this.paletteIndex * 40) + "px)";
+}.bind(WorldOfPixels);
+
+WorldOfPixels.addPaletteColor = function(color) {
+  for (var i=0; i<this.palette.length; i++) {
+    if (this.palette[i][0] == color[0] && this.palette[i][1] == color[1] && this.palette[i][2] == color[2]) {
+      this.paletteIndex = i;
+      this.updatePaletteIndex();
+      return;
+    }
+  }
+  this.paletteIndex = this.palette.length;
+  this.palette.push(new Uint8Array(color));
+  this.updatePalette();
+}.bind(WorldOfPixels);
+
+
 
 function Tool(cursor, icon, offset, isAdminTool, onclick) {
   this.cursor = cursor;
@@ -14,16 +51,16 @@ function Tool(cursor, icon, offset, isAdminTool, onclick) {
 // Cursor tool
 WorldOfPixels.tools.push(
   new Tool("cursor-default.png", "icon-cursor.png", [-1, -2], false, function(x, y, buttons, isDrag) {
-    var tileX = Math.floor(this.camera.x + (x * 16 / this.camera.zoom * 0.75 / this.camera.zoom));
-    var tileY = Math.floor(this.camera.y + (y * 16 / this.camera.zoom * 0.75 / this.camera.zoom));
+    var tileX = Math.floor(this.camera.x + (x / this.camera.zoom));
+    var tileY = Math.floor(this.camera.y + (y / this.camera.zoom));
     
     var pixel = this.getPixel(tileX, tileY);
     if (buttons == 1) {
-      if (pixel[0] !== this.placeColor[0] || pixel[1] !== this.placeColor[1] || pixel[2] !== this.placeColor[2]) {
-        this.chunks[[tileX >> 4, tileY >> 4]].data[(tileY.mod(16) * 16 + tileX.mod(16)) * 3] = this.placeColor[0];
-        this.chunks[[tileX >> 4, tileY >> 4]].data[(tileY.mod(16) * 16 + tileX.mod(16)) * 3 + 1] = this.placeColor[1];
-        this.chunks[[tileX >> 4, tileY >> 4]].data[(tileY.mod(16) * 16 + tileX.mod(16)) * 3 + 2] = this.placeColor[2];
-        this.net.updatePixel(tileX, tileY, this.placeColor);
+      if (pixel[0] !== this.palette[this.paletteIndex][0] || pixel[1] !== this.palette[this.paletteIndex][1] || pixel[2] !== this.palette[this.paletteIndex][2]) {
+        this.chunks[[tileX >> 4, tileY >> 4]].data[(tileY.mod(16) * 16 + tileX.mod(16)) * 3] = this.palette[this.paletteIndex][0];
+        this.chunks[[tileX >> 4, tileY >> 4]].data[(tileY.mod(16) * 16 + tileX.mod(16)) * 3 + 1] = this.palette[this.paletteIndex][1];
+        this.chunks[[tileX >> 4, tileY >> 4]].data[(tileY.mod(16) * 16 + tileX.mod(16)) * 3 + 2] = this.palette[this.paletteIndex][2];
+        this.net.updatePixel(tileX, tileY, this.palette[this.paletteIndex]);
       }
     } else if (buttons == 2) {
       if (pixel[0] !== 255 || pixel[1] !== 255 || pixel[2] !== 255) {
@@ -40,11 +77,11 @@ WorldOfPixels.tools.push(
 WorldOfPixels.tools.push(
   new Tool("cursor-move.png", "icon-move.png", [-18, -20], false, function(x, y, button, isDrag) {
     if (!isDrag) {
-      this.startX = WorldOfPixels.camera.x + (x * 16 / WorldOfPixels.camera.zoom * 0.75 / WorldOfPixels.camera.zoom);
-      this.startY = WorldOfPixels.camera.y + (y * 16 / WorldOfPixels.camera.zoom * 0.75 / WorldOfPixels.camera.zoom);
+      this.startX = WorldOfPixels.camera.x + (x / WorldOfPixels.camera.zoom);
+      this.startY = WorldOfPixels.camera.y + (y / WorldOfPixels.camera.zoom);
     } else {
-      WorldOfPixels.camera.x = this.startX - (x * 16 / WorldOfPixels.camera.zoom * 0.75 / WorldOfPixels.camera.zoom);
-      WorldOfPixels.camera.y = this.startY - (y * 16 / WorldOfPixels.camera.zoom * 0.75 / WorldOfPixels.camera.zoom);
+      WorldOfPixels.camera.x = this.startX - (x / WorldOfPixels.camera.zoom);
+      WorldOfPixels.camera.y = this.startY - (y / WorldOfPixels.camera.zoom);
       WorldOfPixels.updateCamera();
     }
   })
@@ -53,10 +90,10 @@ WorldOfPixels.tools.push(
 // Pipette tool
 WorldOfPixels.tools.push(
   new Tool("cursor-pipette.png", "icon-pipette.png", [-1, -30], false, function(x, y, buttons, isDrag) {
-    var tileX = Math.floor(this.camera.x + (x * 16 / this.camera.zoom * 0.75 / this.camera.zoom));
-    var tileY = Math.floor(this.camera.y + (y * 16 / this.camera.zoom * 0.75 / this.camera.zoom));
+    var tileX = Math.floor(this.camera.x + (x / this.camera.zoom));
+    var tileY = Math.floor(this.camera.y + (y / this.camera.zoom));
     
-    console.log(this.placeColor = this.getPixel(tileX, tileY));
+    this.addPaletteColor(this.getPixel(tileX, tileY));
   }.bind(WorldOfPixels))
 );
 

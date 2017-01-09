@@ -56,9 +56,9 @@ WorldOfPixels.net.sendUpdates = function() {
     var dv = new DataView(array);
     dv.setInt32(0, this.camera.x * 16 + this.mouse.x, true);
     dv.setInt32(4, this.camera.y * 16 + this.mouse.y, true);
-		dv.setUint8(8, this.placeColor[0]);
-		dv.setUint8(9, this.placeColor[1]);
-		dv.setUint8(10, this.placeColor[2]);
+		dv.setUint8(8, this.palette[this.paletteIndex][0]);
+		dv.setUint8(9, this.palette[this.paletteIndex][1]);
+		dv.setUint8(10, this.palette[this.paletteIndex][2]);
 		dv.setUint8(11, this.toolSelected);
     this.net.connection.send(array);
   }

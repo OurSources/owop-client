@@ -36,7 +36,7 @@ WorldOfPixels.mouse = {
 WorldOfPixels.camera = {
   x: -32,
   y: -32,
-  zoom: 12
+  zoom: 16
 };
 
 WorldOfPixels.updateCamera = function() {
@@ -243,14 +243,21 @@ WorldOfPixels.init = function() {
   window.addEventListener("resize", this.resize);
   window.addEventListener("keydown", function(event) {
     var keyCode = event.which || event.keyCode;
-    if (!this.keysDown.includes(keyCode)) {
-      this.keysDown.push(keyCode);
+    if (document.activeElement != document.getElementById("chat-input")) {
+      if (!this.keysDown.includes(keyCode)) {
+        this.keysDown.push(keyCode);
+      }
     }
   }.bind(this));
   window.addEventListener("keyup", function(event) {
     var keyCode = event.which || event.keyCode;
     if (this.keysDown.includes(keyCode)) {
       this.keysDown.splice(this.keysDown.indexOf(keyCode), 1);
+    }
+    if (document.activeElement != document.getElementById("chat-input")) {
+      if (keyCode == 13) {
+        document.getElementById("chat-input").focus();
+      }
     }
   }.bind(this));
   document.getElementById("viewport").addEventListener("mousedown", function(event) {
@@ -273,6 +280,15 @@ WorldOfPixels.init = function() {
     document.getElementById("xy-display").innerHTML = "X: " + Math.floor(this.camera.x + (this.mouse.x * 0.75 / this.camera.zoom)) + ", Y: " + Math.floor(this.camera.y + (this.mouse.y * 0.75 / this.camera.zoom));
   }.bind(this));
   document.getElementById("viewport").oncontextmenu = function(){return false;};
+  document.getElementById("viewport").addEventListener("mousewheel", function(event) {
+    if (event.deltaY > 0) {
+      this.paletteIndex++;
+    } else {
+      this.paletteIndex--;
+    }
+    this.paletteIndex = this.paletteIndex.mod(this.palette.length);
+    this.updatePaletteIndex();
+  }.bind(this));
   
   // Some cool custom css
   console.log("%c" +
@@ -310,6 +326,11 @@ WorldOfPixels.init = function() {
       document.getElementById("tool-select").appendChild(element);
     }
   }
+  
+  this.camera.x = -(window.innerWidth / this.camera.zoom / 2.5);
+  this.camera.y = -(window.innerHeight / this.camera.zoom / 2.5);
+  
+  this.updatePalette();
   
   this.net.connect();
   
