@@ -164,7 +164,6 @@ WorldOfPixels.net.connect = function() {
         this.chatMessage("[Server] You were teleported to X: " + dv.getInt32(1, true) + ", Y: " + dv.getInt32(5, true) + "!");
         break;
       case 4: // Got admin
-        this.chatMessage("[Server] You are now an admin! Type /help for a list of commands.");
         var toolButtonClick = function(id) {
           return function() {
             WorldOfPixels.toolSelected = id;
