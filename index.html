@@ -145,12 +145,13 @@
         bottom: 0;
         width: 400px;
         height: 40%;
-        border: 1px solid #000;
         display: flex;
         flex-direction: column;
+        pointer-events: none;
       }
       #chat.active {
         background-color: rgba(0, 0, 0, 0.6);
+        pointer-events: all;
       }
       #chat-messages {
         flex: 1;
@@ -161,9 +162,14 @@
         color: #FFF;
         text-shadow: 1px 1px 1px #000;
         overflow-y: auto;
+        vertical-align: bottom;
+      }
+      #chat-messages > li {
+        pointer-events: all;
       }
       #chat-input {
         flex: 0;
+        pointer-events: all;
       }
     </style>
     <script type="text/javascript" src="main.js"></script>

@@ -100,7 +100,24 @@ WorldOfPixels.tools.push(
 // Erase tool
 WorldOfPixels.tools.push(
   new Tool("cursor-erase.png", "icon-fill.png", [-7, -32], true, function(x, y, buttons, isDrag) {
+    var chunkX = Math.floor((this.camera.x + (x / this.camera.zoom)) / 16);
+    var chunkY = Math.floor((this.camera.y + (y / this.camera.zoom)) / 16);
     
+    var clear = false;
+		for(var i=16*16*3; i--;){
+			if(this.chunks[[chunkX, chunkY]].data[i] != 255){
+				clear = true;
+				break;
+			}
+		}
+		if(clear){
+			var array = new ArrayBuffer(9);
+			var dv = new DataView(array);
+			dv.setInt32(0, chunkX, true);
+			dv.setInt32(4, chunkY, true);
+			dv.setUint8(8, 0);
+			this.net.connection.send(array);
+		}
   }.bind(WorldOfPixels))
 );
 

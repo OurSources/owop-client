@@ -80,8 +80,8 @@ WorldOfPixels.net.connect = function() {
     if (this.net.worldName === "") {
       this.net.worldName = "main";
     }
-    
-    var worldName = this.net.joinWorld(/*this.net.worldName*/"main");
+    this.net.worldName = "main";
+    var worldName = this.net.joinWorld(this.net.worldName);
     console.log("Connected! Joining world: " + worldName);
     
     this.updateCamera();
@@ -102,6 +102,7 @@ WorldOfPixels.net.connect = function() {
         this.net.id = dv.getUint32(1, true);
         this.net.players = {};
         console.log("Id:", this.net.id);
+        this.chatMessage("[Server] Joined world: \"" + this.net.worldName + "\", your ID is: " + this.net.id + "!");
         break;
       case 1: // Get all cursors, tile updates, disconnects
         // Cursors
@@ -156,11 +157,47 @@ WorldOfPixels.net.connect = function() {
         }
         this.chunks[[chunkX, chunkY]].load(ndata);
         break;
+      case 3: // Teleport
+    		this.camera.x = dv.getInt32(1, true) - (window.innerWidth / this.camera.zoom / 2.5);
+        this.camera.y = dv.getInt32(5, true) - (window.innerHeight / this.camera.zoom / 2.5);
+        this.updateCamera();
+        this.chatMessage("[Server] You were teleported to X: " + dv.getInt32(1, true) + ", Y: " + dv.getInt32(5, true) + "!");
+        break;
+      case 4: // Got admin
+        this.chatMessage("[Server] You are now an admin! Type /help for a list of commands.");
+        var toolButtonClick = function(id) {
+          return function() {
+            WorldOfPixels.toolSelected = id;
+            for (var i=0; i<this.parentNode.children.length; i++) {
+              this.parentNode.children[i].className = "";
+            }
+            this.className = "selected";
+            document.getElementById("chunks").style.cursor = "url(" + WorldOfPixels.tools[WorldOfPixels.toolSelected].cursor + ") " + -WorldOfPixels.tools[WorldOfPixels.toolSelected].offset[0] + " " + -WorldOfPixels.tools[WorldOfPixels.toolSelected].offset[1] + ", pointer";
+          };
+        };
+        
+        document.getElementById("tool-select").innerHTML = "";
+        
+        // Add tools to the tool-select menu
+        for (var m=0; m<this.tools.length; m++) {
+          var element = document.createElement("button");
+          var img = document.createElement("img");
+          img.src = this.tools[m].icon;
+          element.appendChild(img);
+          element.addEventListener("click", toolButtonClick(m));
+          if (m == this.toolSelected) {
+            element.className = "selected";
+            document.getElementById("chunks").style.cursor = "url(" + this.tools[this.toolSelected].cursor + ") 0 0, pointer";
+          }
+          document.getElementById("tool-select").appendChild(element);
+        }
+        break;
     }
   }.bind(this);
   
   this.net.connection.onclose = function() {
     clearInterval(this.net.updateInterval);
-    console.log("Closed");
+    console.log("Disconnected from server");
+    this.chatMessage("[Server] You were disconnected from the server!");
   }.bind(this);
 }.bind(WorldOfPixels);
