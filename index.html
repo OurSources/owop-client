@@ -15,6 +15,16 @@
         background-image: url(unloaded.png);
       }
       
+      .noselect {
+        -webkit-touch-callout: none; /* iOS Safari */
+          -webkit-user-select: none; /* Chrome/Safari/Opera */
+           -khtml-user-select: none; /* Konqueror */
+             -moz-user-select: none; /* Firefox */
+              -ms-user-select: none; /* Internet Explorer/Edge */
+                  user-select: none; /* Non-prefixed version, currently
+                                        not supported by any browser */
+      }
+      
       #viewport {
         position: relative;
         image-rendering: auto;
@@ -164,9 +174,6 @@
         overflow-y: auto;
         vertical-align: bottom;
       }
-      #chat-messages > li {
-        pointer-events: all;
-      }
       #chat-input {
         flex: 0;
         pointer-events: all;
@@ -177,7 +184,7 @@
     <script type="text/javascript" src="player.js"></script>
   </head>
   <body>
-    <div id="viewport">
+    <div id="viewport" onclick="document.getElementById('chat').className='';">
       <div id="chunks"></div>
       <div id="cursors"></div>
     </div>
@@ -191,7 +198,7 @@
     </div>
     <div id="chat">
       <ul id="chat-messages"></ul>
-      <input id="chat-input" type="text" placeholder="Chat here" onfocus="this.parentNode.className='active';" onblur="this.parentNode.className='';" onkeyup="if(event.keyCode==13){this.blur();WorldOfPixels.net.sendMessage(this.value);this.value='';event.stopPropagation();}">
+      <input id="chat-input" type="text" placeholder="Chat here" onfocus="this.parentNode.className='active';" onkeyup="if(event.keyCode==13){this.blur();WorldOfPixels.net.sendMessage(this.value);this.value='';event.stopPropagation();}">
     </div>
   </body>
 </html>

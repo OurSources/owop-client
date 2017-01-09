@@ -29,7 +29,8 @@ WorldOfPixels.mouse = {
   x: 0,
   y: 0,
   lastX: 0,
-  lastY: 0
+  lastY: 0,
+  validClick: false
 };
 
 
@@ -265,6 +266,8 @@ WorldOfPixels.init = function() {
     this.mouse.lastY = this.camera.y * 16 + this.mouse.y;
     this.mouse.x = event.pageX * 16 / this.camera.zoom;
     this.mouse.y = event.pageY * 16 / this.camera.zoom;
+    this.mouse.validClick = true;
+    document.body.className = "noselect";
     
     this.tools[this.toolSelected].click(event.pageX, event.pageY, event.buttons, false);
   }.bind(this));
@@ -274,10 +277,14 @@ WorldOfPixels.init = function() {
     this.mouse.x = event.pageX * 16 / this.camera.zoom;
     this.mouse.y = event.pageY * 16 / this.camera.zoom;
     
-    if (event.buttons !== 0) {
+    if (event.buttons !== 0 && this.mouse.validClick) {
       this.tools[this.toolSelected].click(event.pageX, event.pageY, event.buttons, true);
     }
     document.getElementById("xy-display").innerHTML = "X: " + Math.floor(this.camera.x + (this.mouse.x * 0.75 / this.camera.zoom)) + ", Y: " + Math.floor(this.camera.y + (this.mouse.y * 0.75 / this.camera.zoom));
+  }.bind(this));
+  window.addEventListener("mouseup", function(event) {
+    this.mouse.validClick = false;
+    document.body.className = "";
   }.bind(this));
   document.getElementById("viewport").oncontextmenu = function(){return false;};
   document.getElementById("viewport").addEventListener("mousewheel", function(event) {
