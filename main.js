@@ -16,6 +16,11 @@ WorldOfPixels.options = {
   movementSpeed: 32
 };
 
+// This fixes modulo to work on negative numbers (-1 % 16 = 15)
+Number.prototype.mod = function(n) {
+    return ((this%n)+n)%n;
+};
+
 
 
 WorldOfPixels.keysDown = [];
@@ -26,13 +31,6 @@ WorldOfPixels.mouse = {
   lastX: 0,
   lastY: 0
 };
-
-window.addEventListener("mousemove", function(event) {
-  this.mouse.lastX = this.camera.x * 16 + this.mouse.x;
-  this.mouse.lastY = this.camera.y * 16 + this.mouse.y;
-  this.mouse.x = event.pageX * 16 / this.camera.zoom;
-  this.mouse.y = event.pageY * 16 / this.camera.zoom;
-}.bind(WorldOfPixels));
 
 
 WorldOfPixels.camera = {
@@ -63,11 +61,22 @@ WorldOfPixels.updateCamera = function() {
   /* Possible fix for subpixel (blurry) rendering: round the camera position? */
 
   document.getElementById("viewport").style.zoom = 100 * this.camera.zoom + "%";
-  document.getElementById("viewport").style.transform = "translate(" + (-Math.round(this.camera.x)) + "px," + (-Math.round(this.camera.y)) + "px)";
+  document.getElementById("viewport").style.left = -this.camera.x + "px";
+  document.getElementById("viewport").style.top = -this.camera.y + "px";
+  //document.getElementById("viewport").style.transform = "translate(" + (-Math.round(this.camera.x)) + "px," + (-Math.round(this.camera.y)) + "px)";
   document.body.style.backgroundPosition = -this.camera.x + "px " + -this.camera.y + "px";
 };
 
 
+
+WorldOfPixels.getPixel = function(x, y) {
+  // NOTICE: Number.mod is modified! Check the top of the file ^
+  if ([x >> 4, y >> 4].join() in this.chunks) {
+    return this.chunks[[x >> 4, y >> 4]].data.slice((y.mod(16) * 16 + x.mod(16)) * 3, (y.mod(16) * 16 + x.mod(16) + 1) * 3);
+  } else {
+    return [255, 255, 255];
+  }
+}.bind(WorldOfPixels);
 
 WorldOfPixels.isVisible = function(x, y) {
   
@@ -244,6 +253,25 @@ WorldOfPixels.init = function() {
       this.keysDown.splice(this.keysDown.indexOf(keyCode), 1);
     }
   }.bind(this));
+  window.addEventListener("mousemove", function(event) {
+    this.mouse.lastX = this.camera.x * 16 + this.mouse.x;
+    this.mouse.lastY = this.camera.y * 16 + this.mouse.y;
+    this.mouse.x = event.pageX * 16 / this.camera.zoom;
+    this.mouse.y = event.pageY * 16 / this.camera.zoom;
+    
+    if (event.buttons !== 0) {
+      this.tools[this.toolSelected].click(event.pageX, event.pageY, event.buttons);
+    }
+  }.bind(this));
+  window.addEventListener("mousedown", function(event) {
+    this.mouse.lastX = this.camera.x * 16 + this.mouse.x;
+    this.mouse.lastY = this.camera.y * 16 + this.mouse.y;
+    this.mouse.x = event.pageX * 16 / this.camera.zoom;
+    this.mouse.y = event.pageY * 16 / this.camera.zoom;
+    
+    this.tools[this.toolSelected].click(this.mouse.x, this.mouse.y, event.buttons);
+  }.bind(this));
+  document.getElementById("viewport").oncontextmenu = function(){return false;};
   
   // Some cool custom css
   console.log("%c" +
@@ -253,7 +281,34 @@ WorldOfPixels.init = function() {
     "|_____|___|_| |_|___|  |_____|_|    |__|  |_|_,_|___|_|___|",
     "font-size: 15px; font-weight: bold;"
   );
-  console.log("%cWelcome to the developer console!", "font-size: 20px; font-weight: bold;");
+  console.log("%cWelcome to the developer console!", "font-size: 20px; font-weight: bold; color: #F0F;");
+  
+  var toolButtonClick = function(id) {
+    return function() {
+      WorldOfPixels.toolSelected = id;
+      for (var i=0; i<this.parentNode.children.length; i++) {
+        this.parentNode.children[i].className = "";
+      }
+      this.className = "selected";
+      document.getElementById("chunks").style.cursor = "url(" + WorldOfPixels.tools[WorldOfPixels.toolSelected].cursor + ") " + -WorldOfPixels.tools[WorldOfPixels.toolSelected].offset[0] + " " + -WorldOfPixels.tools[WorldOfPixels.toolSelected].offset[1] + ", pointer";
+    };
+  };
+  
+  // Add tools to the tool-select menu
+  for (var i=0; i<this.tools.length; i++) {
+    if (!this.tools[i].adminTool) {
+      var element = document.createElement("button");
+      var img = document.createElement("img");
+      img.src = this.tools[i].icon;
+      element.appendChild(img);
+      element.addEventListener("click", toolButtonClick(i));
+      if (i == this.toolSelected) {
+        element.className = "selected";
+        document.getElementById("chunks").style.cursor = "url(" + this.tools[this.toolSelected].cursor + ") 0 0, pointer";
+      }
+      document.getElementById("tool-select").appendChild(element);
+    }
+  }
   
   this.net.connect();
   

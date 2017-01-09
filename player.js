@@ -1,37 +1,60 @@
 var WorldOfPixels = WorldOfPixels || {};
 WorldOfPixels.tools = [];
+WorldOfPixels.toolSelected = 0;
+WorldOfPixels.placeColor = [0, 0, 0];
 
-function Tool(img, onclick) {
-  this.img = img;
+function Tool(cursor, icon, offset, isAdminTool, onclick) {
+  this.cursor = cursor;
+  this.icon = icon;
+  this.offset = offset;
+  this.adminTool = isAdminTool;
   this.click = onclick;
 }
 
 // Cursor tool
 WorldOfPixels.tools.push(
-  new Tool("cursor.png", function(x, y, button) {
+  new Tool("cursor.png", "cursor.png", [-1, -2], false, function(x, y, buttons) {
+    var tileX = Math.floor((this.camera.x + (this.mouse.x * 0.75 / this.camera.zoom)));
+    var tileY = Math.floor((this.camera.y + (this.mouse.y * 0.75 / this.camera.zoom)));
     
-  })
+    var pixel = this.getPixel(tileX, tileY);
+    if (buttons == 1) {
+      if (pixel[0] !== this.placeColor[0] || pixel[1] !== this.placeColor[1] || pixel[2] !== this.placeColor[2]) {
+        this.chunks[[tileX >> 4, tileY >> 4]].data[(tileY.mod(16) * 16 + tileX.mod(16)) * 3] = this.placeColor[0];
+        this.chunks[[tileX >> 4, tileY >> 4]].data[(tileY.mod(16) * 16 + tileX.mod(16)) * 3 + 1] = this.placeColor[1];
+        this.chunks[[tileX >> 4, tileY >> 4]].data[(tileY.mod(16) * 16 + tileX.mod(16)) * 3 + 2] = this.placeColor[2];
+        this.net.updatePixel(tileX, tileY, this.placeColor);
+      }
+    } else if (buttons == 2) {
+      if (pixel[0] !== 255 || pixel[1] !== 255 || pixel[2] !== 255) {
+        this.chunks[[tileX >> 4, tileY >> 4]].data[(tileY.mod(16) * 16 + tileX.mod(16)) * 3] = 255;
+        this.chunks[[tileX >> 4, tileY >> 4]].data[(tileY.mod(16) * 16 + tileX.mod(16)) * 3 + 1] = 255;
+        this.chunks[[tileX >> 4, tileY >> 4]].data[(tileY.mod(16) * 16 + tileX.mod(16)) * 3 + 2] = 255;
+        this.net.updatePixel(tileX, tileY, [255, 255, 255]);
+      }
+    }
+  }.bind(WorldOfPixels))
 );
 
 // Move tool
 WorldOfPixels.tools.push(
-  new Tool("move.png", function(x, y, button) {
+  new Tool("move.png", "move.png", [-18, -20], false, function(x, y, buttons) {
     
-  })
+  }.bind(WorldOfPixels))
 );
 
 // Pipette tool
 WorldOfPixels.tools.push(
-  new Tool("pipette.png", function(x, y, button) {
+  new Tool("pipette.png", "pipette.png", [-1, -30], false, function(x, y, buttons) {
     
-  })
+  }.bind(WorldOfPixels))
 );
 
 // Erase tool
 WorldOfPixels.tools.push(
-  new Tool("erase.png", function(x, y, button) {
+  new Tool("erase.png", "erase.png", [-7, -32], true, function(x, y, buttons) {
     
-  })
+  }.bind(WorldOfPixels))
 );
 
 function Player(x, y, r, g, b, tool, id) {
@@ -45,10 +68,13 @@ function Player(x, y, r, g, b, tool, id) {
   if (this.id != WorldOfPixels.net.id) {
     this.element = document.createElement("div");
     this.img = document.createElement("img");
-    this.img.src = WorldOfPixels.tools[this.tool].img;
+    this.img.src = WorldOfPixels.tools[this.tool].cursor;
+    this.img.style.left = WorldOfPixels.tools[this.tool].offset[0] + "px";
+    this.img.style.top = WorldOfPixels.tools[this.tool].offset[1] + "px";
     var idElement = document.createElement("span");
     idElement.innerHTML = id;
     idElement.style.backgroundColor = "rgb(" + (((id + 75387) * 67283 + 53143) % 256) + ", " + (((id + 9283) * 4673 + 7483) % 256) + ", " + (id * 3000 % 256) + ")";
+    idElement.style.transform = "translateY(" + (this.img.height + WorldOfPixels.tools[this.tool].offset[1]) + "px)";
     this.element.appendChild(this.img);
     this.element.appendChild(idElement);
     this.element.style.transform = "translate(" + x + "px," + y + "px)";
@@ -73,11 +99,15 @@ Player.prototype.update = function(x, y, r, g, b, tool) {
   this.b = b;
   if (this.id != WorldOfPixels.net.id) {
     if(tool != this.tool){
-      this.img.src = WorldOfPixels.tools[this.tool].img;
+      this.tool = tool;
+      this.img.src = WorldOfPixels.tools[this.tool].cursor;
+      this.img.style.left = WorldOfPixels.tools[this.tool].offset[0] + "px";
+      this.img.style.top = WorldOfPixels.tools[this.tool].offset[1] + "px";
+    } else {
+      this.tool = tool;
     }
     this.element.style.transform = "translate(" + x + "px," + y + "px)";
   }
-  this.tool = tool;
 };
 
 Player.prototype.disconnect = function() {

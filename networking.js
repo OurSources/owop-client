@@ -38,6 +38,17 @@ WorldOfPixels.net.requestChunk = function(x, y) {
   this.net.connection.send(array);
 }.bind(WorldOfPixels);
 
+WorldOfPixels.net.updatePixel = function(x, y, color) {
+  var array = new ArrayBuffer(11);
+  var dv = new DataView(array);
+	dv.setInt32(0, x, true);
+	dv.setInt32(4, y, true);
+	dv.setUint8(8, color[0]);
+	dv.setUint8(9, color[1]);
+	dv.setUint8(10, color[2]);
+	this.net.connection.send(array);
+}.bind(WorldOfPixels);
+
 WorldOfPixels.net.sendUpdates = function() {
   if (this.mouse.lastX != this.camera.x * 16 + this.mouse.x || this.mouse.lastY != this.camera.y * 16 + this.mouse.y) {
     // Send mouse position
@@ -45,10 +56,10 @@ WorldOfPixels.net.sendUpdates = function() {
     var dv = new DataView(array);
     dv.setInt32(0, this.camera.x * 16 + this.mouse.x, true);
     dv.setInt32(4, this.camera.y * 16 + this.mouse.y, true);
-		dv.setUint8(8, 0);
-		dv.setUint8(9, 0);
-		dv.setUint8(10, 0);
-		dv.setUint8(11, 0);
+		dv.setUint8(8, this.placeColor[0]);
+		dv.setUint8(9, this.placeColor[1]);
+		dv.setUint8(10, this.placeColor[2]);
+		dv.setUint8(11, this.toolSelected);
     this.net.connection.send(array);
   }
 }.bind(WorldOfPixels);
