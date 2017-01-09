@@ -45,37 +45,109 @@
         position: absolute;
       }
       
+      #xy-display {
+        position: absolute;
+        left: 0;
+        top: 0;
+        font-size: 16px;
+        background-color: rgba(0, 0, 0, 0.5);
+        color: #FFF;
+        font-family: Arial;
+      }
+      
       #tool-select {
         position: absolute;
-        top: 0;
-        left: 0;
+        top: 20px;
+        left: 5px;
         width: 50px;
       }
       #tool-select > button {
         display: inline-block;
-        width: 40px;
-        height: 40px;
+        width: 50px;
+        height: 50px;
       }
       #tool-select > button.selected {
         background-color: #aaa;
       }
       #tool-select > button > img {
+        
+      }
+      
+      #palette {
+        position: absolute;
+        right: 0;
+        top: 50%;
+        transform: translateY(-50%);
+      }
+      #palette-selected {
+        width: 44px;
+        height: 40px;
+        background-color: #DDD;
+        border: 1px solid #888;
+        box-sizing: border-box;
+      }
+      #palette-create {
+        position: absolute;
+        right: 50px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 24px;
+        height: 24px;
+        background-color: #888;
+        border: 1px solid #777;
+        box-sizing: border-box;
+      }
+      .plus {
+        position: relative;
         width: 100%;
         height: 100%;
+      }
+      .plus:after {
+        position: absolute;
+        background-color: #FFF;
+        width: 16px;
+        height: 4px;
+        border-radius: 1px;
+        top: 9px;
+        left: 3px;
+        content: "";
+      }
+      .plus:before {
+        position: absolute;
+        background-color: #FFF;
+        width: 4px;
+        height: 16px;
+        border-radius: 1px;
+        top: 3px;
+        left: 9px;
+        content: "";
+      }
+      
+      #palette-colors {
+        position: absolute;
+        left: 4px;
+        top: -4px;
+      }
+      #palette-colors > div {
+        width: 32px;
+        height: 32px;
+        margin: 8px 0;
+        border: 1px solid rgba(0, 0, 0, 0.3);
+        box-sizing: border-box;
       }
       
       #chat {
         position: absolute;
         left: 0;
         bottom: 0;
-        width: 300px;
+        width: 400px;
         height: 40%;
         border: 1px solid #000;
         display: flex;
         flex-direction: column;
       }
       #chat.active {
-        background-color: rgba(0, 0, 0, 0.2);
+        background-color: rgba(0, 0, 0, 0.6);
       }
       #chat-messages {
         flex: 1;
@@ -100,7 +172,20 @@
       <div id="chunks"></div>
       <div id="cursors"></div>
     </div>
+    <span id="xy-display"></span>
     <div id="tool-select"></div>
+    <div id="palette">
+      <div id="palette-selected"></div>
+      <div id="palette-create">
+        <div class="plus"></div>
+      </div>
+      <div id="palette-colors">
+        <div style="background-color: #000;"></div>
+        <div style="background-color: #F00;"></div>
+        <div style="background-color: #0F0;"></div>
+        <div style="background-color: #00F;"></div>
+      </div>
+    </div>
     <div id="chat">
       <ul id="chat-messages"></ul>
       <input id="chat-input" type="text" placeholder="Chat here" onfocus="this.parentNode.className='active';" onblur="this.parentNode.className='';" onkeyup="if(event.keyCode==13){this.blur();WorldOfPixels.net.sendMessage(this.value);this.value='';}">

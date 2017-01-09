@@ -13,9 +13,9 @@ function Tool(cursor, icon, offset, isAdminTool, onclick) {
 
 // Cursor tool
 WorldOfPixels.tools.push(
-  new Tool("cursor.png", "cursor.png", [-1, -2], false, function(x, y, buttons) {
-    var tileX = Math.floor((this.camera.x + (this.mouse.x * 0.75 / this.camera.zoom)));
-    var tileY = Math.floor((this.camera.y + (this.mouse.y * 0.75 / this.camera.zoom)));
+  new Tool("cursor-default.png", "icon-cursor.png", [-1, -2], false, function(x, y, buttons, isDrag) {
+    var tileX = Math.floor(this.camera.x + (x * 16 / this.camera.zoom * 0.75 / this.camera.zoom));
+    var tileY = Math.floor(this.camera.y + (y * 16 / this.camera.zoom * 0.75 / this.camera.zoom));
     
     var pixel = this.getPixel(tileX, tileY);
     if (buttons == 1) {
@@ -38,21 +38,31 @@ WorldOfPixels.tools.push(
 
 // Move tool
 WorldOfPixels.tools.push(
-  new Tool("move.png", "move.png", [-18, -20], false, function(x, y, buttons) {
-    
-  }.bind(WorldOfPixels))
+  new Tool("cursor-move.png", "icon-move.png", [-18, -20], false, function(x, y, button, isDrag) {
+    if (!isDrag) {
+      this.startX = WorldOfPixels.camera.x + (x * 16 / WorldOfPixels.camera.zoom * 0.75 / WorldOfPixels.camera.zoom);
+      this.startY = WorldOfPixels.camera.y + (y * 16 / WorldOfPixels.camera.zoom * 0.75 / WorldOfPixels.camera.zoom);
+    } else {
+      WorldOfPixels.camera.x = this.startX - (x * 16 / WorldOfPixels.camera.zoom * 0.75 / WorldOfPixels.camera.zoom);
+      WorldOfPixels.camera.y = this.startY - (y * 16 / WorldOfPixels.camera.zoom * 0.75 / WorldOfPixels.camera.zoom);
+      WorldOfPixels.updateCamera();
+    }
+  })
 );
 
 // Pipette tool
 WorldOfPixels.tools.push(
-  new Tool("pipette.png", "pipette.png", [-1, -30], false, function(x, y, buttons) {
+  new Tool("cursor-pipette.png", "icon-pipette.png", [-1, -30], false, function(x, y, buttons, isDrag) {
+    var tileX = Math.floor(this.camera.x + (x * 16 / this.camera.zoom * 0.75 / this.camera.zoom));
+    var tileY = Math.floor(this.camera.y + (y * 16 / this.camera.zoom * 0.75 / this.camera.zoom));
     
+    console.log(this.placeColor = this.getPixel(tileX, tileY));
   }.bind(WorldOfPixels))
 );
 
 // Erase tool
 WorldOfPixels.tools.push(
-  new Tool("erase.png", "erase.png", [-7, -32], true, function(x, y, buttons) {
+  new Tool("cursor-erase.png", "icon-fill.png", [-7, -32], true, function(x, y, buttons, isDrag) {
     
   }.bind(WorldOfPixels))
 );

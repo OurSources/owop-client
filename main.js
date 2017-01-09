@@ -253,6 +253,14 @@ WorldOfPixels.init = function() {
       this.keysDown.splice(this.keysDown.indexOf(keyCode), 1);
     }
   }.bind(this));
+  document.getElementById("viewport").addEventListener("mousedown", function(event) {
+    this.mouse.lastX = this.camera.x * 16 + this.mouse.x;
+    this.mouse.lastY = this.camera.y * 16 + this.mouse.y;
+    this.mouse.x = event.pageX * 16 / this.camera.zoom;
+    this.mouse.y = event.pageY * 16 / this.camera.zoom;
+    
+    this.tools[this.toolSelected].click(event.pageX, event.pageY, event.buttons, false);
+  }.bind(this));
   window.addEventListener("mousemove", function(event) {
     this.mouse.lastX = this.camera.x * 16 + this.mouse.x;
     this.mouse.lastY = this.camera.y * 16 + this.mouse.y;
@@ -260,16 +268,9 @@ WorldOfPixels.init = function() {
     this.mouse.y = event.pageY * 16 / this.camera.zoom;
     
     if (event.buttons !== 0) {
-      this.tools[this.toolSelected].click(event.pageX, event.pageY, event.buttons);
+      this.tools[this.toolSelected].click(event.pageX, event.pageY, event.buttons, true);
     }
-  }.bind(this));
-  window.addEventListener("mousedown", function(event) {
-    this.mouse.lastX = this.camera.x * 16 + this.mouse.x;
-    this.mouse.lastY = this.camera.y * 16 + this.mouse.y;
-    this.mouse.x = event.pageX * 16 / this.camera.zoom;
-    this.mouse.y = event.pageY * 16 / this.camera.zoom;
-    
-    this.tools[this.toolSelected].click(this.mouse.x, this.mouse.y, event.buttons);
+    document.getElementById("xy-display").innerHTML = "X: " + Math.floor(this.camera.x + (this.mouse.x * 0.75 / this.camera.zoom)) + ", Y: " + Math.floor(this.camera.y + (this.mouse.y * 0.75 / this.camera.zoom));
   }.bind(this));
   document.getElementById("viewport").oncontextmenu = function(){return false;};
   
