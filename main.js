@@ -10,10 +10,14 @@ var WorldOfPixels = WorldOfPixels || {};
 
 WorldOfPixels.options = {
   serverAddress: "ws://www.ourworldofpixels.com:443", // The server address that websockets connect to
-  fps: 30, // Fps used if requestAnimationFrame is not supported
+  fps: 30, // Fps used if requestAnimationFrame is not supported (not used atm)
   netUpdateSpeed: 20, // How many times per second to send updates to server
   tickSpeed: 30, // How many times per second to run a tick
-  movementSpeed: 32
+  movementSpeed: 32,
+  defaultZoom: 16,
+  zoomStrength: 1,
+  zoomLimitMin: 2,
+  zoomLimitMax: 32
 };
 
 // This fixes modulo to work on negative numbers (-1 % 16 = 15)
@@ -35,9 +39,9 @@ WorldOfPixels.mouse = {
 
 
 WorldOfPixels.camera = {
-  x: -32,
-  y: -32,
-  zoom: 16
+  x: 0,
+  y: 0,
+  zoom: WorldOfPixels.options.defaultZoom
 };
 
 WorldOfPixels.updateCamera = function() {
@@ -61,7 +65,7 @@ WorldOfPixels.updateCamera = function() {
   
   /* Possible fix for subpixel (blurry) rendering: round the camera position? */
 
-  document.getElementById("viewport").style.zoom = 100 * this.camera.zoom + "%";
+  document.getElementById("viewport").style.zoom = Math.round(100 * this.camera.zoom) + "%";
   document.getElementById("viewport").style.left = -this.camera.x + "px";
   document.getElementById("viewport").style.top = -this.camera.y + "px";
   //document.getElementById("viewport").style.transform = "translate(" + (-Math.round(this.camera.x)) + "px," + (-Math.round(this.camera.y)) + "px)";
@@ -98,8 +102,7 @@ function Chunk(x, y, data) {
   this.canvas = document.createElement("canvas");
   this.canvas.width = 16;
   this.canvas.height = 16;
-  this.canvas.style.left = this.x * 16 + "px";
-  this.canvas.style.top = this.y * 16 + "px";
+  this.canvas.style.transform = "translate(" + (this.x * 16) + "px, " + (this.y * 16) + "px)";
   this.draw();
   document.getElementById("chunks").appendChild(this.canvas);
   this.loaded = true;
@@ -286,7 +289,7 @@ WorldOfPixels.init = function() {
     if (event.buttons !== 0 && this.mouse.validClick) {
       this.tools[this.toolSelected].click(event.pageX, event.pageY, event.buttons, true);
     }
-    document.getElementById("xy-display").innerHTML = "X: " + Math.floor(this.camera.x + (this.mouse.x / this.camera.zoom)) + ", Y: " + Math.floor(this.camera.y + (this.mouse.y / this.camera.zoom));
+    document.getElementById("xy-display").innerHTML = "X: " + tileX + ", Y: " + tileY;
   }.bind(this));
   window.addEventListener("mouseup", function(event) {
     this.mouse.validClick = false;
@@ -313,14 +316,14 @@ WorldOfPixels.init = function() {
   );
   console.log("%cWelcome to the developer console!", "font-size: 20px; font-weight: bold; color: #F0F;");
   
-  var toolButtonClick = function(id) {
+  this.toolButtonClick = function(id) {
     return function() {
       WorldOfPixels.toolSelected = id;
       for (var i=0; i<this.parentNode.children.length; i++) {
         this.parentNode.children[i].className = "";
       }
       this.className = "selected";
-      document.getElementById("chunks").style.cursor = "url(" + WorldOfPixels.tools[WorldOfPixels.toolSelected].cursor + ") " + -WorldOfPixels.tools[WorldOfPixels.toolSelected].offset[0] + " " + -WorldOfPixels.tools[WorldOfPixels.toolSelected].offset[1] + ", pointer";
+      document.getElementById("viewport").style.cursor = "url(" + WorldOfPixels.tools[WorldOfPixels.toolSelected].cursor + ") " + -WorldOfPixels.tools[WorldOfPixels.toolSelected].offset[0] + " " + -WorldOfPixels.tools[WorldOfPixels.toolSelected].offset[1] + ", pointer";
     };
   };
   
@@ -331,10 +334,10 @@ WorldOfPixels.init = function() {
       var img = document.createElement("img");
       img.src = this.tools[i].icon;
       element.appendChild(img);
-      element.addEventListener("click", toolButtonClick(i));
+      element.addEventListener("click", this.toolButtonClick(i));
       if (i == this.toolSelected) {
         element.className = "selected";
-        document.getElementById("chunks").style.cursor = "url(" + this.tools[this.toolSelected].cursor + ") 0 0, pointer";
+        document.getElementById("viewport").style.cursor = "url(" + this.tools[this.toolSelected].cursor + ") 0 0, pointer";
       }
       document.getElementById("tool-select").appendChild(element);
     }

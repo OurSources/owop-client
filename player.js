@@ -57,16 +57,10 @@ WorldOfPixels.tools.push(
     var pixel = this.getPixel(tileX, tileY);
     if (buttons == 1) {
       if (pixel[0] !== this.palette[this.paletteIndex][0] || pixel[1] !== this.palette[this.paletteIndex][1] || pixel[2] !== this.palette[this.paletteIndex][2]) {
-        this.chunks[[tileX >> 4, tileY >> 4]].data[(tileY.mod(16) * 16 + tileX.mod(16)) * 3] = this.palette[this.paletteIndex][0];
-        this.chunks[[tileX >> 4, tileY >> 4]].data[(tileY.mod(16) * 16 + tileX.mod(16)) * 3 + 1] = this.palette[this.paletteIndex][1];
-        this.chunks[[tileX >> 4, tileY >> 4]].data[(tileY.mod(16) * 16 + tileX.mod(16)) * 3 + 2] = this.palette[this.paletteIndex][2];
         this.net.updatePixel(tileX, tileY, this.palette[this.paletteIndex]);
       }
     } else if (buttons == 2) {
       if (pixel[0] !== 255 || pixel[1] !== 255 || pixel[2] !== 255) {
-        this.chunks[[tileX >> 4, tileY >> 4]].data[(tileY.mod(16) * 16 + tileX.mod(16)) * 3] = 255;
-        this.chunks[[tileX >> 4, tileY >> 4]].data[(tileY.mod(16) * 16 + tileX.mod(16)) * 3 + 1] = 255;
-        this.chunks[[tileX >> 4, tileY >> 4]].data[(tileY.mod(16) * 16 + tileX.mod(16)) * 3 + 2] = 255;
         this.net.updatePixel(tileX, tileY, [255, 255, 255]);
       }
     }
@@ -107,10 +101,11 @@ WorldOfPixels.tools.push(
 		for(var i=16*16*3; i--;){
 			if(this.chunks[[chunkX, chunkY]].data[i] != 255){
 				clear = true;
-				break;
+				this.chunks[[chunkX, chunkY]].data[i] = 255;
 			}
 		}
 		if(clear){
+		  this.chunks[[chunkX, chunkY]].draw();
 			var array = new ArrayBuffer(9);
 			var dv = new DataView(array);
 			dv.setInt32(0, chunkX, true);
@@ -119,6 +114,30 @@ WorldOfPixels.tools.push(
 			this.net.connection.send(array);
 		}
   }.bind(WorldOfPixels))
+);
+
+// Zoom tool
+WorldOfPixels.tools.push(
+  new Tool(
+    "https://cdn3.iconfinder.com/data/icons/watchify-v1-0-32px/32/magnifying-glass-search-32.png",
+    "https://cdn3.iconfinder.com/data/icons/watchify-v1-0-32px/32/magnifying-glass-search-32.png",
+    [0, 0], false, function(x, y, buttons, isDrag) {
+      if (!isDrag) {
+        if (buttons == 1 && this.camera.zoom * (1 + this.options.zoomStrength) <= this.options.zoomLimitMax) {
+          // Zoom in
+          this.camera.zoom *= 1 + this.options.zoomStrength;
+          this.updateCamera();
+        } else if (buttons == 2 && this.camera.zoom / (1 + this.options.zoomStrength) >= this.options.zoomLimitMin) {
+          // Zoom out
+          this.camera.zoom /= 1 + this.options.zoomStrength;
+          this.updateCamera();
+        } else if (buttons == 3) {
+          // Reset zoom (right + left click)
+          this.camera.zoom = this.options.defaultZoom;
+          this.updateCamera();
+        }
+      }
+    }.bind(WorldOfPixels))
 );
 
 function Player(x, y, r, g, b, tool, id) {

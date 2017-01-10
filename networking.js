@@ -1,6 +1,26 @@
 var WorldOfPixels = WorldOfPixels || {};
 WorldOfPixels.net = {};
 
+function Bucket(rate, time) {
+  this.allowance = rate;
+  this.rate = rate;
+  this.time = time;
+  this.lastCheck = new Date().getTime();
+}
+
+Bucket.prototype.canSpend = function(count) {
+  this.allowance += (new Date().getTime() - this.lastCheck) / 1000 * (this.rate / this.time);
+  this.lastCheck = new Date().getTime();
+  if (this.allowance > this.rate) {
+    this.allowance = this.rate;
+  }
+  if (this.allowance < count) {
+    return false;
+  }
+  this.allowance -= count;
+  return true;
+};
+
 WorldOfPixels.net.stoi = function(string, max) {
   var ints = [];
   var fstring = "";
@@ -39,14 +59,17 @@ WorldOfPixels.net.requestChunk = function(x, y) {
 }.bind(WorldOfPixels);
 
 WorldOfPixels.net.updatePixel = function(x, y, color) {
-  var array = new ArrayBuffer(11);
-  var dv = new DataView(array);
-	dv.setInt32(0, x, true);
-	dv.setInt32(4, y, true);
-	dv.setUint8(8, color[0]);
-	dv.setUint8(9, color[1]);
-	dv.setUint8(10, color[2]);
-	this.net.connection.send(array);
+  if (this.net.placeBucket.canSpend(1)) {
+    this.chunks[[x >> 4, y >> 4]].update(x.mod(16), y.mod(16), color);
+    var array = new ArrayBuffer(11);
+    var dv = new DataView(array);
+  	dv.setInt32(0, x, true);
+  	dv.setInt32(4, y, true);
+  	dv.setUint8(8, color[0]);
+  	dv.setUint8(9, color[1]);
+  	dv.setUint8(10, color[2]);
+  	this.net.connection.send(array);
+  }
 }.bind(WorldOfPixels);
 
 WorldOfPixels.net.sendUpdates = function() {
@@ -59,13 +82,19 @@ WorldOfPixels.net.sendUpdates = function() {
 		dv.setUint8(8, this.palette[this.paletteIndex][0]);
 		dv.setUint8(9, this.palette[this.paletteIndex][1]);
 		dv.setUint8(10, this.palette[this.paletteIndex][2]);
-		dv.setUint8(11, this.toolSelected);
+		dv.setUint8(11, this.toolSelected % 4);
     this.net.connection.send(array);
   }
 }.bind(WorldOfPixels);
 
 WorldOfPixels.net.sendMessage = function(message) {
-  this.net.connection.send(message + String.fromCharCode(10));
+  if (message.length) {
+    if (this.net.chatBucket.canSpend(1)) {
+      this.net.connection.send(message + String.fromCharCode(10));
+    } else {
+      this.chatMessage("Slow down! You're talking too fast!");
+    }
+  }
 }.bind(WorldOfPixels);
 
 WorldOfPixels.net.connect = function() {
@@ -73,6 +102,9 @@ WorldOfPixels.net.connect = function() {
   this.net.connection.binaryType = "arraybuffer";
   
   this.net.connection.onopen = function() {
+    this.net.placeBucket = new Bucket(32, 4);
+    this.net.chatBucket = new Bucket(4, 6);
+    
     this.net.worldName = decodeURIComponent(window.location.pathname);
     if (this.net.worldName.charAt(0) == "/") {
       this.net.worldName = this.net.worldName.substr(1);
@@ -153,12 +185,16 @@ WorldOfPixels.net.connect = function() {
           ndata[l - 9] = data[l];
         }
         if (!this.chunksLoading.includes([chunkX, chunkY].join())) {
-          console.log("eraser");
+          // If chunk was not requested, show eraser fx
           new Fx(3, chunkX * 16, chunkY * 16, {});
+          for (var n=0; n<16*16*3; n++) {
+            this.chunks[[chunkX, chunkY]].data[n] = 255;
+            this.chunks[[chunkX, chunkY]].draw();
+          }
         } else {
           this.chunksLoading.splice(this.chunksLoading.indexOf([chunkX, chunkY].join()), 1);
+          this.chunks[[chunkX, chunkY]] = new Chunk(chunkX, chunkY, ndata);
         }
-        this.chunks[[chunkX, chunkY]] = new Chunk(chunkX, chunkY, ndata);
         break;
       case 3: // Teleport
     		this.camera.x = dv.getInt32(1, true) - (window.innerWidth / this.camera.zoom / 2.5);
@@ -167,16 +203,7 @@ WorldOfPixels.net.connect = function() {
         this.chatMessage("[Server] You were teleported to X: " + dv.getInt32(1, true) + ", Y: " + dv.getInt32(5, true) + "!");
         break;
       case 4: // Got admin
-        var toolButtonClick = function(id) {
-          return function() {
-            WorldOfPixels.toolSelected = id;
-            for (var i=0; i<this.parentNode.children.length; i++) {
-              this.parentNode.children[i].className = "";
-            }
-            this.className = "selected";
-            document.getElementById("chunks").style.cursor = "url(" + WorldOfPixels.tools[WorldOfPixels.toolSelected].cursor + ") " + -WorldOfPixels.tools[WorldOfPixels.toolSelected].offset[0] + " " + -WorldOfPixels.tools[WorldOfPixels.toolSelected].offset[1] + ", pointer";
-          };
-        };
+        this.idAdmin = true;
         
         document.getElementById("tool-select").innerHTML = "";
         
@@ -186,10 +213,10 @@ WorldOfPixels.net.connect = function() {
           var img = document.createElement("img");
           img.src = this.tools[m].icon;
           element.appendChild(img);
-          element.addEventListener("click", toolButtonClick(m));
+          element.addEventListener("click", this.toolButtonClick(m));
           if (m == this.toolSelected) {
             element.className = "selected";
-            document.getElementById("chunks").style.cursor = "url(" + this.tools[this.toolSelected].cursor + ") 0 0, pointer";
+            document.getElementById("viewport").style.cursor = "url(" + this.tools[this.toolSelected].cursor + ") 0 0, pointer";
           }
           document.getElementById("tool-select").appendChild(element);
         }
