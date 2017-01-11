@@ -40,80 +40,121 @@ WorldOfPixels.addPaletteColor = function(color) {
 
 
 
-function Tool(cursor, icon, offset, isAdminTool, onclick) {
+function Tool(cursor, icon, offset, isAdminTool, onclick, onTouch) {
   this.cursor = cursor;
   this.icon = icon;
   this.offset = offset;
   this.adminTool = isAdminTool;
   this.click = onclick;
+  this.touch = onTouch;
 }
 
 // Cursor tool
 WorldOfPixels.tools.push(
-  new Tool("cursor-default.png", "icon-cursor.png", [-1, -2], false, function(x, y, buttons, isDrag) {
-    var tileX = Math.floor(this.camera.x + (x / this.camera.zoom));
-    var tileY = Math.floor(this.camera.y + (y / this.camera.zoom));
-    
-    var pixel = this.getPixel(tileX, tileY);
-    if (buttons == 1) {
-      if (pixel[0] !== this.palette[this.paletteIndex][0] || pixel[1] !== this.palette[this.paletteIndex][1] || pixel[2] !== this.palette[this.paletteIndex][2]) {
-        this.net.updatePixel(tileX, tileY, this.palette[this.paletteIndex]);
+  new Tool("cursor-default.png", "icon-cursor.png", [-1, -2], false,
+    function(x, y, buttons, isDrag) {
+      var tileX = Math.floor(this.camera.x + (x / this.camera.zoom));
+      var tileY = Math.floor(this.camera.y + (y / this.camera.zoom));
+      
+      var pixel = this.getPixel(tileX, tileY);
+      if (buttons == 1) {
+        if (pixel[0] !== this.palette[this.paletteIndex][0] || pixel[1] !== this.palette[this.paletteIndex][1] || pixel[2] !== this.palette[this.paletteIndex][2]) {
+          this.net.updatePixel(tileX, tileY, this.palette[this.paletteIndex]);
+        }
+      } else if (buttons == 2) {
+        if (pixel[0] !== 255 || pixel[1] !== 255 || pixel[2] !== 255) {
+          this.net.updatePixel(tileX, tileY, [255, 255, 255]);
+        }
       }
-    } else if (buttons == 2) {
-      if (pixel[0] !== 255 || pixel[1] !== 255 || pixel[2] !== 255) {
-        this.net.updatePixel(tileX, tileY, [255, 255, 255]);
+    }.bind(WorldOfPixels),
+    function(touches, type) {
+      var averageX = 0;
+      var averageY = 0;
+      for (var i=0; i<touches.length; i++) {
+        var tileX = Math.floor(this.camera.x + (touches[i].pageX / this.camera.zoom));
+        var tileY = Math.floor(this.camera.y + (touches[i].pageY / this.camera.zoom));
+        
+        averageX += this.camera.x + (touches[i].pageX / this.camera.zoom);
+        averageY += this.camera.y + (touches[i].pageY / this.camera.zoom);
+        
+        var pixel = this.getPixel(tileX, tileY);
+        if (pixel[0] !== this.palette[this.paletteIndex][0] || pixel[1] !== this.palette[this.paletteIndex][1] || pixel[2] !== this.palette[this.paletteIndex][2]) {
+          this.net.updatePixel(tileX, tileY, this.palette[this.paletteIndex]);
+        }
       }
-    }
-  }.bind(WorldOfPixels))
+      this.mouse.x = (averageX / touches.length - this.camera.x) * 16;
+      this.mouse.y = (averageY / touches.length - this.camera.y) * 16;
+    }.bind(WorldOfPixels)
+  )
 );
 
 // Move tool
 WorldOfPixels.tools.push(
-  new Tool("cursor-move.png", "icon-move.png", [-18, -20], false, function(x, y, button, isDrag) {
-    if (!isDrag) {
-      this.startX = WorldOfPixels.camera.x + (x / WorldOfPixels.camera.zoom);
-      this.startY = WorldOfPixels.camera.y + (y / WorldOfPixels.camera.zoom);
-    } else {
-      WorldOfPixels.camera.x = this.startX - (x / WorldOfPixels.camera.zoom);
-      WorldOfPixels.camera.y = this.startY - (y / WorldOfPixels.camera.zoom);
-      WorldOfPixels.updateCamera();
-    }
-  })
+  new Tool("cursor-move.png", "icon-move.png", [-18, -20], false,
+    function(x, y, button, isDrag) {
+      if (!isDrag) {
+        this.startX = this.camera.x + (x / this.camera.zoom);
+        this.startY = this.camera.y + (y / this.camera.zoom);
+      } else {
+        this.camera.x = this.startX - (x / this.camera.zoom);
+        this.camera.y = this.startY - (y / this.camera.zoom);
+        this.updateCamera();
+      }
+    }.bind(WorldOfPixels),
+    function(touches, type) {
+      if (type === 0) {
+        this.startX = this.camera.x + (touches[0].pageX / this.camera.zoom);
+        this.startY = this.camera.y + (touches[0].pageY / this.camera.zoom);
+      } else {
+        this.camera.x = this.startX - (touches[0].pageX / this.camera.zoom);
+        this.camera.y = this.startY - (touches[0].pageY / this.camera.zoom);
+        this.updateCamera();
+      }
+      this.mouse.x = (touches[0].pageX - this.camera.x) * 16;
+      this.mouse.y = (touches[0].pageY - this.camera.y) * 16;
+    }.bind(WorldOfPixels)
+  )
 );
 
 // Pipette tool
 WorldOfPixels.tools.push(
-  new Tool("cursor-pipette.png", "icon-pipette.png", [-1, -30], false, function(x, y, buttons, isDrag) {
-    var tileX = Math.floor(this.camera.x + (x / this.camera.zoom));
-    var tileY = Math.floor(this.camera.y + (y / this.camera.zoom));
-    
-    this.addPaletteColor(this.getPixel(tileX, tileY));
-  }.bind(WorldOfPixels))
+  new Tool("cursor-pipette.png", "icon-pipette.png", [-1, -30], false,
+    function(x, y, buttons, isDrag) {
+      var tileX = Math.floor(this.camera.x + (x / this.camera.zoom));
+      var tileY = Math.floor(this.camera.y + (y / this.camera.zoom));
+      
+      this.addPaletteColor(this.getPixel(tileX, tileY));
+    }.bind(WorldOfPixels),
+    function(touches, type) {}.bind(WorldOfPixels)
+  )
 );
 
 // Erase/Fill tool
 WorldOfPixels.tools.push(
-  new Tool("cursor-erase.png", "icon-fill.png", [-7, -32], true, function(x, y, buttons, isDrag) {
-    var chunkX = Math.floor((this.camera.x + (x / this.camera.zoom)) / 16);
-    var chunkY = Math.floor((this.camera.y + (y / this.camera.zoom)) / 16);
-    
-    var clear = false;
-		for(var i=16*16*3; i--;){
-			if(this.chunks[[chunkX, chunkY]].data[i] != 255){
-				clear = true;
-				this.chunks[[chunkX, chunkY]].data[i] = 255;
-			}
-		}
-		if(clear){
-		  this.chunks[[chunkX, chunkY]].draw();
-			var array = new ArrayBuffer(9);
-			var dv = new DataView(array);
-			dv.setInt32(0, chunkX, true);
-			dv.setInt32(4, chunkY, true);
-			dv.setUint8(8, 0);
-			this.net.connection.send(array);
-		}
-  }.bind(WorldOfPixels))
+  new Tool("cursor-erase.png", "icon-fill.png", [-7, -32], true,
+    function(x, y, buttons, isDrag) {
+      var chunkX = Math.floor((this.camera.x + (x / this.camera.zoom)) / 16);
+      var chunkY = Math.floor((this.camera.y + (y / this.camera.zoom)) / 16);
+      
+      var clear = false;
+  		for(var i=16*16*3; i--;){
+  			if(this.chunks[[chunkX, chunkY]].data[i] != 255){
+  				clear = true;
+  				this.chunks[[chunkX, chunkY]].data[i] = 255;
+  			}
+  		}
+  		if(clear){
+  		  this.chunks[[chunkX, chunkY]].draw();
+  			var array = new ArrayBuffer(9);
+  			var dv = new DataView(array);
+  			dv.setInt32(0, chunkX, true);
+  			dv.setInt32(4, chunkY, true);
+  			dv.setUint8(8, 0);
+  			this.net.connection.send(array);
+  		}
+    }.bind(WorldOfPixels),
+    function(touches, type) {}.bind(WorldOfPixels)
+  )
 );
 
 // Zoom tool
@@ -121,7 +162,8 @@ WorldOfPixels.tools.push(
   new Tool(
     "https://cdn3.iconfinder.com/data/icons/watchify-v1-0-32px/32/magnifying-glass-search-32.png",
     "https://cdn3.iconfinder.com/data/icons/watchify-v1-0-32px/32/magnifying-glass-search-32.png",
-    [0, 0], false, function(x, y, buttons, isDrag) {
+    [0, 0], false,
+    function(x, y, buttons, isDrag, touches) {
       if (!isDrag) {
         if (buttons == 1 && this.camera.zoom * (1 + this.options.zoomStrength) <= this.options.zoomLimitMax) {
           // Zoom in
@@ -137,7 +179,9 @@ WorldOfPixels.tools.push(
           this.updateCamera();
         }
       }
-    }.bind(WorldOfPixels))
+    }.bind(WorldOfPixels),
+    function(touches, type) {}.bind(WorldOfPixels)
+  )
 );
 
 function Player(x, y, r, g, b, tool, id) {

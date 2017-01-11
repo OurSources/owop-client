@@ -34,7 +34,8 @@ WorldOfPixels.mouse = {
   y: 0,
   lastX: 0,
   lastY: 0,
-  validClick: false
+  validClick: false,
+  touches: []
 };
 
 
@@ -304,6 +305,28 @@ WorldOfPixels.init = function() {
     }
     this.paletteIndex = this.paletteIndex.mod(this.palette.length);
     this.updatePaletteIndex();
+  }.bind(this));
+  
+  // Touch support
+  document.getElementById("viewport").addEventListener("touchstart", function(event) {
+    this.tools[this.toolSelected].touch(event.changedTouches, 0);
+    
+    event.preventDefault();
+  }.bind(this));
+  window.addEventListener("touchmove", function(event) {
+    this.tools[this.toolSelected].touch(event.changedTouches, 1);
+    
+    event.preventDefault();
+  }.bind(this));
+  window.addEventListener("touchend", function(event) {
+    this.tools[this.toolSelected].touch(event.changedTouches, 2);
+    
+    event.preventDefault();
+  }.bind(this));
+  window.addEventListener("touchcancel", function(event) {
+    this.tools[this.toolSelected].touch(event.changedTouches, 3);
+    
+    event.preventDefault();
   }.bind(this));
   
   // Some cool custom css

@@ -200,7 +200,6 @@ WorldOfPixels.net.connect = function() {
     		this.camera.x = dv.getInt32(1, true) - (window.innerWidth / this.camera.zoom / 2.5);
         this.camera.y = dv.getInt32(5, true) - (window.innerHeight / this.camera.zoom / 2.5);
         this.updateCamera();
-        this.chatMessage("[Server] You were teleported to X: " + dv.getInt32(1, true) + ", Y: " + dv.getInt32(5, true) + "!");
         break;
       case 4: // Got admin
         this.idAdmin = true;
