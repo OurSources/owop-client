@@ -230,16 +230,24 @@ WorldOfPixels.init = function() {
       if (!this.keysDown.includes(keyCode)) {
         this.keysDown.push(keyCode);
       }
+      if (keyCode == 16) {
+        this.selectTool(1);
+      } else if (event.ctrlKey && keyCode == 90 && this.undoHistory.length) {
+        var undo = this.undoHistory.pop();
+        this.net.updatePixel(undo[0], undo[1], undo[2]);
+      }
     }
   }.bind(this));
   window.addEventListener("keyup", function(event) {
     var keyCode = event.which || event.keyCode;
-    if (this.keysDown.includes(keyCode)) {
-      this.keysDown.splice(this.keysDown.indexOf(keyCode), 1);
-    }
     if (document.activeElement != document.getElementById("chat-input")) {
+      if (this.keysDown.includes(keyCode)) {
+        this.keysDown.splice(this.keysDown.indexOf(keyCode), 1);
+      }
       if (keyCode == 13) {
         document.getElementById("chat-input").focus();
+      } else if (keyCode == 16) {
+        this.selectTool(0);
       }
     }
   }.bind(this));
@@ -340,13 +348,9 @@ WorldOfPixels.init = function() {
   console.log("%cWelcome to the developer console!", "font-size: 20px; font-weight: bold; color: #F0F;");
   
   this.toolButtonClick = function(id) {
-    return function() {
-      WorldOfPixels.toolSelected = id;
-      for (var i=0; i<this.parentNode.children.length; i++) {
-        this.parentNode.children[i].className = "";
-      }
-      this.className = "selected";
-      document.getElementById("viewport").style.cursor = "url(" + WorldOfPixels.tools[WorldOfPixels.toolSelected].cursor + ") " + -WorldOfPixels.tools[WorldOfPixels.toolSelected].offset[0] + " " + -WorldOfPixels.tools[WorldOfPixels.toolSelected].offset[1] + ", pointer";
+    return function(event) {
+      WorldOfPixels.selectTool(id);
+      event.stopPropagation();
     };
   };
   
@@ -354,10 +358,13 @@ WorldOfPixels.init = function() {
   for (var i=0; i<this.tools.length; i++) {
     if (!this.tools[i].adminTool) {
       var element = document.createElement("button");
+      element.id = "tool-" + i;
       var img = document.createElement("img");
       img.src = this.tools[i].icon;
       element.appendChild(img);
       element.addEventListener("click", this.toolButtonClick(i));
+      element.addEventListener("touchstart", this.toolButtonClick(i));
+      element.addEventListener("touchend", this.toolButtonClick(i));
       if (i == this.toolSelected) {
         element.className = "selected";
         document.getElementById("viewport").style.cursor = "url(" + this.tools[this.toolSelected].cursor + ") 0 0, pointer";

@@ -3,6 +3,7 @@ WorldOfPixels.tools = [];
 WorldOfPixels.toolSelected = 0;
 WorldOfPixels.paletteIndex = 0;
 WorldOfPixels.palette = [new Uint8Array([0, 0, 0]), new Uint8Array([255, 0, 0]), new Uint8Array([0, 255, 0]), new Uint8Array([0, 0, 255])];
+WorldOfPixels.undoHistory = [];
 
 WorldOfPixels.updatePalette = function() {
   document.getElementById("palette-colors").innerHTML = "";
@@ -59,12 +60,16 @@ WorldOfPixels.tools.push(
       var pixel = this.getPixel(tileX, tileY);
       if (buttons == 1) {
         if (pixel[0] !== this.palette[this.paletteIndex][0] || pixel[1] !== this.palette[this.paletteIndex][1] || pixel[2] !== this.palette[this.paletteIndex][2]) {
+          this.undoHistory.push([tileX, tileY, [pixel[0], pixel[1], pixel[2]]]);
           this.net.updatePixel(tileX, tileY, this.palette[this.paletteIndex]);
         }
       } else if (buttons == 2) {
         if (pixel[0] !== 255 || pixel[1] !== 255 || pixel[2] !== 255) {
+          this.undoHistory.push([tileX, tileY, [pixel[0], pixel[1], pixel[2]]]);
           this.net.updatePixel(tileX, tileY, [255, 255, 255]);
         }
+      } else if (buttons == 4) {
+        this.addPaletteColor(this.getPixel(tileX, tileY));
       }
     }.bind(WorldOfPixels),
     function(touches, type) {
@@ -79,6 +84,7 @@ WorldOfPixels.tools.push(
         
         var pixel = this.getPixel(tileX, tileY);
         if (pixel[0] !== this.palette[this.paletteIndex][0] || pixel[1] !== this.palette[this.paletteIndex][1] || pixel[2] !== this.palette[this.paletteIndex][2]) {
+          this.undoHistory.push([tileX, tileY, [pixel[0], pixel[1], pixel[2]]]);
           this.net.updatePixel(tileX, tileY, this.palette[this.paletteIndex]);
         }
       }
@@ -125,7 +131,14 @@ WorldOfPixels.tools.push(
       
       this.addPaletteColor(this.getPixel(tileX, tileY));
     }.bind(WorldOfPixels),
-    function(touches, type) {}.bind(WorldOfPixels)
+    function(touches, type) {
+      for (var i=0; i<touches.length; i++) {
+        var tileX = Math.floor(this.camera.x + (touches[i].pageX / this.camera.zoom));
+        var tileY = Math.floor(this.camera.y + (touches[i].pageY / this.camera.zoom));
+        
+        this.addPaletteColor(this.getPixel(tileX, tileY));
+      }
+    }.bind(WorldOfPixels)
   )
 );
 
@@ -153,7 +166,29 @@ WorldOfPixels.tools.push(
   			this.net.connection.send(array);
   		}
     }.bind(WorldOfPixels),
-    function(touches, type) {}.bind(WorldOfPixels)
+    function(touches, type) {
+      for (var i=0; i<touches.length; i++) {
+        var chunkX = Math.floor((this.camera.x + (touches[i].pageX / this.camera.zoom)) / 16);
+        var chunkY = Math.floor((this.camera.y + (touches[i].pageY / this.camera.zoom)) / 16);
+        
+        var clear = false;
+    		for(var j=16*16*3; j--;){
+    			if(this.chunks[[chunkX, chunkY]].data[j] != 255){
+    				clear = true;
+    				this.chunks[[chunkX, chunkY]].data[j] = 255;
+    			}
+    		}
+    		if(clear){
+    		  this.chunks[[chunkX, chunkY]].draw();
+    			var array = new ArrayBuffer(9);
+    			var dv = new DataView(array);
+    			dv.setInt32(0, chunkX, true);
+    			dv.setInt32(4, chunkY, true);
+    			dv.setUint8(8, 0);
+    			this.net.connection.send(array);
+    		}
+      }
+    }.bind(WorldOfPixels)
   )
 );
 
@@ -180,9 +215,21 @@ WorldOfPixels.tools.push(
         }
       }
     }.bind(WorldOfPixels),
-    function(touches, type) {}.bind(WorldOfPixels)
+    function(touches, type) {
+      
+    }.bind(WorldOfPixels)
   )
 );
+
+WorldOfPixels.selectTool = function(id) {
+  this.toolSelected = id;
+  var children = document.getElementById("tool-select").children;
+  for (var i=0; i<children.length; i++) {
+    children[i].className = "";
+  }
+  document.getElementById("tool-" + id).className = "selected";
+  document.getElementById("viewport").style.cursor = "url(" + this.tools[id].cursor + ") " + -this.tools[id].offset[0] + " " + -this.tools[id].offset[1] + ", pointer";
+}.bind(WorldOfPixels);
 
 function Player(x, y, r, g, b, tool, id) {
   this.x = x;

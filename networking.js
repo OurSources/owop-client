@@ -184,7 +184,7 @@ WorldOfPixels.net.connect = function() {
         for (var l=9; l<777; l++) {
           ndata[l - 9] = data[l];
         }
-        if (!this.chunksLoading.includes([chunkX, chunkY].join())) {
+        if (!this.chunksLoading.includes([chunkX, chunkY].join()) && [chunkX, chunkY].join() in this.chunks) {
           // If chunk was not requested, show eraser fx
           new Fx(3, chunkX * 16, chunkY * 16, {});
           for (var n=0; n<16*16*3; n++) {
@@ -209,10 +209,13 @@ WorldOfPixels.net.connect = function() {
         // Add tools to the tool-select menu
         for (var m=0; m<this.tools.length; m++) {
           var element = document.createElement("button");
+          element.id = "tool-" + i;
           var img = document.createElement("img");
           img.src = this.tools[m].icon;
           element.appendChild(img);
           element.addEventListener("click", this.toolButtonClick(m));
+          element.addEventListener("touchstart", this.toolButtonClick(i));
+          element.addEventListener("touchend", this.toolButtonClick(i));
           if (m == this.toolSelected) {
             element.className = "selected";
             document.getElementById("viewport").style.cursor = "url(" + this.tools[this.toolSelected].cursor + ") 0 0, pointer";
