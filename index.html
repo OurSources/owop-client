@@ -239,7 +239,7 @@
     <span id="xy-display"></span>
     <div id="tool-select"></div>
     <div id="palette">
-      <div id="palette-create" onclick="var color=document.createElement('input');color.oninput=function(){var value=/^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(this.value);WorldOfPixels.addPaletteColor([parseInt(value[1], 16), parseInt(value[2], 16), parseInt(value[3], 16)])};color.type='color';color.click();">
+      <div id="palette-create" onclick="var color=document.createElement('input');color.onchange=function(){var value=/^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(this.value);WorldOfPixels.addPaletteColor([parseInt(value[1], 16), parseInt(value[2], 16), parseInt(value[3], 16)])};color.type='color';color.click();">
         <div class="plus"></div>
       </div>
       <div id="palette-colors"></div>
