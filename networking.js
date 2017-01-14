@@ -213,7 +213,7 @@ WorldOfPixels.net.connect = function() {
         // Add tools to the tool-select menu
         for (var m=0; m<this.tools.length; m++) {
           var element = document.createElement("button");
-          element.id = "tool-" + i;
+          element.id = "tool-" + m;
           var img = document.createElement("img");
           img.src = this.tools[m].icon;
           element.appendChild(img);
