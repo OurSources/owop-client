@@ -1,7 +1,5 @@
 /*
  * TODO:
- *   Smooth mouse move transitions
- *   Scroll with middle mouse button
  *   Mabye bookmarks
  *   IE support by adding .cur cursors
  */
@@ -221,7 +219,7 @@ WorldOfPixels.init = function() {
   }
 	
   this.clientFx = new Fx(0, 0, 0, {color: [0, 0, 0]});
-  this.lastTool = 0;
+  this.lastFxTool = 0;
   
   window.addEventListener("resize", this.resize);
   window.addEventListener("keydown", function(event) {
@@ -262,19 +260,17 @@ WorldOfPixels.init = function() {
     this.tools[this.toolSelected].click(event.pageX, event.pageY, event.buttons, false);
   }.bind(this));
   window.addEventListener("mousemove", function(event) {
-    this.mouse.lastX = this.camera.x * 16 + this.mouse.x;
-    this.mouse.lastY = this.camera.y * 16 + this.mouse.y;
-    this.mouse.x = event.pageX * 16 / this.camera.zoom;
-    this.mouse.y = event.pageY * 16 / this.camera.zoom;
+    this.mouse.x = event.pageX;
+    this.mouse.y = event.pageY;
     
     var tileX = Math.floor(this.camera.x + (event.pageX / this.camera.zoom));
     var tileY = Math.floor(this.camera.y + (event.pageY / this.camera.zoom));
-    if (this.toolSelected != this.lastTool) {
+    if (this.toolSelected != this.lastFxTool) {
       if (this.clientFx) {
         this.clientFx.delete();
       }
       this.clientFx = undefined;
-      this.lastTool = this.toolSelected;
+      this.lastFxTool = this.toolSelected;
       switch(this.toolSelected) {
         case 0:
           this.clientFx = new Fx(0, tileX, tileY, {color: this.palette[this.paletteIndex]});

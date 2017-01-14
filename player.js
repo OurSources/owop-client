@@ -1,6 +1,7 @@
 var WorldOfPixels = WorldOfPixels || {};
 WorldOfPixels.tools = [];
 WorldOfPixels.toolSelected = 0;
+WorldOfPixels.lastTool = 0;
 WorldOfPixels.paletteIndex = 0;
 WorldOfPixels.palette = [new Uint8Array([0, 0, 0]), new Uint8Array([255, 0, 0]), new Uint8Array([0, 255, 0]), new Uint8Array([0, 0, 255])];
 WorldOfPixels.undoHistory = [];

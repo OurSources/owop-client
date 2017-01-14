@@ -5,12 +5,12 @@ function Bucket(rate, time) {
   this.allowance = rate;
   this.rate = rate;
   this.time = time;
-  this.lastCheck = new Date().getTime();
+  this.lastCheck = Date.now();
 }
 
 Bucket.prototype.canSpend = function(count) {
-  this.allowance += (new Date().getTime() - this.lastCheck) / 1000 * (this.rate / this.time);
-  this.lastCheck = new Date().getTime();
+  this.allowance += (Date.now() - this.lastCheck) / 1000 * (this.rate / this.time);
+  this.lastCheck = Date.now();
   if (this.allowance > this.rate) {
     this.allowance = this.rate;
   }
@@ -73,7 +73,11 @@ WorldOfPixels.net.updatePixel = function(x, y, color) {
 }.bind(WorldOfPixels);
 
 WorldOfPixels.net.sendUpdates = function() {
-  if (this.mouse.lastX != this.camera.x * 16 + this.mouse.x || this.mouse.lastY != this.camera.y * 16 + this.mouse.y) {
+  if (this.mouse.x != this.mouse.lastX || this.mouse.y != this.mouse.lastY || this.toolSelected != this.lastTool) {
+    this.mouse.lastX = this.mouse.x;
+    this.mouse.lastY = this.mouse.y;
+    this.lastTool = this.toolSelected;
+    
     // Send mouse position
     var array = new ArrayBuffer(12);
     var dv = new DataView(array);
@@ -214,8 +218,8 @@ WorldOfPixels.net.connect = function() {
           img.src = this.tools[m].icon;
           element.appendChild(img);
           element.addEventListener("click", this.toolButtonClick(m));
-          element.addEventListener("touchstart", this.toolButtonClick(i));
-          element.addEventListener("touchend", this.toolButtonClick(i));
+          element.addEventListener("touchstart", this.toolButtonClick(m));
+          element.addEventListener("touchend", this.toolButtonClick(m));
           if (m == this.toolSelected) {
             element.className = "selected";
             document.getElementById("viewport").style.cursor = "url(" + this.tools[this.toolSelected].cursor + ") 0 0, pointer";
