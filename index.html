@@ -1,26 +1,28 @@
 <!DOCTYPE html>
 <html>
   <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     <title>World of Pixels</title>
-    <meta charset="UTF-8">
+    
     <link rel="icon" href="favicon.ico" type="image/x-icon">
     <style>
-      @keyframes fade {
-        from {opacity: 1}
-        to {opacity: 0}
-      }
-      
       html, body {
+        font-family: sans-serif;
+        font-size: 14px;
+        text-shadow: -1px 0 #000, 0 1px #000, 1px 0 #000, 0 -1px #000;
+        overflow: hidden;
         width: 100%;
         height: 100%;
-      }
-      body {
         margin: 0;
-        overflow: hidden;
-        background-image: url(unloaded.png);
+	touch-action: none;
+	position: absolute;
+      }
+
+      body {
+        background-image: url(img/unloaded.png);
       }
       
-      .noselect {
+      html {
         -webkit-touch-callout: none; /* iOS Safari */
           -webkit-user-select: none; /* Chrome/Safari/Opera */
            -khtml-user-select: none; /* Konqueror */
@@ -29,86 +31,61 @@
                   user-select: none; /* Non-prefixed version, currently
                                         not supported by any browser */
       }
-      
-      #viewport {
-        position: relative;
+
+      .selectable {
+        -webkit-touch-callout: text;
+          -webkit-user-select: text;
+           -khtml-user-select: text;
+             -moz-user-select: text;
+              -ms-user-select: text;
+                  user-select: text;
+      }
+
+      .pixelated {
         image-rendering: -moz-crisp-edges;
         image-rendering:   -o-crisp-edges;
         image-rendering: -webkikt-optimize-contrast;
         image-rendering: pixelated;
         image-rendering: crisp-edges;
         -ms-interpolation-mode: crisp-edges;
-        /*transition: all .1s linear;*/
       }
       
-      #chunks > canvas {
+      #viewport, #windows {
+        transform-origin: 0 0;
         position: absolute;
       }
-      
-      #fx {
-        pointer-events: none;
+
+      #windows {
+        width: 0;
+        height: 0;
       }
-      #fx > div {
+      
+      #clusters > canvas {
         position: absolute;
       }
-      .fx0 {
-        left: -0.0625px;
-        top: -0.0625px;
-        width: 0.75px;
-        height: 0.75px;
-        border-width: 0.1875px;
-        border-style: solid;
-      }
-      .fx1 {
-        width: 1px;
-        height: 1px;
-        border-width: 0.125px;
-        border-style: solid;
-        box-sizing: border-box;
-        animation: fade 1s;
-        opacity: 0;
-      }
-      .fx2 {
-        width: 16px;
-        height: 16px;
-        border: 0.2px solid #FFF;
-        box-sizing: border-box;
-      }
-      .fx3 {
-        width: 16px;
-        height: 16px;
-        border: 0.2px solid #000;
-        box-sizing: border-box;
-        animation: fade 1s;
-        opacity: 0;
-      }
-      
-      #cursors {
-        zoom: 6.25%;
-      }
-      .cursor {
-        transition: transform .07s linear;
+
+      #animations {
         position: absolute;
         pointer-events: none;
       }
-      .cursor > img {
-        position: absolute;
-      }
-      .cursor > span {
+      #xy-display, #playercount-display {
         position: absolute;
         color: #FFF;
-        text-shadow: 1px 1px 1px #000;
-        font-family: Arial;
+        pointer-events: none;
       }
-      
       #xy-display {
-        position: absolute;
-        left: 0;
-        top: 0;
-        font-size: 16px;
-        background-color: rgba(0, 0, 0, 0.5);
-        color: #FFF;
-        font-family: Arial;
+        padding-left: 5px;
+        padding-top: 1px;
+        padding-right: 2px;
+        left: -2px;
+        top: -2px;
+        border: 2px solid rgba(68, 68, 68, 0.4);
+        background-color: rgba(136, 136, 136, 0.7);
+        
+      }
+      #playercount-display {
+        right: 5px;
+        top: 0px;
       }
       
       #tool-select {
@@ -183,7 +160,7 @@
         position: absolute;
         left: 4px;
         top: -5px;
-        transition: transform 0.4s ease-out;
+        transition: transform 0.2s ease-out;
       }
       #palette-colors > div {
         width: 32px;
@@ -195,49 +172,83 @@
         cursor: pointer;
       }
       
-      #chat {
+      #chat, #dev-chat {
         position: absolute;
         left: 0;
         bottom: 0;
-        width: 400px;
-        height: 40%;
+        min-width: 20%;
+        max-width: 450px;
+        max-height: 40%;
         display: flex;
+        font-family: monospace;
         flex-direction: column;
+        background-color: none;
         pointer-events: none;
+        overflow: hidden;
+        transition: all 0.2s;
       }
-      #chat.active {
+      #dev-chat {
+       right: 0;
+       left: initial;
+     }
+      #chat.active, #dev-chat.active {
         background-color: rgba(0, 0, 0, 0.6);
+        box-shadow: 0px 0px 5px #000;
         pointer-events: all;
+        overflow-y: auto;
       }
-      #chat-messages {
+      #chat-messages, #dev-chat-messages {
         flex: 1;
         margin: 0;
         padding: 0;
-        font-family: monospace;
-        font-size: 14px;
+        font-size: inherit;
         color: #FFF;
-        text-shadow: 1px 1px 1px #000;
-        overflow-y: auto;
+        text-shadow: inherit;
+        word-wrap: break-word;
+        overflow: inherit;
         vertical-align: bottom;
       }
       #chat-input {
         flex: 0;
+        color: #FFF;
         pointer-events: all;
+        border: 1px solid #000;
+        background: rgba(0, 0, 0, 0.5);
+      }
+
+      #chat-input::-webkit-input-placeholder {
+        color: #BBB;
+      }
+      #chat-input:-moz-placeholder {
+        /* FF 4-18 */
+        color: #BBB;
+      }
+      #chat-input::-moz-placeholder {
+        /* FF 19+ */
+        color: #BBB;
+      }
+      #chat-input:-ms-input-placeholder {
+        /* IE 10+ */
+        color: #BBB;
       }
     </style>
     <script type="text/javascript" src="main.js"></script>
     <script type="text/javascript" src="networking.js"></script>
+    <script type="text/javascript" src="canvas_renderer.js"></script>
+    <script type="text/javascript" src="tool_renderer.js"></script>
+    <script type="text/javascript" src="windowsys.js"></script>
     <script type="text/javascript" src="player.js"></script>
     <script type="text/javascript" src="fx.js"></script>
   </head>
   <body>
-    <div id="viewport" onmousedown="document.getElementById('chat').className='';">
-      <div id="chunks"></div>
-      <div id="fx"></div>
-      <div id="cursors"></div>
+    <div id="viewport" class="pixelated" onmousedown="WorldOfPixels.closeChat();">
+      <div id="clusters"></div>
     </div>
+    <canvas id="animations"></canvas>
     <span id="xy-display"></span>
+    <span id="playercount-display"></span>
     <div id="tool-select"></div>
+    <div id="windows" class="pixelated"></div>
     <div id="palette">
       <div id="palette-create" onclick="var color=document.createElement('input');color.onchange=function(){var value=/^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(this.value);WorldOfPixels.addPaletteColor([parseInt(value[1], 16), parseInt(value[2], 16), parseInt(value[3], 16)])};color.type='color';color.click();">
         <div class="plus"></div>
@@ -246,7 +257,10 @@
     </div>
     <div id="chat">
       <ul id="chat-messages"></ul>
-      <input id="chat-input" type="text" placeholder="Chat here" onfocus="this.parentNode.className='active';" onkeyup="if(event.keyCode==13){this.blur();WorldOfPixels.net.sendMessage(this.value);this.value='';this.parentElement.className='';event.stopPropagation();}">
+      <input id="chat-input" type="text" maxlength="80" placeholder="Chat here">
+    </div>
+    <div id="dev-chat" style="display: none;">
+     <ul id="dev-chat-messages"></ul>
     </div>
   </body>
 </html>

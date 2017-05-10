@@ -1,4 +1,4 @@
-/* World of Pixels protocol:
+/* World of Pixels protocol (not used/finished yet):
  * 	 Clientbound = Messages sent from server to client
  *   Serverbound = Messages sent from client to server
  */
