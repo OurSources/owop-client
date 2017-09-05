@@ -1,6 +1,7 @@
 const fs = require('fs-extra');
 const webpack = require('webpack');
 const HtmlWebpackPlugin =  require('html-webpack-plugin');
+const ScriptExtHtmlWebpackPlugin = require('script-ext-html-webpack-plugin');
 
 const srcDir = `${__dirname}/src`;
 
@@ -18,7 +19,7 @@ const config = {
 	module: {
 		loaders: [{
 			loader: 'babel-loader',
-			exclude: /node_modules/,
+			include: `${srcDir}/js`,
 			query: {
 				presets: ['env']
 			}
@@ -31,7 +32,12 @@ const config = {
 			minChunks: module => module.context && module.context.indexOf('node_modules') !== -1
 		}),
 		new HtmlWebpackPlugin({
-			template: `${srcDir}/index.html`
+			title: 'World of Pixels',
+			inject: 'head',
+			template: `${srcDir}/index.ejs`
+		}),
+		new ScriptExtHtmlWebpackPlugin({
+			defaultAttribute: 'defer'
 		})
 	]
 };
@@ -46,7 +52,7 @@ module.exports = async env => {
 	}
 
 	/* Copy the following files/directories from the src folder to the dist folder */
-	await Promise.all(['favicon.ico', 'index.html', 'css', 'img']
+	await Promise.all(['favicon.ico', 'css', 'img']
 		.map(file => fs.copy(`${srcDir}/${file}`, `${config.output.path}/${file}`)));
 
 	return config;
