@@ -22,10 +22,14 @@ export const OldProtocol = {
     worldBorder: 0xFFFFF,
     chatBucket: [4, 6],
     placeBucket: [32, 4],
+    misc: {
+        worldVerification: 1337,
+        chatVerification: String.fromCharCode(10),
+        tokenVerification: 'CaptchA'
+    },
     opCode: {
         client: {
-            worldVerification: 1337,
-            chatVerification: 10
+            
         },
         server: {
             setId: 0,
@@ -208,6 +212,10 @@ class OldProtocolImpl extends Protocol {
                 switch (dv.getUint8(1)) {
                     case captchaState.CA_WAITING:
                         loadAndRequestCaptcha();
+                        eventSys.once(e.captcha.captchaToken, token => {
+                            let message = OldProtocol.misc.tokenVerification + token;
+                            this.ws.send(message);
+                        });
                         break;
 
                     case captchaState.CA_OK:
@@ -225,7 +233,7 @@ class OldProtocolImpl extends Protocol {
         for (var i = nstr[0].length; i--;) {
             dv.setUint8(i, nstr[0][i]);
         }
-        dv.setUint16(nstr[0].length, OldProtocol.opCode.client.worldVerification, true);
+        dv.setUint16(nstr[0].length, OldProtocol.misc.worldVerification, true);
         this.ws.send(array);
         return nstr[1];
     }
@@ -255,7 +263,7 @@ class OldProtocolImpl extends Protocol {
     sendMessage(str) {
         if (str.length && this.id !== null) {
             if (this.chatBucket.canSpend(1)) {
-                this.ws.send(str + String.fromCharCode(10));
+                this.ws.send(str + OldProtocol.misc.chatVerification);
                 return true;
             } else {
                 eventSys.emit(e.net.chat, "Slow down! You're talking too fast!");
