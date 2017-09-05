@@ -1,0 +1,76 @@
+::-webkit-scrollbar {
+	width: 16px;
+	height: 16px;
+}
+::-webkit-scrollbar-corner {
+	background-color: rgba(0, 0, 0, 0);
+}
+/*::-webkit-scrollbar-track {
+	height: 16px;
+	width: 16px;
+	border: 6px solid;
+	border-image: url(img/button_pressed.png) 6 repeat;
+	background-color: #4d313b;
+	border-width: 6px;
+	background-origin: border-box;
+	background-repeat: no-repeat;
+}*/
+::-webkit-scrollbar-button {
+	height: 16px;
+	width: 16px;
+	border: 6px solid;
+	border-image: url(/img/button.png) 6 repeat;
+	background-image: url(/img/gui.png);
+	background-color: #ABA389;
+	border-width: 6px;
+	background-origin: border-box;
+	background-repeat: no-repeat;
+}
+::-webkit-scrollbar-button:hover {
+	background-color: #b8b29c;
+}
+::-webkit-scrollbar-button:active {
+	background-color: #8d8671;
+	border-image: url(/img/button_pressed.png) 6 repeat;
+}
+::-webkit-scrollbar-button:disabled {
+	background-color: #8d8671;
+	border-image: url(/img/button_pressed.png) 6 repeat;
+}
+::-webkit-scrollbar-button:vertical:increment {
+	background-position: -32px 0px;
+}
+::-webkit-scrollbar-button:vertical:increment:disabled {
+	background-position: -48px 0px;
+}
+::-webkit-scrollbar-button:vertical:decrement {
+	background-position: 0px 0px;
+}
+::-webkit-scrollbar-button:vertical:decrement:disabled {
+	background-position: -16px 0px;
+}
+::-webkit-scrollbar-button:horizontal:increment {
+	background-position: 0px 16px;
+}
+::-webkit-scrollbar-button:horizontal:increment:disabled {
+	background-position: -16px 16px;
+}
+::-webkit-scrollbar-button:horizontal:decrement {
+	background-position: -32px 16px;
+}
+::-webkit-scrollbar-button:horizontal:decrement:disabled {
+	background-position: -48px 16px;
+}
+::-webkit-scrollbar-thumb {
+	border: 6px solid;
+	border-image: url(/img/button.png) 6 repeat;
+	background-color: #ABA389;
+	border-width: 6px;
+}
+::-webkit-scrollbar-thumb:hover {
+	background-color: #b8b29c;
+}
+::-webkit-scrollbar-thumb:active {
+	background-color: #8d8671;
+	border-image: url(/img/button_pressed.png) 6 repeat;
+}

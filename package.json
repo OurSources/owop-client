@@ -1,0 +1,22 @@
+{
+  "name": "owop-client",
+  "version": "0.1.0",
+  "description": "Our World Of Pixels client",
+  "main": "src/main.js",
+  "scripts": {
+    "build": "webpack",
+    "watch": "webpack -w",
+    "release": "webpack --env.release"
+  },
+  "author": "nagalun, DayDun",
+  "license": "ISC",
+  "devDependencies": {
+    "babel-core": "^6.26.0",
+    "babel-loader": "^7.1.2",
+    "babel-preset-env": "^1.6.0",
+    "fs-extra": "^4.0.1",
+    "rimraf": "^2.6.1",
+    "webpack": "^3.5.5"
+  },
+  "dependencies": {}
+}
