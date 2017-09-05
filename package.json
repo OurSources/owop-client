@@ -6,6 +6,7 @@
   "scripts": {
     "build": "webpack",
     "watch": "webpack -w",
+    "start": "webpack-dev-server --open",
     "release": "webpack --env.release"
   },
   "author": "nagalun, DayDun",
@@ -15,7 +16,6 @@
     "babel-loader": "^7.1.2",
     "babel-preset-env": "^1.6.0",
     "fs-extra": "^4.0.1",
-    "webpack": "^3.5.5"
   },
   "dependencies": {}
 }

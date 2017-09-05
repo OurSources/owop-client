@@ -1,5 +1,6 @@
 const fs = require('fs-extra');
 const webpack = require('webpack');
+const HtmlWebpackPlugin =  require('html-webpack-plugin');
 
 const srcDir = `${__dirname}/src`;
 
@@ -10,6 +11,9 @@ const config = {
 	output: {
 		filename: '[name].js',
 		path: `${__dirname}/dist`
+	},
+	devServer: {
+		contentBase: './dist'
 	},
 	module: {
 		loaders: [{
@@ -25,6 +29,9 @@ const config = {
 			name: 'libs',
 			filename: 'libs.js',
 			minChunks: module => module.context && module.context.indexOf('node_modules') !== -1
+		}),
+		new HtmlWebpackPlugin({
+			template: './index.html'
 		})
 	]
 };
