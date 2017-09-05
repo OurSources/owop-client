@@ -1,14 +1,15 @@
 const fs = require('fs-extra');
 const webpack = require('webpack');
-const rimraf = require('rimraf');
+
+const srcDir = `${__dirname}/src`;
 
 const config = {
 	entry: {
-		app: "./src/js/main.js",
+		app: `${srcDir}/js/main.js`,
 	},
 	output: {
-		filename: "[name].js",
-		path: __dirname + "/dist"
+		filename: '[name].js',
+		path: `${__dirname}/dist`
 	},
 	module: {
 		loaders: [{
@@ -33,12 +34,13 @@ module.exports = async env => {
 	if (!env.release) {
 		config.devtool = "source-map";
 	} else {
-		await new Promise(resolve => rimraf(config.output.path, resolve));
+		console.log(`Cleaning build dir: '${config.output.path}'`);
+		await fs.remove(config.output.path);
 	}
 
 	/* Copy the following files/directories from the src folder to the dist folder */
 	await Promise.all(['favicon.ico', 'index.html', 'css', 'img']
-		.map(file => fs.copy(...(['src', 'dist'].map(dir => `${__dirname}/${dir}/${file}`)))));
+		.map(file => fs.copy(`${srcDir}/${file}`, `${config.output.path}/${file}`)));
 
 	return config;
 };
