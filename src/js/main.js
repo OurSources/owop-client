@@ -14,7 +14,7 @@ import { options } from './conf.js';
 import { World } from './World.js';
 import { camera, renderer, moveCameraBy } from './canvas_renderer.js';
 import { net } from './networking.js';
-import { updateClientFx, player } from './player.js';
+import { updateClientFx, player } from './local_player.js';
 
 export { showDevChat };
 
