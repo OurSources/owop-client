@@ -13,7 +13,7 @@ const config = {
 		path: `${__dirname}/dist`
 	},
 	devServer: {
-		contentBase: './dist'
+		contentBase: `${__dirname}/dist`
 	},
 	module: {
 		loaders: [{
@@ -31,7 +31,7 @@ const config = {
 			minChunks: module => module.context && module.context.indexOf('node_modules') !== -1
 		}),
 		new HtmlWebpackPlugin({
-			template: './index.html'
+			template: `${srcDir}/index.html`
 		})
 	]
 };
