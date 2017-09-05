@@ -103,6 +103,10 @@ body, #viewport, #xy-display, #tool-select, #palette, #windows {
 	transition: transform 1s;
 }
 
+#noscript-msg, #status {
+	font: initial;
+}
+
 #status-msg {
 	vertical-align: super;
 }
