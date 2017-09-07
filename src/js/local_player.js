@@ -6,7 +6,7 @@ import { elements, mouse, misc } from './main.js';
 import { colorUtils as color } from './util/color.js';
 import { renderer } from './canvas_renderer.js';
 import { cursors } from './tool_renderer.js';
-import { tools } from './tools.js';
+import { tools, updateToolbar, updateToolWindow } from './tools.js';
 import { Fx } from './Fx.js';
 
 export { updateClientFx };
@@ -36,12 +36,9 @@ export const player = {
 	get rank() { return isAdmin ? "ADMIN" : "USER" },
 	get tool() { return toolSelected; },
 	set tool(name) {
-		let t = tools[name];
-		if (t) {
-			toolSelected = t;
-		}
+		selectTool(name);
 	},
-	get toolId() { return tools[toolSelected].id; },
+	get toolId() { return tools[toolSelected].id; }, /* TODO */
 	get tools() { return tools; },
 	getToolById: getToolById
 };
@@ -120,58 +117,14 @@ function addPaletteColor(color) {
 	updatePalette();
 }
 
-
-function updateToolbar() {
-	let toolButtonClick = id => event => {
-		selectTool(id);
-		event.stopPropagation();
-	};
-	
-	var toolSelect = elements.toolSelect;
-	toolSelect.innerHTML = "";
-	
-	// Add tools to the tool-select menu
-	for (var i = 0; i < tools.length; i++) {
-		if (!tools[i].adminTool || isAdmin) {
-			var element = document.createElement("button");
-			var container = document.createElement("div");
-			var tool = tools[i];
-			element.id = "tool-" + i;
-			element.addEventListener("click", toolButtonClick(i));
-			if (i === toolSelected) {
-				container.style.backgroundImage = "url(" + cursors.slotset + ")";
-				element.className = "selected";
-			} else {
-				container.style.backgroundImage = "url(" + cursors.set.src + ")";
-			}
-			container.style.backgroundPosition = tool.setposition;
-			element.appendChild(container);
-			toolSelect.appendChild(element);
-		}
-	}
-	if (tools.length !== 0) {
-		selectTool(0);
-	}
-};
-
-
-
-function selectTool(id) {
-	if(id === toolSelected || !tools[id]) {
+function selectTool(name) {
+	let tool = tools[name];
+	if(name === toolSelected || !tool) {
 		return;
 	}
-	toolSelected = id;
-	tools[id].call("select");
-	var children = elements.toolSelect.children;
-	for (var i=0; i<children.length; i++) {
-		children[i].className = "";
-		children[i].children[0].style.backgroundImage = "url(" + cursors.set.src + ")";
-	}
-	var element = document.getElementById("tool-" + id);
-	var container = element.children[0];
-	container.style.backgroundImage = "url(" + cursors.slotset + ")";
-	element.className = "selected";
-	elements.viewport.style.cursor = "url(" + tools[id].cursorblob + ") " + tools[id].offset[0] + " " + tools[id].offset[1] + ", pointer";
+	toolSelected = tool;
+	tool.call("select");
+	updateToolWindow(name);
 	mouse.validClick = false;
 	updateClientFx(true);
 }

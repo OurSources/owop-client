@@ -121,14 +121,13 @@ body, #viewport, #xy-display, #tool-select, #palette, #windows {
 
 #windows {
 	pointer-events: none;
-	width: 100%;
-	height: 100%;
+	/*width: 100%;
+	height: 100%;*/
 }
 
 #windows > div, .winframe { /* Frame */
 	position: absolute;
 	pointer-events: initial;
-	padding-top: 20px;
 	background-color: #aba389;
 	border: 11px #aba389 solid;
 	border-width: 11px;
@@ -137,10 +136,10 @@ body, #viewport, #xy-display, #tool-select, #palette, #windows {
 	box-shadow: 0px 0px 5px #000;
 }
 #windows > div > span { /* Title */
+	display: block;
 	pointer-events: none;
-	position: absolute;
-	width: 100%;
-	top: -5px;
+	margin-top: -5px;
+	min-width: 100%;
 	text-align: center;
 }
 #windows > div > button { /* Close button */
@@ -159,9 +158,9 @@ body, #viewport, #xy-display, #tool-select, #palette, #windows {
 }
 #windows > div > div, .wincontainer { /* Container */
 	overflow: auto;
-	width: 100%;
+	min-width: 100%;
 	height: 100%;
-	margin: -5px;
+	margin: 0 -5px -5px -5px;
 	background-color: #7e635c;
 	border: 5px #7e635c solid;
 	border-width: 5px;
@@ -223,31 +222,35 @@ button:focus {
 	top: -4px;
 }
 #playercount-display {
-	right: 5px;
-	top: 0px;
+	right: -4px;
+	top: -4px;
 }
 
-#tool-select {
-	position: absolute;
-	top: 25px;
-	left: 5px;
-	width: 40px;
+#toole-container {
+	overflow: hidden;
 }
-#tool-select, #xy-display, #palette-create, #palette, .framed {
+#playercount-display, #xy-display, #palette-create, #palette, .framed {
 	border: 5px #aba389 solid;
 	border-image: url(/img/small_border.png) 5 repeat;
 	border-image-outset: 1px;
 	background-color: #7e635c;
 	box-shadow: 0px 0px 5px #000;
 }
-#tool-select > button {
+#toole-container > button > div {
+	/* ugly */
+	position: fixed;
+	margin: -18px -4px;
+	width: 36px;
+	height: 36px;
+}
+#toole-container > button {
 	position: relative;
 	display: inline-block;
 	width: 40px;
 	height: 40px;
 	padding: 0;
 }
-#tool-select > button.selected {
+#toole-container > button.selected {
 	background-color: #aaa;
 }
 

@@ -2,10 +2,57 @@
 import { PublicAPI, eventSys } from './global.js';
 import { EVENTS as e } from './conf.js';
 import { cursors } from './tool_renderer.js';
+import { net } from './networking.js';
+import { player } from './local_player.js';
+import { camera } from './canvas_renderer.js';
+import { windowSys, GUIWindow } from './windowsys.js';
+import { misc, elements } from './main.js';
 
 export const tools = {};
+export let toolsWindow = null;
 
 PublicAPI.tools = tools;
+
+export function updateToolWindow(name) {
+	let tool = tools[name];
+	var children = toolsWindow.container.children;
+	for (var i = 0; i < children.length; i++) {
+		children[i].className = "";
+		children[i].children[0].style.backgroundImage = "url(" + cursors.set.src + ")";
+	}
+	var element = document.getElementById("tool-" + name);
+	var container = element.children[0];
+	container.style.backgroundImage = "url(" + cursors.slotset + ")";
+	element.className = "selected";
+	elements.viewport.style.cursor = "url(" + tool.cursorblob + ") " + tool.offset[0] + " " + tool.offset[1] + ", pointer";
+}
+
+export function updateToolbar(win = toolsWindow) {
+	const container = win.container;
+	const toolButtonClick = name => event => player.tool = name;
+	
+	container.innerHTML = "";
+	
+	// Add tools to the tool-select menu
+	for (const name in tools) {
+		var tool = tools[name];
+		if (!tool.adminTool || player.rank === "ADMIN") {
+			var element = document.createElement("button");
+			var mask = document.createElement("div");
+			element.id = "tool-" + name;
+			element.addEventListener("click", toolButtonClick(name));
+			if (tool === player.tool) {
+				mask.style.backgroundImage = "url(" + cursors.slotset + ")";
+				element.className = "selected";
+			} else {
+				mask.style.backgroundImage = "url(" + cursors.set.src + ")";
+			}
+			mask.style.backgroundPosition = tool.setposition;
+			element.appendChild(mask);
+			container.appendChild(element);
+		}
+	}
+}
 
 class Tool {
     constructor(cursor, fxType, isAdminTool, onInit) {
@@ -50,34 +97,35 @@ class Tool {
     }
 }
 
-eventSys.once(e.misc.toolsRendered, function() {
+eventSys.once(e.misc.toolsRendered, () => {
 	// Cursor tool
 	tools['cursor'] = new Tool(cursors.cursor, 0, false,
-		function(tool) {
+		tool => {
 			function draw(tileX, tileY, color) {
 				var pixel = misc.world.getPixel(tileX, tileY);
 				if (pixel !== null && !(color[0] === pixel[0] && color[1] === pixel[1] && color[2] === pixel[2])) {
-					wop.undoHistory.push([tileX, tileY, pixel]);
-					wop.net.updatePixel(tileX, tileY, color);
+					// TODO
+					//wop.undoHistory.push([tileX, tileY, pixel]);
+					net.protocol.updatePixel(tileX, tileY, color);
 				}
 			}
 			
 			tool.setEvent('click', function(x, y, buttons, isDrag) {
-				var tileX = Math.floor(wop.camera.x + (x / wop.camera.zoom));
-				var tileY = Math.floor(wop.camera.y + (y / wop.camera.zoom));
+				var tileX = Math.floor(camera.x + (x / camera.zoom));
+				var tileY = Math.floor(camera.y + (y / camera.zoom));
 				/* White color if right clicking */
-				var color = buttons == 2 ? [255, 255, 255] : wop.palette[wop.paletteIndex];
+				var color = buttons === 2 ? [255, 255, 255] : player.selectedColor;
 				switch (buttons) {
 				case 1:
 				case 2:
 					draw(tileX, tileY, color);
 					break;
 				case 4:
-					wop.addPaletteColor(pixel);
+					player.selectedColor = pixel;
 					break;
 				}
 			});
-		}.bind(this)
+		}
 	);
 	
 	// Move tool
@@ -198,4 +246,11 @@ eventSys.once(e.misc.toolsRendered, function() {
 		function() {}
 	);*/
 	eventSys.emit(e.misc.toolsInitialized);
+});
+
+eventSys.once(e.misc.toolsInitialized, () => {
+	toolsWindow = windowSys.addWindow(new GUIWindow('Tools', {}, wdow => {
+		wdow.container.id = "toole-container";
+		updateToolbar(wdow);
+	}).move(5, 32));
 });

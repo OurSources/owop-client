@@ -149,6 +149,6 @@ function load(oncomplete) {
 	cursors.set.src = "/img/toolset.png";
 }
 
-eventSys.once(e.loaded, function() {
+eventSys.once(e.loaded, () => {
 	load(() => eventSys.emit(e.misc.toolsRendered));
 });

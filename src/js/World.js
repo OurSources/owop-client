@@ -3,7 +3,8 @@ import { protocol, EVENTS as e } from './conf.js';
 import { eventSys } from './global.js';
 import { colorUtils as color } from './util/color.js';
 import { net } from './networking.js';
-import { camera, isVisible, mouse } from './main.js';
+import { camera, isVisible } from './canvas_renderer.js';
+import { mouse } from './main.js';
 
 export class Chunk {
 	constructor(x, y, netdata) { /* netdata = Uint32Array */

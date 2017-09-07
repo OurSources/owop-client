@@ -4,7 +4,7 @@
  *   IE support by adding .cur cursors
  */
  /* NOTE: Changed colors storing format to 0xAARRGGBB (arrays: [B, G, R]) */
-"use strict";
+'use strict';
 import { CHUNK_SIZE, EVENTS as e } from './conf.js';
 import { Bucket } from './util/Bucket.js';
 import { escapeHTML, getTime, getCookie, cookiesEnabled } from './util/misc.js';
@@ -15,6 +15,7 @@ import { World } from './World.js';
 import { camera, renderer, moveCameraBy } from './canvas_renderer.js';
 import { net } from './networking.js';
 import { updateClientFx, player } from './local_player.js';
+import { resolveProtocols } from './protocol/all.js'
 
 export { showDevChat };
 
@@ -88,7 +89,7 @@ function receiveMessage(text) {
 	span.innerHTML = text;
 	message.appendChild(span);
 	elements.chatMessages.appendChild(message);
-	elements.chatMessages.scrollTop = elements.chatMessages.scrollHeight;
+	scrollChatToBottom();
 }
 
 function receiveDevMessage(text) {
@@ -98,7 +99,11 @@ function receiveDevMessage(text) {
 	message.appendChild(span);
 	elements.devChatMessages.appendChild(message);
 	elements.devChatMessages.scrollTop = elements.devChatMessages.scrollHeight;
-};
+}
+
+function scrollChatToBottom() {
+	elements.chatMessages.scrollTop = elements.chatMessages.scrollHeight;
+}
 
 function clearChat() {
 	elements.chatMessages.innerHTML = "";
@@ -151,18 +156,21 @@ function movedMouse(x, y, btns) {
 	}
 
 	if (btns && mouse.validClick) {
-		player.tool.click(x, y, btns, true);
+		player.tool.call('click', [x, y, btns, true]);
 	}
 }
 
 function openChat() {
 	elements.chat.className = "active selectable";
 	elements.devChat.className = "active selectable";
+	scrollChatToBottom();
 }
 
 function closeChat() {
 	elements.chat.className = "";
 	elements.devChat.className = "";
+	elements.chatInput.blur();
+	scrollChatToBottom();
 }
 
 function showDevChat(bool) {
@@ -180,12 +188,12 @@ function updatePlayerCount(count) {
 /*function openServerSelector() {
 	windowsys.addWindow(new GUIWindow(0, 0, 250, 60, "Select a server", {
 			centered: true
-		}, function(wdow) {
+		}, wdow => {
 
 		wdow.addObj(mkHTML("button", {
 			innerHTML: "Original server",
 			style: "width: 100%; height: 50%",
-			onclick: function() {
+			onclick: () => {
 				w.options.serverAddress = "ws://ourworldofpixels.com:443";
 				w.net.connect();
 				win.wm.delWindow(win);
@@ -227,14 +235,14 @@ function updatePlayerCount(count) {
 			}.bind({w: this, win: wdow})
 		}));
 	}.bind(this)));
-}.bind(WorldOfPixels);*/
+}*/
 
 function logoMakeRoom(bool) {
 	elements.loadUl.style.transform = bool ? "translateY(-75%) scale(0.5)" : "";
 }
 
 function showWorldUI(bool) {
-	misc.guiShown = !misc.guiShown;
+	misc.guiShown = bool;
 	elements.xyDisplay.style.transform = bool ? "initial" : "";
 	elements.playerCountDisplay.style.transform = bool ? "initial" : "";
 	elements.palette.style.transform = bool ? "translateY(-50%)" : "";
@@ -272,18 +280,17 @@ function inGameDisconnected() {
 	misc.world = null;
 }
 
-function retryingConnect(worldName) {
+function retryingConnect(server, worldName) {
 	if (misc.connecting && !net.isConnected()) { /* We're already connected/trying to connect */
 		return;
 	}
-	let server = options.serverAddress.find(sv => sv.default);
 	misc.connecting = true;
 	const tryConnect = (tryN) => {
 		eventSys.once(e.net.connecting, () => {
 			statusMsg(true, "Connecting...");
 			showLoadScr(true, false);
 		});
-		net.connect(server.url, worldName);
+		net.connect(server, worldName);
 		const disconnected = () => {
 			++tryN;
 			statusMsg(true, `Could not connect to server, retrying... (${tryN})`);
@@ -313,7 +320,7 @@ function init() {
 		function(f) {
 			setTimeout(f, 1000 / options.fps);
 		};
-	HTMLCanvasElement.prototype.toBlob = HTMLCanvasElement.prototype.msToBlob || HTMLCanvasElement.prototype.toBlob;
+	HTMLCanvasElement.prototype.toBlob = HTMLCanvasElement.prototype.toBlob || HTMLCanvasElement.prototype.msToBlob;
 
 	/* I don't think this is useful anymore,
 	 * since too much stuff used doesn't work on very old browsers.
@@ -341,25 +348,27 @@ function init() {
 	
 	viewport.oncontextmenu = () => false;
 
-	viewport.addEventListener("mouseenter", function() {
+	viewport.addEventListener("mouseenter", () => {
 		mouse.insideViewport = true;
 		updateClientFx(true);
 	});
-	viewport.addEventListener("mouseleave", function() {
+	viewport.addEventListener("mouseleave", () => {
 		mouse.insideViewport = false;
 		updateClientFx(true);
 	});
 
-	chatinput.addEventListener("keyup", function(event) {
-		if (event.keyCode == 13) {
-			chatinput.blur();
+	chatinput.addEventListener("keyup", event => {
+		var keyCode = event.which || event.keyCode;
+		if (keyCode === 27) {
+			closeChat();
+		} else if (keyCode == 13) {
 			net.protocol.sendMessage(chatinput.value);
 			chatinput.value = '';
 			closeChat();
 			event.stopPropagation();
 		}
 	});
-	chatinput.addEventListener("focus", function(event) {
+	chatinput.addEventListener("focus", event => {
 		if (!mouse.validClick) {
 			openChat();
 		} else {
@@ -367,7 +376,7 @@ function init() {
 		}
 	});
 	
-	window.addEventListener("keydown", function(event) {
+	window.addEventListener("keydown", event => {
 		var keyCode = event.which || event.keyCode;
 		if (document.activeElement.tagName !== "INPUT" && misc.world !== null) {
 			keysDown[keyCode] = true;
@@ -421,7 +430,6 @@ function init() {
 					break;
 
 				case 112: /* F1 */
-					/* BUG: opening chat while GUI is hidden will mess up the page */
 					showWorldUI(!misc.guiShown);
 					event.preventDefault();
 					break;
@@ -433,7 +441,7 @@ function init() {
 			return false;
 		}
 	});
-	window.addEventListener("keyup", function(event) {
+	window.addEventListener("keyup", event => {
 		var keyCode = event.which || event.keyCode;
 		delete keysDown[keyCode];
 		if (document.activeElement.tagName !== "INPUT") {
@@ -444,7 +452,7 @@ function init() {
 			}
 		}
 	});
-	viewport.addEventListener("mousedown", function(event) {
+	viewport.addEventListener("mousedown", event => {
 		closeChat();
 		mouse.lastX = mouse.x;
 		mouse.lastY = mouse.y;
@@ -452,20 +460,21 @@ function init() {
 		mouse.y = event.pageY;
 		mouse.validClick = true;
 
-		player.tool.click(event.pageX, event.pageY, event.buttons, false);
+		player.tool.call('click', [event.pageX, event.pageY, event.buttons, false]);
 	});
-	window.addEventListener("mouseup", function(event) {
+
+	window.addEventListener("mouseup", event => {
 		mouse.validClick = false;
 	});
 
-	window.addEventListener("mousemove", function(event) {
+	window.addEventListener("mousemove", event => {
 		movedMouse(event.pageX, event.pageY, event.buttons);
 		/*if (mouse.validClick) { // Prevents selection of the chat input placeholder - performance issues?
 			event.preventDefault();
 		}*/
 	});
 
-	const mousewheel = function(event) {
+	const mousewheel = event => {
 		var delta = Math.max(-1, Math.min(1, (event.deltaY || event.detail)));
 		var pIndex = player.paletteIndex;
 		if (delta > 0) {
@@ -480,24 +489,24 @@ function init() {
 	viewport.addEventListener("DOMMouseScroll", mousewheel); /* Firefox */
 	
 	// Touch support
-	viewport.addEventListener("touchstart", function(event) {
+	viewport.addEventListener("touchstart", event => {
 		player.tool.touch(event.changedTouches, 0);
 		var moved = event.changedTouches[0];
 		if (moved) {
 			movedMouse(moved.pageX, moved.pageY, 0);
 		}
 	}, { passive: true });
-	viewport.addEventListener("touchmove", function(event) {
+	viewport.addEventListener("touchmove", event => {
 		player.tool.touch(event.changedTouches, 1);
 		var moved = event.changedTouches[0];
 		if (moved) {
 			movedMouse(moved.pageX, moved.pageY, 0);
 		}
 	}, { passive: true });
-	viewport.addEventListener("touchend", function(event) {
+	viewport.addEventListener("touchend", event => {
 		player.tool.touch(event.changedTouches, 2);
 	}, { passive: true });
-	viewport.addEventListener("touchcancel", function(event) {
+	viewport.addEventListener("touchcancel", event => {
 		player.tool.touch(event.changedTouches, 3);
 	}, { passive: true });
 	
@@ -512,6 +521,7 @@ function init() {
 	console.log("%cWelcome to the developer console!", "font-size: 20px; font-weight: bold; color: #F0F;");
 	
 	//this.windowsys.addWindow(new OWOPDropDown());
+	resolveProtocols();
 	
 	/* Calls other initialization functions */
 	eventSys.emit(e.init);
@@ -519,8 +529,17 @@ function init() {
 	updateXYDisplay(0, 0);
 
 	misc.urlWorldName = decodeURIComponent(window.location.pathname).replace(/^(\/beta(?:\/)|\/)/g, "");
+
+	const defaultServer = (serverList => {
+		for (var i = 0; i < serverList.length; i++) {
+			if (serverList[i].default) {
+				return serverList[i];
+			}
+		}
+		return null;
+	})(options.serverAddress);
 	
-	retryingConnect(misc.urlWorldName);
+	retryingConnect(defaultServer, misc.urlWorldName);
 
 	elements.reconnectBtn.onclick = () => retryingConnect(misc.urlWorldName);
 
@@ -558,11 +577,11 @@ eventSys.on(e.net.world.join, world => {
 	eventSys.emit(e.misc.worldInitialized);
 });
 
-eventSys.on(e.net.connected, function() {
+eventSys.on(e.net.connected, () => {
 	clearChat();
 });
 
-window.addEventListener("error", function(e) {
+window.addEventListener("error", e => {
 	showDevChat(true);
 	var errmsg = e ? e.error && (e.error.stack || e.message || e.error.message) : "Unknown error occurred";
 	errmsg = escapeHTML(errmsg);
@@ -576,7 +595,7 @@ window.addEventListener("error", function(e) {
 	}
 });
 
-window.addEventListener("load", function() {
+window.addEventListener("load", () => {
 	if (window.location.hostname.indexOf("cursors.me") != -1 ||
 		window.location.hostname.indexOf("yourworldofpixels.com") != -1) {
 		// Redirects to the main url if played on an alternative url.
@@ -603,7 +622,6 @@ window.addEventListener("load", function() {
 	elements.palette = document.getElementById("palette");
 	elements.paletteColors = document.getElementById("palette-colors");
 	elements.paletteCreate = document.getElementById("palette-create");
-	elements.toolSelect = document.getElementById("tool-select");
 	
 	elements.animCanvas = document.getElementById("animations");
 	elements.clusterDiv = document.getElementById("clusters");

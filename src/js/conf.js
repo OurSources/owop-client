@@ -1,8 +1,8 @@
 "use strict";
-import { OldProtocol } from './protocol/old.js';
+import { eventSys, PublicAPI } from './global.js';
 /* Important constants */
 
-export const protocol = OldProtocol; /* TODO: switch depending on the server config, see below */
+export let protocol = null; /* TODO: switch depending on the server config, see below */
 
 /* The raw event ID numbers should NOT be used, instead import the EVENTS object in your file. */
 let evtId = 0;
@@ -64,14 +64,14 @@ export const EVENTS = {
 
 export const options = {
 	serverAddress: [{
-		default: true,
+		default: false,
 		title: 'Official server',
-		proto: OldProtocol,
+		proto: 'old',
 		url: 'ws://ourworldofpixels.com:443'
 	},{
-		default: false,
+		default: true,
 		title: 'Localhost',
-		proto: OldProtocol,
+		proto: 'old',
 		url: 'ws://localhost:25565'
 	}], // The server address that websockets connect to
 	fps: 30, // Fps used if requestAnimationFrame is not supported (not used atm)
@@ -83,3 +83,7 @@ export const options = {
 	zoomLimitMin: 1,
 	zoomLimitMax: 32
 };
+
+eventSys.on(EVENTS.net.connecting, server => {
+	protocol = server.proto;
+});

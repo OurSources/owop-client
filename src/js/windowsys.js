@@ -99,7 +99,7 @@ OWOPDropDown.prototype.getWindow = function() {
  * initfunc = function where all the windows objects should be added,
  *            first function argument is the guiwindow object itself
  */
-export function GUIWindow(x, y, w, h, title, options, initfunc) {
+export function GUIWindow(title, options, initfunc) {
 	options = options || {};
 	this.wm = WorldOfPixels.windowsys;
 	this.opt = options;
@@ -107,7 +107,7 @@ export function GUIWindow(x, y, w, h, title, options, initfunc) {
 	this.frame = document.createElement("div");
 	this.container = document.createElement("div");
 	
-	if(title) {
+	if (title) {
 		this.titlespan = document.createElement("span");
 		this.titlespan.innerHTML = title;
 	
@@ -119,12 +119,8 @@ export function GUIWindow(x, y, w, h, title, options, initfunc) {
 	if (options.centered) {
 		options.immobile = true;
 		this.frame.className = "centered";
-	} else {
-		this.move(x, y);
 	}
-	
-	this.resize(w, h);
-	
+		
 	Object.defineProperty(this, "realw", {
 		get: function() {
 			return this.frame.offsetWidth;
@@ -209,13 +205,15 @@ GUIWindow.prototype.move = function(x, y) {
 		this.x = x;
 		this.y = y;
 	}
+	return this;
 };
 
 GUIWindow.prototype.resize = function(w, h){
-	this.w = w = Math.max(w, 27);
-	this.h = h = Math.max(h, 47);
-	this.frame.style.width = w + "px";
-	this.frame.style.height = h + "px";
+	this.w = w;
+	this.h = h;
+	this.container.style.width = w + "px";
+	this.container.style.height = h + "px";
+	return this;
 };
 
 GUIWindow.prototype.close = function() {

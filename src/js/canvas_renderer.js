@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 import { protocol, EVENTS as e, options } from './conf.js';
 import { eventSys, PublicAPI } from './global.js';
 import { elements, misc } from './main.js';
