@@ -7,7 +7,7 @@ import { activeFx, FXTYPE } from './Fx.js';
 import { getTime } from './util/misc.js';
 import { Lerp } from './util/Lerp.js';
 
-export { centerCameraTo, moveCameraBy };
+export { centerCameraTo, moveCameraBy, moveCameraTo };
 
 /* oh boy, i'm going to get shit for making this private, aren't i?  */
 const cameraValues = {
@@ -412,6 +412,12 @@ function centerCameraTo(x, y) {
 function moveCameraBy(x, y) {
 	cameraValues.x += x;
 	cameraValues.y += y;
+	onCameraMove();
+}
+
+function moveCameraTo(x, y) {
+	cameraValues.x = x;
+	cameraValues.y = y;
 	onCameraMove();
 }
 

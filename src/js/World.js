@@ -1,7 +1,7 @@
 "use strict";
 import { protocol, EVENTS as e } from './conf.js';
 import { eventSys } from './global.js';
-import { colorUtils as color } from './util/color.js';
+import { colorUtils } from './util/color.js';
 import { net } from './networking.js';
 import { camera, isVisible } from './canvas_renderer.js';
 import { mouse } from './main.js';
@@ -17,8 +17,17 @@ export class Chunk {
 	}
 	
 	update(x, y, color) {
+		/* WARNING: Should absMod if not power of two */
+		x &= (protocol.chunkSize - 1);
+		y &= (protocol.chunkSize - 1);
 		this.u32data[y * protocol.chunkSize + x] = 0xFF000000 | color;
 		this.needsRedraw = true;
+	}
+
+	get(x, y) {
+		x &= (protocol.chunkSize - 1);
+		y &= (protocol.chunkSize - 1);
+		return this.u32data[y * protocol.chunkSize + x];
 	}
 
 	clear() {
@@ -109,17 +118,38 @@ export class World {
 			eventSys.emit(e.renderer.updateChunk, chunksUpdated[c]);
 		}
 	}
-	
-	getPixel(x, y) {
+
+	setPixel(x, y, color) {
+		var chunk = this.getChunkAt(x, y);
+		if (chunk) {
+			var oldPixel = this.getPixel(x, y, chunk);
+			if ((oldPixel[0] === color[0] && oldPixel[1] === color[1] && oldPixel[2] === color[2])
+			|| !net.protocol.updatePixel(x, y, color)) {
+				return false;
+			}
+			chunk.update(x, y, colorUtils.u24_888(color[0], color[1], color[2]));
+			eventSys.emit(e.renderer.updateChunk, chunk);
+			return true;
+		}
+		return false;
+	}
+
+	getChunkAt(x, y) {
 		var fl     = Math.floor;
 		var key    = [fl(x / protocol.chunkSize), fl(y / protocol.chunkSize)].join();
-		/* WARNING: should absMod if not power of two */
-		var pixelX = x & (protocol.chunkSize - 1);
-		var pixelY = y & (protocol.chunkSize - 1);
-		var chunk = this.chunks[key];
+		return this.chunks[key];
+	}
+	
+	getPixel(x, y, chunk) {
+		if (!chunk) {
+			var fl     = Math.floor;
+			var key    = [fl(x / protocol.chunkSize), fl(y / protocol.chunkSize)].join();
+			chunk = this.chunks[key];
+		}
+		
 		if (chunk) {
-			var clr = chunk.u32data[pixelY * protocol.chunkSize + pixelX];
-			return color.to565(clr & 0xFF, clr >> 8 & 0xFF, clr >> 16 & 0xFF);
+			var clr = chunk.get(x, y);
+			return [clr & 0xFF, clr >> 8 & 0xFF, clr >> 16 & 0xFF];
 		}
 		return null;
 	}

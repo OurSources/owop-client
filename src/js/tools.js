@@ -1,12 +1,12 @@
 'use strict';
 import { PublicAPI, eventSys } from './global.js';
-import { EVENTS as e } from './conf.js';
+import { EVENTS as e, protocol, options } from './conf.js';
 import { cursors } from './tool_renderer.js';
 import { net } from './networking.js';
 import { player } from './local_player.js';
-import { camera } from './canvas_renderer.js';
+import { camera, moveCameraTo, moveCameraBy } from './canvas_renderer.js';
 import { windowSys, GUIWindow } from './windowsys.js';
-import { misc, elements } from './main.js';
+import { misc, elements, mouse } from './main.js';
 
 export const tools = {};
 export let toolsWindow = null;
@@ -14,6 +14,9 @@ export let toolsWindow = null;
 PublicAPI.tools = tools;
 
 export function updateToolWindow(name) {
+	if (!toolsWindow) {
+		return;
+	}
 	let tool = tools[name];
 	var children = toolsWindow.container.children;
 	for (var i = 0; i < children.length; i++) {
@@ -64,6 +67,9 @@ class Tool {
         this.adminTool = isAdminTool;
         this.extra = {}; /* Extra storage for tools */
         this.events = {
+			mouseup: null,
+			mousedown: null,
+			mousemove: null,
             click: null,
             touch: null,
             select: null,
@@ -106,11 +112,11 @@ eventSys.once(e.misc.toolsRendered, () => {
 				if (pixel !== null && !(color[0] === pixel[0] && color[1] === pixel[1] && color[2] === pixel[2])) {
 					// TODO
 					//wop.undoHistory.push([tileX, tileY, pixel]);
-					net.protocol.updatePixel(tileX, tileY, color);
+					misc.world.setPixel(tileX, tileY, color);
 				}
 			}
 			
-			tool.setEvent('click', function(x, y, buttons, isDrag) {
+			tool.setEvent('click', (x, y, buttons, isDrag) => {
 				var tileX = Math.floor(camera.x + (x / camera.zoom));
 				var tileY = Math.floor(camera.y + (y / camera.zoom));
 				/* White color if right clicking */
@@ -130,55 +136,51 @@ eventSys.once(e.misc.toolsRendered, () => {
 	
 	// Move tool
 	tools['move'] = new Tool(cursors.move, -1, false,
-		function(tool) {
+		tool => {
 			var extra = tool.extra;
-			var wop = this;
 			function move(x, y, isDrag) {
 				if (!isDrag) {
-					extra.startX = wop.camera.x + (x / wop.camera.zoom);
-					extra.startY = wop.camera.y + (y / wop.camera.zoom);
+					extra.startX = camera.x + (x / camera.zoom);
+					extra.startY = camera.y + (y / camera.zoom);
 				} else {
-					wop.camera.x = extra.startX - (x / wop.camera.zoom);
-					wop.camera.y = extra.startY - (y / wop.camera.zoom);
-					wop.updateCamera();
+					moveCameraTo(extra.startX - (x / camera.zoom), extra.startY - (y / camera.zoom));
 				}
 			}
-			tool.setEvent("click", function(x, y, buttons, isDrag) {
+			tool.setEvent("click", (x, y, buttons, isDrag) => {
 				move(x, y, isDrag);
 			});
-			tool.setEvent("touch", function(touches, type) {
+			tool.setEvent("touch", (touches, type) => {
 				move(touches[0].pageX, touches[0].pageY, type !== 0);
 			});
-		}.bind(this)
+		}
 	);
 	
 	// Pipette tool
 	tools['pipette'] = new Tool(cursors.pipette, -1, false,
-		function(tool) {
-			var wop = this;
-			tool.setEvent("click", function(x, y, buttons, isDrag) {
-				var tileX = Math.floor(wop.camera.x + (x / wop.camera.zoom));
-				var tileY = Math.floor(wop.camera.y + (y / wop.camera.zoom));
+		tool => {
+			tool.setEvent("click", (x, y, buttons, isDrag) => {
+				var tileX = Math.floor(camera.x + (x / camera.zoom));
+				var tileY = Math.floor(camera.y + (y / camera.zoom));
 				
-				var color = wop.getPixel(tileX, tileY);
+				var color = misc.world.getPixel(tileX, tileY);
 				if (color) {
-					wop.addPaletteColor(color);
+					player.selectedColor = color;
 				}
 			});
-		}.bind(this)
+		}
 	);
 	
 	// Erase/Fill tool
-	/*tools['erase'] = new Tool(cursors.fill, 3, true,
-		function(x, y, buttons, isDrag) {
-			var chunk16X = Math.floor((this.camera.x + (x / this.camera.zoom)) / 16);
-			var chunk16Y = Math.floor((this.camera.y + (y / this.camera.zoom)) / 16);
+	tools['erase'] = new Tool(cursors.fill, 3, true,
+		tool => {
+			/*var chunk16X = Math.floor((camera.x + (x / camera.zoom)) / protocol.chunkSize);
+			var chunk16Y = Math.floor((camera.y + (y / camera.zoom)) / protocol.chunkSize);
 			
 			var fill = false;
 			var fl = Math.floor;
-			var chunk = this.chunks[[fl(chunk16X / 16), fl(chunk16Y / 16)]];
-			var color = buttons == 2 ? [31, 63, 31] : this.palette[this.paletteIndex];
-			if (!chunk || !this.net.isConnected()) {
+			var chunk = this.chunks[[fl(chunk16X / protocol.chunkSize), fl(chunk16Y / protocol.chunkSize)]];
+			var color = buttons == 2 ? [255, 255, 255] : this.palette[this.paletteIndex];
+			if (!chunk || !net.isConnected()) {
 				return;
 			}
 			var offx = chunk16X * 16;
@@ -199,52 +201,52 @@ eventSys.once(e.misc.toolsRendered, () => {
 				dv.setInt32(4, chunk16Y, true);
 				dv.setUint16(8, u16_565(color[2], color[1], color[0]), true);
 				this.net.connection.send(array);
-			}
-		}.bind(this)
+			}*/
+		}
 	);
 	
 	// Zoom tool
 	tools['zoom'] = new Tool(cursors.zoom, -1, false,
-		function(x, y, buttons, isDrag, touches) {
-			if (!isDrag) {
-				var lzoom = this.camera.zoom;
-				if (buttons === 1 && this.camera.zoom * (1 + this.options.zoomStrength) <= this.options.zoomLimitMax) {
-					// Zoom in
-					this.camera.zoom *= 1 + this.options.zoomStrength;
-					this.camera.x += this.mouse.x / this.camera.zoom;
-					this.camera.y += this.mouse.y / this.camera.zoom;
-					this.updateCamera();
-				} else if (buttons === 2 && this.camera.zoom / (1 + this.options.zoomStrength) >= this.options.zoomLimitMin) {
+		tool => {
+			function zoom(x, y, buttons, isDrag) {
+				if (!isDrag) {
+					var lzoom = camera.zoom;
+					var offX = 0;
+					var offY = 0;
+					if (buttons === 1 && camera.zoom * (1 + options.zoomStrength) <= options.zoomLimitMax) {
+						// Zoom in
+						camera.zoom *= 1 + options.zoomStrength;
+						offX = mouse.x / camera.zoom;
+						offY = mouse.y / camera.zoom;
+					} else if (buttons === 2 && camera.zoom / (1 + options.zoomStrength) >= options.zoomLimitMin) {
+						// Zoom out
+						camera.zoom /= 1 + options.zoomStrength;
+						offX = mouse.x * (3 / lzoom - 2 / camera.zoom);
+						offY = mouse.y * (3 / lzoom - 2 / camera.zoom);
+					} else if (buttons === 3) {
+						// Reset zoom (right + left click)
+						camera.zoom = options.defaultZoom;
+					}
+					moveCameraBy(camera.x + offX, camera.y + offY);
+				}
+			}
+			
+			tool.setEvent("click", zoom);
+			tool.setEvent("touch", (touches, type) => {
+				var lzoom = camera.zoom;
+				if (type === 0 && touches[0].identifier === 1 && camera.zoom / (1 + options.zoomStrength) >= options.zoomLimitMin) {
 					// Zoom out
-					this.camera.zoom /= 1 + this.options.zoomStrength;
-					this.camera.x += this.mouse.x * (3 / lzoom - 2 / this.camera.zoom);
-					this.camera.y += this.mouse.y * (3 / lzoom - 2 / this.camera.zoom);
-					this.updateCamera();
-				} else if (buttons === 3) {
-					// Reset zoom (right + left click)
-					this.camera.zoom = this.options.defaultZoom;
-					this.updateCamera();
+					camera.zoom /= 1 + this.options.zoomStrength;
+					camera.x += this.mouse.x * (3 / lzoom - 2 / this.camera.zoom);
+					camera.y += this.mouse.y * (3 / lzoom - 2 / this.camera.zoom);
 				}
-				if (lzoom !== this.camera.zoom) {
-					this.events.emit("zoom", this.camera.zoom);
-				}
-			}
-		}.bind(this),
-		function(touches, type) {
-			var lzoom = this.camera.zoom;
-			if (type === 0 && touches[0].identifier === 1 && this.camera.zoom / (1 + this.options.zoomStrength) >= this.options.zoomLimitMin) {
-				// Zoom out
-				this.camera.zoom /= 1 + this.options.zoomStrength;
-				this.camera.x += this.mouse.x * (3 / lzoom - 2 / this.camera.zoom);
-				this.camera.y += this.mouse.y * (3 / lzoom - 2 / this.camera.zoom);
-				this.updateCamera();
-			}
-			if (lzoom !== this.camera.zoom) {
-				this.events.emit("zoom", this.camera.zoom);
-			}
-		}.bind(this),
-		function() {}
-	);*/
+				/*if (lzoom !== this.camera.zoom) {
+					camera.zoom = 
+					eventSys.emit(e.camera.zoom, this.camera.zoom);
+				}*/
+			});
+		}
+	);
 	eventSys.emit(e.misc.toolsInitialized);
 });
 

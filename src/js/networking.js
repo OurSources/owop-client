@@ -19,30 +19,6 @@ function isConnected() {
 	return net.protocol !== null && net.protocol.isConnected();
 }
 
-function updatePixel(x, y, color) {
-	var fl = Math.floor;
-	var key = fl(x / 256) + ',' + fl(y / 256);
-	var chunk = this.chunks[key];
-	var crgb = this.getPixel(x, y);
-	if (chunk) {
-		crgb = u16_565(crgb[2], crgb[1], crgb[0]);
-		var rgb = u16_565(color[2], color[1], color[0]);
-		if (this.net.isConnected() && crgb !== rgb && this.net.placeBucket.canSpend(1)) {
-			chunk.update(x & 0xFF, y & 0xFF, color);
-			var array = new ArrayBuffer(11);
-			var dv = new DataView(array);
-			dv.setInt32(0,  x, true);
-			dv.setInt32(4,  y, true);
-			dv.setUint16(8, rgb, true);
-			//dv.setUint8(10, 255);
-			this.net.connection.send(array);
-			this.renderer.requestRender(2); /* Request world re-render */
-			return true;
-		}
-	}
-	return false;
-}
-
 function sendUpdates() {
 	var worldx = this.mouse.worldX;
 	var worldy = this.mouse.worldY;

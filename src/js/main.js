@@ -3,7 +3,9 @@
  *   Mabye bookmarks
  *   IE support by adding .cur cursors
  */
- /* NOTE: Changed colors storing format to 0xAARRGGBB (arrays: [B, G, R]) */
+ /* NOTE: Let's stick with the correct way of storing colors, 
+  * first byte should be red value: 0xAABBGGRR, or [r, g, b]
+  */
 'use strict';
 import { CHUNK_SIZE, EVENTS as e } from './conf.js';
 import { Bucket } from './util/Bucket.js';
@@ -32,7 +34,7 @@ export const mouse = {
 	lastWorldY: 0,
 	validClick: false,
 	validTile: false,
-	insideViewport: true,
+	insideViewport: false,
 	touches: []
 };
 
@@ -145,18 +147,19 @@ function tick() {
 function movedMouse(x, y, btns) {
 	mouse.x = x;
 	mouse.y = y;
+
+	if (btns && mouse.validClick) {
+		player.tool.call('click', [x, y, btns, true]);
+	}
+
 	mouse.worldX = camera.x * 16 + mouse.x / (camera.zoom / 16);
 	mouse.worldY = camera.y * 16 + mouse.y / (camera.zoom / 16);
 	
 	var tileX = Math.floor(mouse.worldX / 16);
 	var tileY = Math.floor(mouse.worldY / 16);
-	
+
 	if (updateClientFx()) {
 		updateXYDisplay(tileX, tileY);
-	}
-
-	if (btns && mouse.validClick) {
-		player.tool.call('click', [x, y, btns, true]);
 	}
 }
 
@@ -382,7 +385,7 @@ function init() {
 			keysDown[keyCode] = true;
 			switch (keyCode) {
 				case 16: /* Shift */
-					selectTool(1);
+					player.tool = "move";
 					break;
 
 				case 90: /* Ctrl + Z */
@@ -448,7 +451,7 @@ function init() {
 			if (keyCode == 13) {
 				elements.chatInput.focus();
 			} else if (keyCode == 16) {
-				selectTool(0);
+				player.tool = "cursor";
 			}
 		}
 	});
@@ -541,7 +544,7 @@ function init() {
 	
 	retryingConnect(defaultServer, misc.urlWorldName);
 
-	elements.reconnectBtn.onclick = () => retryingConnect(misc.urlWorldName);
+	elements.reconnectBtn.onclick = () => retryingConnect(defaultServer, misc.urlWorldName);
 
 	misc.tickInterval = setInterval(tick, 1000 / options.tickSpeed);
 }

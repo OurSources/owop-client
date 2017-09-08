@@ -5,6 +5,7 @@ import { eventSys } from './../global.js';
 import { Chunk } from './../World.js';
 import { Bucket } from './../util/Bucket.js';
 import { loadAndRequestCaptcha } from './../captcha.js';
+import { colorUtils as color } from './../util/color.js'
 
 export const captchaState = {
 	CA_WAITING: 0,
@@ -253,7 +254,19 @@ class OldProtocolImpl extends Protocol {
     }
         
     updatePixel(x, y, rgb) {
-        
+        if (this.isConnected() && this.placeBucket.canSpend(1)) {
+            var array = new ArrayBuffer(11);
+            var dv = new DataView(array);
+            dv.setInt32(0,  x, true);
+            dv.setInt32(4,  y, true);
+            dv.setUint8(8, rgb[0]);
+            dv.setUint8(9, rgb[1]);
+            dv.setUint8(10, rgb[2]);
+            //dv.setUint8(10, 255);
+            this.ws.send(array);
+            return true;
+        }
+        return false;
     }
         
     sendUpdates() {

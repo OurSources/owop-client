@@ -23,7 +23,7 @@ export class Fx {
         this.y = y;
         this.options = options;
         var clr = options.color;
-        if (clr) {
+        if (Number.isInteger(clr)) {
             this.options.colorhex = color.toHTML(clr);
 		}
 		activeFx.push(this);
@@ -33,7 +33,7 @@ export class Fx {
 		this.type = type;
 		this.x = x;
 		this.y = y;
-		if(!options.color) {
+		if(!Number.isInteger(options.color)) {
 			options.colorhex = "#000000";
 		} else if(options.color !== this.options.color) {
 			options.colorhex = color.toHTML(options.color);

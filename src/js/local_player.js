@@ -2,23 +2,24 @@
 import { eventSys, PublicAPI } from './global.js';
 import { EVENTS as e, RANK } from './conf.js';
 import { openColorPicker, absMod } from './util/misc.js';
-import { elements, mouse, misc } from './main.js';
+import { elements, mouse, misc, showDevChat } from './main.js';
 import { colorUtils as color } from './util/color.js';
 import { renderer } from './canvas_renderer.js';
 import { cursors } from './tool_renderer.js';
 import { tools, updateToolbar, updateToolWindow } from './tools.js';
 import { Fx } from './Fx.js';
+import { net } from './networking.js';
 
 export { updateClientFx };
 
 let toolSelected = null;
 
-const palette = [[0, 0, 0], [0, 0, 255], [0, 255, 0], [255, 0, 0]];
+const palette = [[0, 0, 0], [255, 0, 0], [0, 255, 0], [0, 0, 255]];
 let paletteIndex = 0;
 
 export const undoHistory = [];
 
-const clientFx = new Fx(-1, 0, 0, {color: 0});
+const clientFx = new Fx(-1, 0, 0, { color: 0 });
 
 let rank = RANK.NONE;
 
@@ -33,7 +34,7 @@ export const player = {
 		addPaletteColor(c);
 	},
 	get palette() { return palette; },
-	get rank() { return isAdmin ? "ADMIN" : "USER" },
+	get rank() { return rank },
 	get tool() { return toolSelected; },
 	set tool(name) {
 		selectTool(name);
@@ -63,7 +64,7 @@ function updatePalette() {
 	paletteColors.innerHTML = "";
 	var colorClick = (index) => () => {
 		paletteIndex = index;
-		updatePaletteIndex();
+		changedColor();
 	};
 	var colorDelete = (index) => () => {
 		if(palette.length > 1) {
@@ -72,14 +73,14 @@ function updatePalette() {
 				--paletteIndex;
 			}
 			updatePalette();
-			updatePaletteIndex();
+			changedColor();
 		}
 	};
 	
 	for (var i = 0; i < palette.length; i++) {
 		var element = document.createElement("div");
 		var clr = palette[i];
-		element.style.backgroundColor = "rgb(" + clr[2] + "," + clr[1] + "," + clr[0] + ")";
+		element.style.backgroundColor = "rgb(" + clr[0] + "," + clr[1] + "," + clr[2] + ")";
 		element.onmouseup = function(e) {
 			switch(e.button) {
 				case 0:
@@ -97,7 +98,7 @@ function updatePalette() {
 		element.oncontextmenu = () => false;
 		paletteColors.appendChild(element);
 	}
-	updatePaletteIndex();
+	changedColor();
 }
 
 function updatePaletteIndex() {
@@ -108,7 +109,7 @@ function addPaletteColor(color) {
 	for (var i = 0; i < palette.length; i++) {
 		if (palette[i][0] === color[0] && palette[i][1] === color[1] && palette[i][2] === color[2]) {
 			paletteIndex = i;
-			updatePaletteIndex();
+			changedColor();
 			return;
 		}
 	}
@@ -126,6 +127,7 @@ function selectTool(name) {
 	tool.call("select");
 	updateToolWindow(name);
 	mouse.validClick = false;
+	clientFx.type = tool.fxType;
 	updateClientFx(true);
 }
 
@@ -136,8 +138,8 @@ function updateClientFx(force) {
 	var tileY   = Math.floor(mouse.worldY / 16);
 	var rgb = player.selectedColor;
 	    rgb = color.u24_888(rgb[2], rgb[1], rgb[0]);
-	var tool = tools[toolSelected];
-	if (tool !== undefined && (fxtileX !== tileX || fxtileY !== tileY || force)) {
+	var tool = toolSelected;
+	if (tool && (fxtileX !== tileX || fxtileY !== tileY || force)) {
 		var valid = misc.world !== null && misc.world.validMousePos(tileX, tileY);
 		if (valid) {
 			clientFx.update(tool.fxType, tileX, tileY, {color: rgb});
@@ -150,18 +152,27 @@ function updateClientFx(force) {
 	return false;
 }
 
-eventSys.on(e.net.sec.rank, rank => {
-	switch (rank) {
+eventSys.on(e.misc.toolsInitialized, () => {
+	player.tool = "cursor";
+});
+
+eventSys.on(e.net.sec.rank, newRank => {
+	rank = newRank;
+	switch (newRank) {
 		case RANK.NONE:
 			break;
 
 		case RANK.USER:
+			showDevChat(false);
 			break;
 
 		case RANK.ADMIN:
 			showDevChat(true);
+			net.protocol.placeBucket.time = 0;
+			net.protocol.chatBucket.time = 0;
 			break;
 	}
+	updateToolbar();
 });
 
 eventSys.once(e.init, () => {
