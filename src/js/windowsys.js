@@ -242,7 +242,6 @@ export function delWindow(window) {
 	if(windowSys.windows[realWindow.title]) {
 		elements.windows.removeChild(realWindow.frame);
 		delete windowSys.windows[realWindow.title];
-		window.close();
 	}
 	return window;
 }

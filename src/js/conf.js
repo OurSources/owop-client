@@ -16,6 +16,7 @@ export const RANK = {
 export const EVENTS = {
 	loaded: ++evtId,
 	init: ++evtId,
+	tick: ++evtId,
 	misc: {
 		toolsRendered: ++evtId,
 		toolsInitialized: ++evtId,
@@ -64,7 +65,7 @@ export const EVENTS = {
 
 export const options = {
 	serverAddress: [{
-		default: false,
+		default: true,
 		title: 'Official server',
 		proto: 'old',
 		url: 'ws://ourworldofpixels.com:443'

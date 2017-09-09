@@ -1,6 +1,6 @@
 'use strict';
 import { PublicAPI, eventSys } from './global.js';
-import { EVENTS as e, protocol, options } from './conf.js';
+import { EVENTS as e, protocol, options, RANK } from './conf.js';
 import { cursors } from './tool_renderer.js';
 import { net } from './networking.js';
 import { player } from './local_player.js';
@@ -10,6 +10,7 @@ import { misc, elements, mouse } from './main.js';
 
 export const tools = {};
 export let toolsWindow = null;
+let windowShown = false;
 
 PublicAPI.tools = tools;
 
@@ -20,13 +21,11 @@ export function updateToolWindow(name) {
 	let tool = tools[name];
 	var children = toolsWindow.container.children;
 	for (var i = 0; i < children.length; i++) {
-		children[i].className = "";
-		children[i].children[0].style.backgroundImage = "url(" + cursors.set.src + ")";
+		var button = children[i];
+		var isSelected = button.id.split('-')[1] === name;
+		button.className = isSelected ? 'selected' : '';
+		button.children[0].style.backgroundImage = "url(" + (isSelected ? cursors.slotset : cursors.set.src) + ")";
 	}
-	var element = document.getElementById("tool-" + name);
-	var container = element.children[0];
-	container.style.backgroundImage = "url(" + cursors.slotset + ")";
-	element.className = "selected";
 	elements.viewport.style.cursor = "url(" + tool.cursorblob + ") " + tool.offset[0] + " " + tool.offset[1] + ", pointer";
 }
 
@@ -39,7 +38,7 @@ export function updateToolbar(win = toolsWindow) {
 	// Add tools to the tool-select menu
 	for (const name in tools) {
 		var tool = tools[name];
-		if (!tool.adminTool || player.rank === "ADMIN") {
+		if (!tool.adminTool || player.rank === RANK.ADMIN) {
 			var element = document.createElement("button");
 			var mask = document.createElement("div");
 			element.id = "tool-" + name;
@@ -57,8 +56,20 @@ export function updateToolbar(win = toolsWindow) {
 	}
 }
 
+export function showToolsWindow(bool) {
+	if (windowShown !== bool) {
+		if (bool && toolsWindow) {
+			windowSys.addWindow(toolsWindow);
+		} else if (toolsWindow) {
+			windowSys.delWindow(toolsWindow);
+		}
+		windowShown = bool;
+	}
+}
+
 class Tool {
-    constructor(cursor, fxType, isAdminTool, onInit) {
+    constructor(name, cursor, fxType, isAdminTool, onInit) {
+		this.name = name;
         this.fxType = fxType;
         this.cursorblob = cursor.img.shadowblob;
         this.cursor = cursor.img.shadowed;
@@ -105,7 +116,7 @@ class Tool {
 
 eventSys.once(e.misc.toolsRendered, () => {
 	// Cursor tool
-	tools['cursor'] = new Tool(cursors.cursor, 0, false,
+	tools['cursor'] = new Tool('cursor', cursors.cursor, 0, false,
 		tool => {
 			function draw(tileX, tileY, color) {
 				var pixel = misc.world.getPixel(tileX, tileY);
@@ -127,7 +138,10 @@ eventSys.once(e.misc.toolsRendered, () => {
 					draw(tileX, tileY, color);
 					break;
 				case 4:
-					player.selectedColor = pixel;
+					var pixel = misc.world.getPixel(tileX, tileY);
+					if (pixel) {
+						player.selectedColor = pixel;
+					}
 					break;
 				}
 			});
@@ -135,7 +149,7 @@ eventSys.once(e.misc.toolsRendered, () => {
 	);
 	
 	// Move tool
-	tools['move'] = new Tool(cursors.move, -1, false,
+	tools['move'] = new Tool('move', cursors.move, -1, false,
 		tool => {
 			var extra = tool.extra;
 			function move(x, y, isDrag) {
@@ -156,7 +170,7 @@ eventSys.once(e.misc.toolsRendered, () => {
 	);
 	
 	// Pipette tool
-	tools['pipette'] = new Tool(cursors.pipette, -1, false,
+	tools['pipette'] = new Tool('pipette', cursors.pipette, -1, false,
 		tool => {
 			tool.setEvent("click", (x, y, buttons, isDrag) => {
 				var tileX = Math.floor(camera.x + (x / camera.zoom));
@@ -171,7 +185,7 @@ eventSys.once(e.misc.toolsRendered, () => {
 	);
 	
 	// Erase/Fill tool
-	tools['erase'] = new Tool(cursors.fill, 3, true,
+	tools['erase'] = new Tool('erase', cursors.erase, 3, true,
 		tool => {
 			/*var chunk16X = Math.floor((camera.x + (x / camera.zoom)) / protocol.chunkSize);
 			var chunk16Y = Math.floor((camera.y + (y / camera.zoom)) / protocol.chunkSize);
@@ -206,39 +220,39 @@ eventSys.once(e.misc.toolsRendered, () => {
 	);
 	
 	// Zoom tool
-	tools['zoom'] = new Tool(cursors.zoom, -1, false,
+	tools['zoom'] = new Tool('zoom', cursors.zoom, -1, false,
 		tool => {
 			function zoom(x, y, buttons, isDrag) {
 				if (!isDrag) {
 					var lzoom = camera.zoom;
 					var offX = 0;
 					var offY = 0;
+					var w = window.innerWidth;
+					var h = window.innerHeight;
 					if (buttons === 1 && camera.zoom * (1 + options.zoomStrength) <= options.zoomLimitMax) {
 						// Zoom in
 						camera.zoom *= 1 + options.zoomStrength;
-						offX = mouse.x / camera.zoom;
-						offY = mouse.y / camera.zoom;
+						offX = (mouse.x - w / 2) / camera.zoom;
+						offY = (mouse.y - h / 2) / camera.zoom;
 					} else if (buttons === 2 && camera.zoom / (1 + options.zoomStrength) >= options.zoomLimitMin) {
 						// Zoom out
 						camera.zoom /= 1 + options.zoomStrength;
-						offX = mouse.x * (3 / lzoom - 2 / camera.zoom);
-						offY = mouse.y * (3 / lzoom - 2 / camera.zoom);
+						offX = (mouse.x - w / 2) * (3 / lzoom - 2 / camera.zoom);
+						offY = (mouse.y - h / 2) * (3 / lzoom - 2 / camera.zoom);
 					} else if (buttons === 3) {
 						// Reset zoom (right + left click)
 						camera.zoom = options.defaultZoom;
 					}
-					moveCameraBy(camera.x + offX, camera.y + offY);
+					moveCameraBy(offX, offY);
 				}
 			}
 			
 			tool.setEvent("click", zoom);
 			tool.setEvent("touch", (touches, type) => {
 				var lzoom = camera.zoom;
-				if (type === 0 && touches[0].identifier === 1 && camera.zoom / (1 + options.zoomStrength) >= options.zoomLimitMin) {
+				if (type === 0 && touches[0].identifier === 1) {
 					// Zoom out
-					camera.zoom /= 1 + this.options.zoomStrength;
-					camera.x += this.mouse.x * (3 / lzoom - 2 / this.camera.zoom);
-					camera.y += this.mouse.y * (3 / lzoom - 2 / this.camera.zoom);
+					zoom()
 				}
 				/*if (lzoom !== this.camera.zoom) {
 					camera.zoom = 
@@ -251,8 +265,21 @@ eventSys.once(e.misc.toolsRendered, () => {
 });
 
 eventSys.once(e.misc.toolsInitialized, () => {
-	toolsWindow = windowSys.addWindow(new GUIWindow('Tools', {}, wdow => {
+	toolsWindow = new GUIWindow('Tools', {}, wdow => {
 		wdow.container.id = "toole-container";
+		wdow.container.style = "max-width: 40px";
 		updateToolbar(wdow);
-	}).move(5, 32));
+	}).move(5, 32);
+
+	if (windowShown) {
+		windowSys.addWindow(toolsWindow);
+	}
+});
+
+eventSys.on(e.net.disconnected, () => {
+	showToolsWindow(false);
+});
+
+eventSys.on(e.net.world.join, () => {
+	showToolsWindow(true);
 });

@@ -20,7 +20,7 @@ function loadCaptcha(onload) {
 }
 
 function requestVerification() {
-	windowSys.addWindow(new GUIWindow(0, 0, 250, 70, "Verification needed", {
+	windowSys.addWindow(new GUIWindow("Verification needed", {
 			centered: true
 	}, wdow => {
 		var id = grecaptcha.render(wdow.addObj(mkHTML("div", {

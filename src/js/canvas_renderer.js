@@ -6,6 +6,7 @@ import { player } from './local_player.js';
 import { activeFx, FXTYPE } from './Fx.js';
 import { getTime } from './util/misc.js';
 import { Lerp } from './util/Lerp.js';
+import { tools } from './tools.js';
 
 export { centerCameraTo, moveCameraBy, moveCameraTo };
 
@@ -188,7 +189,7 @@ function render(type) {
 			ctx.globalAlpha = 1;
 			var players = misc.world.players;
 			for (var p in players) {
-				if (!players[p].render()) {
+				if (!renderPlayer(players[p])) {
 					needsRender |= renderer.rendertype.FX;
 				}
 			}
@@ -262,10 +263,10 @@ function renderPlayer(targetPlayer) {
 	var zoom = camera.zoom;
 	var ctx  = rendererValues.animContext;
 	var cnvs = ctx.canvas;
-	var tool = targetPlayer.tool;
+	var tool = tools[targetPlayer.tool];
 	if (!tool) {
 		/* Render the default tool if the selected one isn't defined */
-		tool = player.tools[0];
+		tool = tools['cursor'];
 	}
 	var toolwidth = tool.cursor.width / 16 * zoom;
 	var toolheight = tool.cursor.height / 16 * zoom;

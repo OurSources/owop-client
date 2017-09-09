@@ -1,11 +1,13 @@
 'use strict';
 import { Protocol } from './Protocol.js';
-import { EVENTS as e, RANK } from './../conf.js';
+import { EVENTS as e, RANK, options } from './../conf.js';
 import { eventSys } from './../global.js';
 import { Chunk } from './../World.js';
 import { Bucket } from './../util/Bucket.js';
 import { loadAndRequestCaptcha } from './../captcha.js';
-import { colorUtils as color } from './../util/color.js'
+import { colorUtils as color } from './../util/color.js';
+import { player, shouldUpdate } from './../local_player.js';
+import { mouse } from './../main.js';
 
 export const captchaState = {
 	CA_WAITING: 0,
@@ -23,6 +25,14 @@ export const OldProtocol = {
     worldBorder: 0xFFFFF,
     chatBucket: [4, 6],
     placeBucket: [32, 4],
+    tools: {
+        id: {}, /* Generated automatically */
+        0: 'cursor',
+        1: 'move',
+        2: 'pipette',
+        3: 'erase',
+        4: 'zoom' /* Not supported server-side atm */
+    },
     misc: {
         worldVerification: 1337,
         chatVerification: String.fromCharCode(10),
@@ -42,6 +52,12 @@ export const OldProtocol = {
         }
     }
 };
+
+for (const id in OldProtocol.tools) {
+    if (Number.isInteger(+id)) {
+        OldProtocol.tools.id[OldProtocol.tools[id]] = id;
+    }
+}
 
 function stoi(string, max) {
 	var ints = [];
@@ -73,10 +89,17 @@ class OldProtocolImpl extends Protocol {
         this.chatBucket = new Bucket(params[0], params[1]);
         params = OldProtocol.placeBucket;
         this.placeBucket = new Bucket(params[0], params[1]);
+
+        this.interval = null;
+
+        eventSys.once(e.net.world.join, () => {
+            this.interval = setInterval(() => this.sendUpdates(), 1000 / options.netUpdateSpeed);
+        });
     }
 
-    openHandler() {
-        super.openHandler();
+    closeHandler() {
+        super.closeHandler();
+        clearInterval(this.interval);
     }
 
     messageHandler(message) {
@@ -120,7 +143,7 @@ class OldProtocolImpl extends Protocol {
                         x: pmx,
                         y: pmy,
                         rgb: [pr, pg, pb],
-                        tool: ptool
+                        tool: OldProtocol.tools[ptool]
                     };
 	  				if (pid !== this.id && !this.players[pid]) {
 						++this.playercount;
@@ -262,7 +285,6 @@ class OldProtocolImpl extends Protocol {
             dv.setUint8(8, rgb[0]);
             dv.setUint8(9, rgb[1]);
             dv.setUint8(10, rgb[2]);
-            //dv.setUint8(10, 255);
             this.ws.send(array);
             return true;
         }
@@ -270,7 +292,28 @@ class OldProtocolImpl extends Protocol {
     }
         
     sendUpdates() {
-    
+        var worldx = mouse.worldX;
+        var worldy = mouse.worldY;
+        var lastx = mouse.lastWorldX;
+        var lasty = mouse.lastWorldY;
+        if (shouldUpdate() || (worldx != lastx || worldy != lasty)) {
+            var selrgb = player.selectedColor;
+            mouse.lastWorldX = worldx;
+            mouse.lastWorldY = worldy;
+            // Send mouse position
+            var array = new ArrayBuffer(12);
+            var dv = new DataView(array);
+            dv.setInt32(0, worldx, true);
+            dv.setInt32(4, worldy, true);
+            dv.setUint8(8, selrgb[0]);
+            dv.setUint8(9, selrgb[1]);
+            dv.setUint8(10, selrgb[0]);
+            var tool = player.tool;
+            var toolId = tool !== null ? +OldProtocol.tools.id[tool.name] : 0;
+            /* Ugly workaround for the non supported zoom tool */
+            dv.setUint8(11, toolId === 4 ? 0 : toolId);
+            this.ws.send(array);
+        }
     }
         
     sendMessage(str) {

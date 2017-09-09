@@ -22,6 +22,7 @@ export const undoHistory = [];
 const clientFx = new Fx(-1, 0, 0, { color: 0 });
 
 let rank = RANK.NONE;
+let somethingChanged = false;
 
 export const player = {
 	get paletteIndex() { return paletteIndex; },
@@ -40,23 +41,19 @@ export const player = {
 		selectTool(name);
 	},
 	get toolId() { return tools[toolSelected].id; }, /* TODO */
-	get tools() { return tools; },
-	getToolById: getToolById
+	get tools() { return tools; }
 };
 
 PublicAPI.player = player;
 
-function getToolById(id) {
-	for (var t in tools) {
-		if (tools[t].id === id) {
-			return tools[t];
-		}
-	}
+export function shouldUpdate() { /* sets colorChanged to false when called */
+	return somethingChanged ? !(somethingChanged = false) : somethingChanged;
 }
 
 function changedColor() {
 	updateClientFx(true);
 	updatePaletteIndex();
+	somethingChanged = true;
 }
 
 function updatePalette() {
@@ -128,6 +125,7 @@ function selectTool(name) {
 	updateToolWindow(name);
 	mouse.validClick = false;
 	clientFx.type = tool.fxType;
+	somethingChanged = true;
 	updateClientFx(true);
 }
 
@@ -170,6 +168,7 @@ eventSys.on(e.net.sec.rank, newRank => {
 			showDevChat(true);
 			net.protocol.placeBucket.time = 0;
 			net.protocol.chatBucket.time = 0;
+			updateToolbar();
 			break;
 	}
 	updateToolbar();

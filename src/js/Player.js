@@ -1,12 +1,13 @@
 'use strict';
 import { Lerp } from './util/Lerp.js';
 import { colorUtils as color } from './util/color.js';
+import { Fx } from './Fx.js';
 
-class Player {
+export class Player {
     constructor(x, y, rgb, tool, id) {
         this.id   = id.toString(); /* Prevents calling .toString every frame */
-        this._x    = new Lerp(x, x, 50);
-        this._y    = new Lerp(y, y, 50);
+        this._x    = new Lerp(x, x, 65);
+        this._y    = new Lerp(y, y, 65);
         this.tool = tool;
 
         this.clr = (((id + 75387) * 67283 + 53143) % 256) << 16
@@ -16,11 +17,10 @@ class Player {
     
         this.rgb    = rgb;
     
-        var fl = Math.floor;
         var toolfx = null; /* TODO */
         toolfx = toolfx ? toolfx.fxType : -1;
         /* TODO: Lerp Fx position */
-        this.fx = new Fx(toolfx, fl(x / 16), fl(y / 16), {color: this.rgb});
+        this.fx = new Fx(toolfx, Math.floor(x / 16), Math.floor(y / 16), {color: this.rgb});
     }
 
     get endX() {
@@ -39,13 +39,13 @@ class Player {
         return this._y.val;
     }
 
-    update(x, y, rgb, tool, t) {
-        this._x = x;
-        this._y = y;
+    update(x, y, rgb, tool) {
+        this._x.val = x;
+        this._y.val = y;
         this.tool = tool;
         this.rgb = rgb;
         let toolfx = -1;
-        this.fx.update(toolfx, fl(x / 16), fl(y / 16), {color: this.rgb});
+        this.fx.update(toolfx, Math.floor(x / 16), Math.floor(y / 16), {color: this.rgb});
     }
 
     disconnect() {

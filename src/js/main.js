@@ -19,7 +19,7 @@ import { net } from './networking.js';
 import { updateClientFx, player } from './local_player.js';
 import { resolveProtocols } from './protocol/all.js'
 
-export { showDevChat };
+export { showDevChat, statusMsg };
 
 export const keysDown = {};
 
@@ -51,6 +51,8 @@ PublicAPI.events = eventSys;
 PublicAPI.elements = elements;
 
 export const misc = {
+	exceptionTimeout: null,
+	tick: 0,
 	urlWorldName: null,
 	connecting: false,
 	tickInterval: null,
@@ -114,6 +116,7 @@ function clearChat() {
 
 
 function tick() {
+	var tickNum = ++misc.tick;
 	var offX = 0;
 	var offY = 0;
 	var offZoom = 0;
@@ -142,6 +145,8 @@ function tick() {
 		camera.zoom = camera.zoom + offZoom;
 		movedMouse(mouse.x, mouse.y, mouse.validClick ? 1 : 0);
 	}
+
+	eventSys.emit(e.tick, tickNum);
 }
 
 function movedMouse(x, y, btns) {
@@ -594,7 +599,10 @@ window.addEventListener("error", e => {
 		receiveDevMessage(errmsg[i]);
 	}
 	if (!misc.isAdmin) { /* TODO */
-		setTimeout(() => showDevChat(false), 5000);
+		if (misc.exceptionTimeout) {
+			clearTimeout(misc.exceptionTimeout);
+		}
+		misc.exceptionTimeout = setTimeout(() => showDevChat(false), 5000);
 	}
 });
 
