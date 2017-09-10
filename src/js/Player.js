@@ -2,6 +2,7 @@
 import { Lerp } from './util/Lerp.js';
 import { colorUtils as color } from './util/color.js';
 import { Fx, FXTYPE } from './Fx.js';
+import { tools } from './tools.js';
 
 export class Player {
     constructor(x, y, rgb, tool, id) {
@@ -16,11 +17,11 @@ export class Player {
         this.clr = color.toHTML(this.clr);
     
         this.rgb    = rgb;
-    
-        var toolfx = null; /* TODO */
-        toolfx = toolfx ? toolfx.fxType : FXTYPE.NONE;
+        
+        tool = tools[tool];
+        var toolfx = tool ? tool.fxType : FXTYPE.NONE;
         /* TODO: Lerp Fx position */
-        this.fx = new Fx(toolfx, Math.floor(x / 16), Math.floor(y / 16), {color: this.rgb});
+        this.fx = new Fx(toolfx, Math.floor(x / 16), Math.floor(y / 16), {color: color.u24_888(rgb[2], rgb[1], rgb[0])});
     }
 
     get endX() {
@@ -44,8 +45,9 @@ export class Player {
         this._y.val = y;
         this.tool = tool;
         this.rgb = rgb;
-        let toolfx = -1;
-        this.fx.update(toolfx, Math.floor(x / 16), Math.floor(y / 16), {color: this.rgb});
+        tool = tools[tool];
+        let toolfx = tool ? tool.fxType : FXTYPE.NONE;
+        this.fx.update(toolfx, Math.floor(x / 16), Math.floor(y / 16), {color: color.u24_888(rgb[2], rgb[1], rgb[0])});
     }
 
     disconnect() {
