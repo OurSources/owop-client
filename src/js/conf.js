@@ -22,9 +22,7 @@ export const EVENTS = {
 		toolsInitialized: ++evtId,
 		logoMakeRoom: ++evtId,
 		worldInitialized: ++evtId,
-		windowAdded: ++evtId
-	},
-	captcha: {
+		windowAdded: ++evtId,
 		captchaToken: ++evtId
 	},
 	renderer: {

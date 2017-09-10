@@ -132,7 +132,10 @@ class OldProtocolImpl extends Protocol {
                 var updates = {};
 				for (var i = dv.getUint8(1); i--;) {
                     updated = true;
-  					var pid = dv.getUint32(2 + i * 16, true);
+                    var pid = dv.getUint32(2 + i * 16, true);
+                    if (pid === this.id) {
+                        continue;
+                    }
 	  				var pmx = dv.getInt32(2 + i * 16 + 4, true);
 	  				var pmy = dv.getInt32(2 + i * 16 + 8, true);
 	  				var pr = dv.getUint8(2 + i * 16 + 12);
@@ -145,7 +148,7 @@ class OldProtocolImpl extends Protocol {
                         rgb: [pr, pg, pb],
                         tool: OldProtocol.tools[ptool]
                     };
-	  				if (pid !== this.id && !this.players[pid]) {
+	  				if (!this.players[pid]) {
 						++this.playercount;
 						eventSys.emit(e.net.playerCount, this.playercount);
 	  					this.players[pid] = true;
@@ -236,7 +239,7 @@ class OldProtocolImpl extends Protocol {
                 switch (dv.getUint8(1)) {
                     case captchaState.CA_WAITING:
                         loadAndRequestCaptcha();
-                        eventSys.once(e.captcha.captchaToken, token => {
+                        eventSys.once(e.misc.captchaToken, token => {
                             let message = OldProtocol.misc.tokenVerification + token;
                             this.ws.send(message);
                         });
@@ -244,6 +247,7 @@ class OldProtocolImpl extends Protocol {
 
                     case captchaState.CA_OK:
                        this.worldName = this.joinWorld(this.worldName);
+                       break;
                 }
 				break;
 		}

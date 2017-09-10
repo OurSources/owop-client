@@ -3,7 +3,7 @@ import { protocol, EVENTS as e } from './conf.js';
 import { eventSys } from './global.js';
 import { colorUtils } from './util/color.js';
 import { net } from './networking.js';
-import { camera, isVisible } from './canvas_renderer.js';
+import { camera, isVisible, renderer } from './canvas_renderer.js';
 import { mouse } from './main.js';
 import { Player } from './Player.js';
 
@@ -56,6 +56,7 @@ export class World {
 		const disconnectedFunc = () => eventSys.emit(e.net.world.leave);
 		const updateTileFunc = t => this.tilesUpdated(t);
 		const updatePlayerFunc = p => this.playersMoved(p);
+		const destroyPlayerFunc = p => this.playersLeft(p);
 		const leaveWFunc = () => {
 			this.unloadAllChunks();
 			eventSys.removeListener(e.net.chunk.load, loadCFunc);
@@ -64,12 +65,14 @@ export class World {
 			eventSys.removeListener(e.net.disconnected, disconnectedFunc);
 			eventSys.removeListener(e.net.world.tilesUpdated, updateTileFunc);
 			eventSys.removeListener(e.net.world.playersMoved, updatePlayerFunc);
+			eventSys.removeListener(e.net.world.playersLeft, destroyPlayerFunc);
 		};
 		eventSys.on(e.net.chunk.load, loadCFunc);
 		eventSys.on(e.net.chunk.unload, unloadCFunc);
 		eventSys.on(e.net.chunk.clear, clearCFunc);
 		eventSys.on(e.net.world.tilesUpdated, updateTileFunc);
 		eventSys.on(e.net.world.playersMoved, updatePlayerFunc);
+		eventSys.on(e.net.world.playersLeft, destroyPlayerFunc);
 		eventSys.once(e.net.world.leave, leaveWFunc);
 		eventSys.once(e.net.disconnected, disconnectedFunc);
 	}
@@ -124,14 +127,36 @@ export class World {
 	}
 
 	playersMoved(players) {
+		var rendered = false;
 		for (const id in players) {
 			var player = this.players[id];
 			var u = players[id];
 			if (player) {
 				player.update(u.x, u.y, u.rgb, u.tool);
 			} else {
-				this.players[id] = new Player(u.x, u.y, u.rgb, u.tool, id);
+				player = this.players[id] = new Player(u.x, u.y, u.rgb, u.tool, id);
 			}
+			if (!rendered && (isVisible(player.endX / 16, player.endY / 16, 4, 4)
+					|| isVisible(player.x / 16, player.y / 16, 4, 4))) {
+				rendered = true;
+				renderer.render(renderer.rendertype.FX);
+			}
+		}
+	}
+
+	playersLeft(ids) {
+		var rendered = false;
+		for (var i = 0; i < ids.length; i++) {
+			var id = ids[i];
+			var player = this.players[id];
+			if (player) {
+				player.disconnect();
+				if (!rendered && isVisible(player.x / 16, player.y / 16, 4, 4)) {
+					rendered = true;
+					renderer.render(renderer.rendertype.FX);
+				}
+			}
+			delete this.players[id];
 		}
 	}
 

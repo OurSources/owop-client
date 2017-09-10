@@ -8,7 +8,7 @@ import { getTime } from './util/misc.js';
 import { Lerp } from './util/Lerp.js';
 import { tools } from './tools.js';
 
-export { centerCameraTo, moveCameraBy, moveCameraTo };
+export { centerCameraTo, moveCameraBy, moveCameraTo, isVisible };
 
 /* oh boy, i'm going to get shit for making this private, aren't i?  */
 const cameraValues = {
@@ -45,7 +45,7 @@ const rendererValues = {
 	clusters: {}
 };
 
-// PublicAPI.rval = rendererValues;
+PublicAPI.rval = rendererValues;
 
 export const renderer = {
 	rendertype: {
@@ -188,8 +188,11 @@ function render(type) {
 			}
 			ctx.globalAlpha = 1;
 			var players = misc.world.players;
+			var fontsize = 10 / 16 * zoom | 0;
+			ctx.font = fontsize + "px sans-serif";
 			for (var p in players) {
-				if (!renderPlayer(players[p])) {
+				var player = players[p];
+				if (!renderPlayer(player, fontsize)) {
 					needsRender |= renderer.rendertype.FX;
 				}
 			}
@@ -199,7 +202,6 @@ function render(type) {
 	if (type & renderer.rendertype.VIEWPORT) {
 		elements.clusterDiv.style.transform = "scale(" + zoom + ") translate(" + (-camera.x) + "px," + (-camera.y) + "px)";
 	}
-
 	requestRender(needsRender);
 }
 
@@ -226,12 +228,11 @@ function renderFx(fx, time) { /* Move this to Fx proto maybe */
 		context.strokeRect(fxx, fxy, zoom, zoom);
 		break;
 
-		case FXTYPE.PIXEL_UPDATE:
+	case FXTYPE.PIXEL_UPDATE:
 		var alpha = 1 - (time - fx.options.time) / 1000;
 		if (alpha <= 0) {
 			fx.delete();
 			return 2; /* 2 = An FX object was deleted */
-			break;
 		}
 		context.globalAlpha = alpha;
 		context.strokeStyle = fx.options.colorhex;
@@ -257,7 +258,7 @@ function renderFx(fx, time) { /* Move this to Fx proto maybe */
 	return 1;
 }
 
-function renderPlayer(targetPlayer) {
+function renderPlayer(targetPlayer, fontsize) {
 	var camx = camera.x * 16;
 	var camy = camera.y * 16;
 	var zoom = camera.zoom;
@@ -281,12 +282,11 @@ function renderPlayer(targetPlayer) {
 		return true;
 	}
 
-	var fontsize = 10 / 16 * zoom | 0;
+	
 	if (fontsize > 3) {
 		var idstr = targetPlayer.id;
 		var textw = ctx.measureText(idstr).width + (zoom / 2);
 		
-		ctx.font = fontsize + "px sans-serif";
 		ctx.globalAlpha = 1;
 		ctx.fillStyle = targetPlayer.clr;
 		ctx.fillRect(cx, cy + toolheight, textw, zoom);
@@ -299,7 +299,8 @@ function renderPlayer(targetPlayer) {
 	}
 
 	ctx.drawImage(tool.cursor, cx, cy, toolwidth, toolheight);
-	return x === player.endX && y === player.endY;
+
+	return x === targetPlayer.endX && y === targetPlayer.endY;
 }
 
 function requestRender(type) {
@@ -451,7 +452,6 @@ eventSys.on(e.renderer.rmChunk, chunk => {
 		cluster.delChunk(chunk);
 		if (!cluster.removed) {
 			rendererValues.updatedClusters.push(cluster);
-			requestRender(renderer.rendertype.WORLD);
 		}
 	}
 });
@@ -464,6 +464,8 @@ eventSys.on(e.renderer.updateChunk, chunk => {
 	if (cluster && !cluster.toUpdate) {
 		cluster.toUpdate = true;
 		rendererValues.updatedClusters.push(cluster);
+	}
+	if (isVisible(chunk.x * protocol.chunkSize, chunk.y * protocol.chunkSize, protocol.chunkSize, protocol.chunkSize)) {
 		requestRender(renderer.rendertype.WORLD);
 	}
 });
@@ -486,5 +488,5 @@ eventSys.once(e.init, () => {
 		}
 		window.requestAnimationFrame(frameLoop);
 	}
-	frameLoop();
+	eventSys.once(e.misc.toolsInitialized, frameLoop);
 });

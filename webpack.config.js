@@ -11,7 +11,8 @@ const config = {
 	},
 	output: {
 		filename: '[name].js',
-		path: `${__dirname}/dist`
+		path: `${__dirname}/dist`,
+		publicPath: '/'
 	},
 	devServer: {
 		contentBase: `${__dirname}/dist`
@@ -34,7 +35,8 @@ const config = {
 		new HtmlWebpackPlugin({
 			title: 'World of Pixels',
 			inject: 'head',
-			template: `${srcDir}/index.ejs`
+			template: `${srcDir}/index.ejs`,
+			favicon: `${srcDir}/favicon.ico`
 		}),
 		new ScriptExtHtmlWebpackPlugin({
 			defaultAttribute: 'defer'
@@ -52,7 +54,7 @@ module.exports = async env => {
 	}
 
 	/* Copy the following files/directories from the src folder to the dist folder */
-	await Promise.all(['favicon.ico', 'css', 'img']
+	await Promise.all(['img', 'css', 'font']
 		.map(file => fs.copy(`${srcDir}/${file}`, `${config.output.path}/${file}`)));
 
 	return config;

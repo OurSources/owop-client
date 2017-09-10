@@ -2,11 +2,13 @@
 import { elements } from './main.js';
 import { EVENTS as e } from './conf.js';
 import { PublicAPI, eventSys } from './global.js';
+import { mkHTML } from './util/misc.js';
 
 export const windowSys = {
 	windows: {},
 	class: {
 		input: UtilInput,
+		dialog: UtilDialog,
 		dropDown: OWOPDropDown,
 		window: GUIWindow
 	},
@@ -18,7 +20,7 @@ export const windowSys = {
 PublicAPI.windowSys = windowSys;
 
 export function UtilInput(title, message, inputType, cb) {
-	this.win = new GUIWindow(0, 0, 200, 60, title, {
+	this.win = new GUIWindow(title, {
 		centered: true,
 		closeable: true
 	}, function(win) {
@@ -40,16 +42,41 @@ export function UtilInput(title, message, inputType, cb) {
 				this.getWindow().close();
 			}.bind(this)
 		}));
-	}.bind(this));
+	}.bind(this)).resize(200, 60);
 }
 
 UtilInput.prototype.getWindow = function() {
 	return this.win;
 };
 
+export function UtilDialog(title, message, canClose, cb) {
+	this.win = new GUIWindow(title, {
+		centered: true,
+		closeable: canClose
+	}, function(win) {
+		this.messageBox = win.addObj(mkHTML("span", {
+			className: "whitetext",
+			style: "display: block; padding-bottom: 4px;",
+			innerHTML: message
+		}));
+		this.okButton = win.addObj(mkHTML("button", {
+			innerHTML: "OK",
+			style: "display: block; width: 80px; height: 30px; margin: auto;",
+			onclick: function() {
+				cb();
+				this.getWindow().close();
+			}.bind(this)
+		}));
+	}.bind(this));
+}
+
+UtilDialog.prototype.getWindow = function() {
+	return this.win;
+};
+
 /* Highly specific purpose, should only be created once */
 export function OWOPDropDown() {
-	this.win = new GUIWindow(0, 0, 68, 122, null, {
+	this.win = new GUIWindow(null, {
 		immobile: true
 	},
 	function(win) {
@@ -88,7 +115,7 @@ export function OWOPDropDown() {
 				width: 100%; height: 100%;",
 			onclick: function() {console.log("help")}.bind(this)
 		}));
-	});
+	}).resize(68, 122);
 }
 
 OWOPDropDown.prototype.getWindow = function() {
@@ -217,7 +244,7 @@ GUIWindow.prototype.resize = function(w, h){
 };
 
 GUIWindow.prototype.close = function() {
-	this.wm.delWindow(this);
+	delWindow(this);
 	window.removeEventListener("mousemove", this.mmovefunc);
 	window.removeEventListener("mouseup", this.mupfunc);
 	this.frame.removeEventListener("mousedown", this.mdownfunc);

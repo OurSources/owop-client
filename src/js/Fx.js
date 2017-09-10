@@ -53,13 +53,17 @@ export class Fx {
 
 eventSys.on(e.net.world.tilesUpdated, tiles => {
 	let time = getTime(true);
+	let made = false;
 	for (var i = 0; i < tiles.length; i++) {
 		var t = tiles[i];
 		if (camera.isVisible(t.x, t.y, 1, 1)) {
 			new Fx(FXTYPE.PIXEL_UPDATE, t.x, t.y, {color: t.rgb ^ 0xFFFFFF, time: time});
+			made = true;
 		}
 	}
-	renderer.render(renderer.rendertype.FX);
+	if (made) {
+		renderer.render(renderer.rendertype.FX);
+	}
 });
 
 eventSys.on(e.net.chunk.clear, (chunkX, chunkY) => {

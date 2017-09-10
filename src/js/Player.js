@@ -1,7 +1,7 @@
 'use strict';
 import { Lerp } from './util/Lerp.js';
 import { colorUtils as color } from './util/color.js';
-import { Fx } from './Fx.js';
+import { Fx, FXTYPE } from './Fx.js';
 
 export class Player {
     constructor(x, y, rgb, tool, id) {
@@ -18,7 +18,7 @@ export class Player {
         this.rgb    = rgb;
     
         var toolfx = null; /* TODO */
-        toolfx = toolfx ? toolfx.fxType : -1;
+        toolfx = toolfx ? toolfx.fxType : FXTYPE.NONE;
         /* TODO: Lerp Fx position */
         this.fx = new Fx(toolfx, Math.floor(x / 16), Math.floor(y / 16), {color: this.rgb});
     }

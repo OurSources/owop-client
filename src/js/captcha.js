@@ -1,8 +1,9 @@
 'use strict';
 import { EVENTS as e } from './conf.js';
 import { eventSys } from './global.js';
-import { mkHTML, loadScript } from './util/misc.js';
-import { windowSys, GUIWindow } from './windowsys.js';
+import { mkHTML, loadScript, setCookie } from './util/misc.js';
+import { windowSys, GUIWindow, UtilDialog } from './windowsys.js';
+import { misc } from './main.js';
 
 const SITEKEY = "6LcgvScUAAAAAARUXtwrM8MP0A0N70z4DHNJh-KI";
 
@@ -28,8 +29,8 @@ function requestVerification() {
 		})), {
 			theme: "light",
 			sitekey: SITEKEY,
-			callback: e => {
-				eventSys.emit(e.misc.captchaToken, e);
+			callback: token => {
+				eventSys.emit(e.misc.captchaToken, token);
 				wdow.close();
 			}
 		});
@@ -39,5 +40,15 @@ function requestVerification() {
 }
 
 export function loadAndRequestCaptcha() {
-    loadCaptcha(requestVerification);
+	if (misc.showEUCookieNag) {
+		windowSys.addWindow(new UtilDialog('Cookie notice',
+		`This box alerts you that we're going to use cookies!
+		If you don't accept their usage, disable cookies and reload the page.`, false, () => {
+			setCookie('nagAccepted', 'true');
+			misc.showEUCookieNag = false;
+			loadCaptcha(requestVerification);
+		}));
+	} else {
+		loadCaptcha(requestVerification);
+	}
 }

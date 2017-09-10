@@ -7,6 +7,7 @@ import { player } from './local_player.js';
 import { camera, moveCameraTo, moveCameraBy } from './canvas_renderer.js';
 import { windowSys, GUIWindow } from './windowsys.js';
 import { misc, elements, mouse } from './main.js';
+import { FXTYPE } from './Fx.js';
 
 export const tools = {};
 export let toolsWindow = null;
@@ -116,7 +117,7 @@ class Tool {
 
 eventSys.once(e.misc.toolsRendered, () => {
 	// Cursor tool
-	tools['cursor'] = new Tool('cursor', cursors.cursor, 0, false,
+	tools['cursor'] = new Tool('cursor', cursors.cursor, FXTYPE.PIXEL_SELECT, false,
 		tool => {
 			function draw(tileX, tileY, color) {
 				var pixel = misc.world.getPixel(tileX, tileY);
@@ -149,7 +150,7 @@ eventSys.once(e.misc.toolsRendered, () => {
 	);
 	
 	// Move tool
-	tools['move'] = new Tool('move', cursors.move, -1, false,
+	tools['move'] = new Tool('move', cursors.move, FXTYPE.NONE, false,
 		tool => {
 			var extra = tool.extra;
 			function move(x, y, isDrag) {
@@ -170,7 +171,7 @@ eventSys.once(e.misc.toolsRendered, () => {
 	);
 	
 	// Pipette tool
-	tools['pipette'] = new Tool('pipette', cursors.pipette, -1, false,
+	tools['pipette'] = new Tool('pipette', cursors.pipette, FXTYPE.NONE, false,
 		tool => {
 			tool.setEvent("click", (x, y, buttons, isDrag) => {
 				var tileX = Math.floor(camera.x + (x / camera.zoom));
@@ -185,7 +186,7 @@ eventSys.once(e.misc.toolsRendered, () => {
 	);
 	
 	// Erase/Fill tool
-	tools['erase'] = new Tool('erase', cursors.erase, 3, true,
+	tools['erase'] = new Tool('erase', cursors.erase, FXTYPE.CHUNK_UPDATE, true,
 		tool => {
 			/*var chunk16X = Math.floor((camera.x + (x / camera.zoom)) / protocol.chunkSize);
 			var chunk16Y = Math.floor((camera.y + (y / camera.zoom)) / protocol.chunkSize);
@@ -280,6 +281,6 @@ eventSys.on(e.net.disconnected, () => {
 	showToolsWindow(false);
 });
 
-eventSys.on(e.net.world.join, () => {
+eventSys.on(e.misc.worldInitialized, () => {
 	showToolsWindow(true);
 });
