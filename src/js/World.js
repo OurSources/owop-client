@@ -31,9 +31,10 @@ export class Chunk {
 		return this.u32data[y * protocol.chunkSize + x];
 	}
 
-	clear() {
+	set(data) {
 		for (var i = 0; i < this.u32data.length; i++) {
-			this.u32data[i] = 0xFFFFFFFF;
+			var j = 3 * i;
+			this.u32data[i] = 0xFF000000 | data[j + 2] << 16 | data[j + 1] << 8 | data[j];
 		}
 		this.needsRedraw = true;
 	}
@@ -52,16 +53,17 @@ export class World {
 		
 		const loadCFunc = chunk => this.chunkLoaded(chunk);
 		const unloadCFunc = chunk => this.chunkUnloaded(chunk);
-		const clearCFunc = (x, y) => this.chunkCleared(x, y); /* Will probably remove */
+		const setCFunc = (x, y, data) => this.chunkPasted(x, y, data);
 		const disconnectedFunc = () => eventSys.emit(e.net.world.leave);
 		const updateTileFunc = t => this.tilesUpdated(t);
 		const updatePlayerFunc = p => this.playersMoved(p);
 		const destroyPlayerFunc = p => this.playersLeft(p);
 		const leaveWFunc = () => {
 			this.unloadAllChunks();
+			this.playersLeft(Object.keys(this.players));
 			eventSys.removeListener(e.net.chunk.load, loadCFunc);
 			eventSys.removeListener(e.net.chunk.unload, unloadCFunc);
-			eventSys.removeListener(e.net.chunk.clear, clearCFunc);
+			eventSys.removeListener(e.net.chunk.set, setCFunc);
 			eventSys.removeListener(e.net.disconnected, disconnectedFunc);
 			eventSys.removeListener(e.net.world.tilesUpdated, updateTileFunc);
 			eventSys.removeListener(e.net.world.playersMoved, updatePlayerFunc);
@@ -69,7 +71,7 @@ export class World {
 		};
 		eventSys.on(e.net.chunk.load, loadCFunc);
 		eventSys.on(e.net.chunk.unload, unloadCFunc);
-		eventSys.on(e.net.chunk.clear, clearCFunc);
+		eventSys.on(e.net.chunk.set, setCFunc);
 		eventSys.on(e.net.world.tilesUpdated, updateTileFunc);
 		eventSys.on(e.net.world.playersMoved, updatePlayerFunc);
 		eventSys.on(e.net.world.playersLeft, destroyPlayerFunc);
@@ -79,9 +81,8 @@ export class World {
 	
 	loadChunk(x, y) {
 		var key = [x, y].join();
-		if (!this.chunks[key] && net.isConnected() && !this.chunksLoading[key]) {
+		if (!this.chunks[key] && net.isConnected()) {
 			net.protocol.requestChunk(x, y);
-			this.chunksLoading[key] = true;
 		}
 	}
 	
@@ -209,10 +210,10 @@ export class World {
 		eventSys.emit(e.renderer.rmChunk, chunk);
 	}
 
-	chunkCleared(x, y) {
+	chunkPasted(x, y, data) {
 		var chunk = this.chunks[[x, y]];
 		if (chunk) {
-			chunk.clear();
+			chunk.set(data);
 			eventSys.emit(e.renderer.updateChunk, chunk);
 		}
 	}

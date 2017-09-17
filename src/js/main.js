@@ -28,11 +28,13 @@ export const mouse = {
 	y: 0, /* pageY */
 	lastX: 0,
 	lastY: 0,
-	worldX: 0,
-	worldY: 0,
-	lastWorldX: 0,
-	lastWorldY: 0,
-	validClick: false,
+	get worldX() { return camera.x * 16 + this.x / (camera.zoom / 16); },
+	get worldY() { return camera.y * 16 + this.y / (camera.zoom / 16); },
+	mouseDownWorldX: 0,
+	mouseDownWorldY: 0,
+	get tileX() { return Math.floor(this.worldX / 16); },
+	get tileY() { return Math.floor(this.worldY / 16); },
+	buttons: 0,
 	validTile: false,
 	insideViewport: false,
 	touches: []
@@ -143,28 +145,23 @@ function tick() {
 	if (offX !== 0 || offY !== 0 || offZoom !== 0) {
 		moveCameraBy(offX, offY);
 		camera.zoom = camera.zoom + offZoom;
-		movedMouse(mouse.x, mouse.y, mouse.validClick ? 1 : 0);
+		updateMouse(null, 'mousemove', mouse.x, mouse.y);
 	}
 
 	eventSys.emit(e.tick, tickNum);
 }
 
-function movedMouse(x, y, btns) {
-	mouse.x = x;
-	mouse.y = y;
-
-	if (btns && mouse.validClick) {
-		player.tool.call('click', [x, y, btns, true]);
-	}
-
-	mouse.worldX = camera.x * 16 + mouse.x / (camera.zoom / 16);
-	mouse.worldY = camera.y * 16 + mouse.y / (camera.zoom / 16);
+function updateMouse(event, eventName, mouseX, mouseY) {
+	mouse.x = mouseX;
+	mouse.y = mouseY;
 	
-	var tileX = Math.floor(mouse.worldX / 16);
-	var tileY = Math.floor(mouse.worldY / 16);
+	var tool = player.tool;
+	if (tool !== null) {
+		player.tool.call(eventName, [mouse, event]);
 
-	if (updateClientFx()) {
-		updateXYDisplay(tileX, tileY);
+		if (updateClientFx()) {
+			updateXYDisplay(mouse.tileX, mouse.tileY);
+		}
 	}
 }
 
@@ -274,7 +271,7 @@ function statusMsg(showSpinner, message) {
 	if (message === null) {
 		elements.status.style.display = "none";
 		return;
-	} else  {
+	} else {
 		elements.status.style.display = "";
 	}
 	elements.statusMsg.innerHTML = message;
@@ -377,17 +374,21 @@ function init() {
 		}
 	});
 	chatinput.addEventListener("focus", event => {
-		if (!mouse.validClick) {
+		if (!mouse.buttons) {
 			openChat();
 		} else {
 			chatinput.blur();
 		}
 	});
-	
+
 	window.addEventListener("keydown", event => {
 		var keyCode = event.which || event.keyCode;
 		if (document.activeElement.tagName !== "INPUT" && misc.world !== null) {
 			keysDown[keyCode] = true;
+			var tool = player.tool;
+			if (tool !== null && tool.call('keydown', [keysDown, event])) {
+				return false;
+			}
 			switch (keyCode) {
 				case 16: /* Shift */
 					player.tool = "move";
@@ -420,17 +421,21 @@ function init() {
 								prmpt = false;
 							} else if (nrgb[i][0] == '#' && nrgb[i].length == 7) {
 								var colr = parseInt(nrgb[i].replace('#', '0x'));
-								nrgb = [colr & 0xFF, colr >> 8 & 0xFF, colr >> 16 & 0xFF];
+								/* The parsed HTML color doesn't have red as the first byte, so invert it. */
+								nrgb = [colr >> 16 & 0xFF, colr >> 8 & 0xFF, colr & 0xFF];
 								prmpt = false;
 							}
 						}
 						first = false;
 						nrgb[i] = parseInt(nrgb[i]);
 						if(!(Number.isInteger(nrgb[i]) && nrgb[i] >= 0 && nrgb[i] < 256)){
+							valid = false;
 							break; /* Invalid color */
 						}
 					}
-					player.selectedColor = nrgb;
+					if (valid) {
+						player.selectedColor = nrgb;
+					}
 					break;
 
 				case 71: /* G */
@@ -453,10 +458,13 @@ function init() {
 		var keyCode = event.which || event.keyCode;
 		delete keysDown[keyCode];
 		if (document.activeElement.tagName !== "INPUT") {
-			if (keyCode == 13) {
-				elements.chatInput.focus();
-			} else if (keyCode == 16) {
-				player.tool = "cursor";
+			var tool = player.tool;
+			if (!(tool !== null && tool.call('keyup', [keysDown, event]))) {
+				if (keyCode == 13) {
+					elements.chatInput.focus();
+				} else if (keyCode == 16) {
+					player.tool = "cursor";
+				}
 			}
 		}
 	});
@@ -466,20 +474,26 @@ function init() {
 		mouse.lastY = mouse.y;
 		mouse.x = event.pageX;
 		mouse.y = event.pageY;
-		mouse.validClick = true;
+		mouse.mouseDownWorldX = mouse.worldX;
+		mouse.mouseDownWorldY = mouse.worldY;
+		mouse.buttons = event.buttons;
 
-		player.tool.call('click', [event.pageX, event.pageY, event.buttons, false]);
+		var tool = player.tool;
+		if (tool !== null) {
+			player.tool.call('mousedown', [mouse, event]);
+		}
 	});
 
 	window.addEventListener("mouseup", event => {
-		mouse.validClick = false;
+		mouse.buttons = event.buttons;
+		var tool = player.tool;
+		if (tool !== null) {
+			player.tool.call('mouseup', [mouse, event]);
+		}
 	});
 
 	window.addEventListener("mousemove", event => {
-		movedMouse(event.pageX, event.pageY, event.buttons);
-		/*if (mouse.validClick) { // Prevents selection of the chat input placeholder - performance issues?
-			event.preventDefault();
-		}*/
+		updateMouse(event, 'mousemove', event.pageX, event.pageY);
 	});
 
 	const mousewheel = event => {
@@ -497,26 +511,22 @@ function init() {
 	viewport.addEventListener("DOMMouseScroll", mousewheel); /* Firefox */
 	
 	// Touch support
-	viewport.addEventListener("touchstart", event => {
-		player.tool.touch(event.changedTouches, 0);
+	const touchEvent = evtName => event => {
 		var moved = event.changedTouches[0];
 		if (moved) {
-			movedMouse(moved.pageX, moved.pageY, 0);
+			updateMouse(event, evtName, moved.pageX, moved.pageY);
 		}
-	}, { passive: true });
-	viewport.addEventListener("touchmove", event => {
-		player.tool.touch(event.changedTouches, 1);
-		var moved = event.changedTouches[0];
-		if (moved) {
-			movedMouse(moved.pageX, moved.pageY, 0);
+	};
+	const touchEventNoUpdate = evtName => event => {
+		var tool = player.tool;
+		if (tool !== null) {
+			player.tool.call(evtName, [mouse, event]);
 		}
-	}, { passive: true });
-	viewport.addEventListener("touchend", event => {
-		player.tool.touch(event.changedTouches, 2);
-	}, { passive: true });
-	viewport.addEventListener("touchcancel", event => {
-		player.tool.touch(event.changedTouches, 3);
-	}, { passive: true });
+	};
+	viewport.addEventListener("touchstart", touchEvent('touchstart'), { passive: true });
+	viewport.addEventListener("touchmove", touchEvent('touchmove'), { passive: true });
+	viewport.addEventListener("touchend", touchEventNoUpdate('touchend'), { passive: true });
+	viewport.addEventListener("touchcancel", touchEventNoUpdate('touchcancel'), { passive: true });
 	
 	// Some cool custom css
 	console.log("%c" +
@@ -560,7 +570,7 @@ eventSys.once(e.misc.logoMakeRoom, () => {
 	logoMakeRoom();
 });
 
-eventSys.on(e.loaded, init);
+eventSys.once(e.loaded, init);
 eventSys.on(e.net.playerCount, updatePlayerCount);
 
 eventSys.on(e.net.chat, receiveMessage);

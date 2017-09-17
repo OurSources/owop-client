@@ -79,6 +79,8 @@ class OldProtocolImpl extends Protocol {
     constructor(ws, worldName) {
         super(ws);
         super.hookEvents(this);
+        this.lastSentX = 0;
+        this.lastSentY = 0;
         this.playercount = 1;
         this.worldName = worldName ? worldName : "main";
         this.players = {};
@@ -92,14 +94,17 @@ class OldProtocolImpl extends Protocol {
 
         this.interval = null;
 
-        eventSys.once(e.net.world.join, () => {
+        this.joinFunc = () => {
             this.interval = setInterval(() => this.sendUpdates(), 1000 / options.netUpdateSpeed);
-        });
+        };
+
+        eventSys.once(e.net.world.join, this.joinFunc);
     }
 
     closeHandler() {
         super.closeHandler();
         clearInterval(this.interval);
+        eventSys.removeListener(e.net.world.join, this.joinFunc);
     }
 
     messageHandler(message) {
@@ -211,7 +216,7 @@ class OldProtocolImpl extends Protocol {
                 var u8data = new Uint8Array(message, 9, message.byteLength - 9);
                 var key = [chunkX, chunkY].join();
 				if (!this.chunksLoading[key]) {
-                    eventSys.emit(e.net.chunk.clear, chunkX, chunkY);
+                    eventSys.emit(e.net.chunk.set, chunkX, chunkY, u8data);
 				} else {
                     delete this.chunksLoading[key];
                     var u32data = new Uint32Array(OldProtocol.chunkSize * OldProtocol.chunkSize);
@@ -298,12 +303,12 @@ class OldProtocolImpl extends Protocol {
     sendUpdates() {
         var worldx = mouse.worldX;
         var worldy = mouse.worldY;
-        var lastx = mouse.lastWorldX;
-        var lasty = mouse.lastWorldY;
+        var lastx = this.lastSentX;
+        var lasty = this.lastSentY;
         if (shouldUpdate() || (worldx != lastx || worldy != lasty)) {
             var selrgb = player.selectedColor;
-            mouse.lastWorldX = worldx;
-            mouse.lastWorldY = worldy;
+            this.lastSentX = worldx;
+            this.lastSentY = worldy;
             // Send mouse position
             var array = new ArrayBuffer(12);
             var dv = new DataView(array);
@@ -311,11 +316,10 @@ class OldProtocolImpl extends Protocol {
             dv.setInt32(4, worldy, true);
             dv.setUint8(8, selrgb[0]);
             dv.setUint8(9, selrgb[1]);
-            dv.setUint8(10, selrgb[0]);
+            dv.setUint8(10, selrgb[2]);
             var tool = player.tool;
             var toolId = tool !== null ? +OldProtocol.tools.id[tool.name] : 0;
-            /* Ugly workaround for the non supported zoom tool */
-            dv.setUint8(11, toolId === 4 ? 0 : toolId);
+            dv.setUint8(11, toolId);
             this.ws.send(array);
         }
     }

@@ -82,36 +82,52 @@ class Tool {
 			mouseup: null,
 			mousedown: null,
 			mousemove: null,
-            click: null,
-            touch: null,
+			touchstart: null,
+			touchmove: null,
+			touchend: null,
+			touchcancel: null,
             select: null,
-            keypress: null
+			keydown: null,
+			keyup: null
         };
         onInit(this);
     }
 
     setEvent(type, func) {
-        this.events[type] = func || null;
+		var events = type.split(' ');
+		for (var i = 0; i < events.length; i++) {
+			this.events[events[i]] = func || null;
+		}
     }
 
     call(type, data) {
         var func = this.events[type];
         if (func) {
             return func.apply(this, data);
-        }
-        else if (type === "touch") {
-            return this.defaultTouchHandler.apply(this, data);
+        } else if (type.indexOf("touch") === 0) {
+            return this.defaultTouchHandler(type.slice(5), data);
         }
         return false;
     }
 
-    defaultTouchHandler(touches, type) {
-        var click = this.events.click;
-        if (click) {
-            for (var i = 0; i < touches.length; i++) {
-                click(touches[i].pageX, touches[i].pageY, 1, type !== 0);
-            }
-        }
+    defaultTouchHandler(type, data) {
+		var mouse = data[0];
+		var event = data[1]; /* hmm... */
+		var handlers = {
+			start: this.events.mousedown,
+			move: this.events.mousemove,
+			end: this.events.mouseup,
+			cancel: this.events.mouseup
+		};
+		var handler = handlers[type];
+		if (handler) {
+			var touches = event.changedTouches;
+			for (var i = 0; i < touches.length; i++) {
+				mouse.x = touches[i].pageX;
+				mouse.y = touches[i].pageY;
+				handler.apply(this, data);
+			}
+		}
     }
 }
 
@@ -128,18 +144,16 @@ eventSys.once(e.misc.toolsRendered, () => {
 				}
 			}
 			
-			tool.setEvent('click', (x, y, buttons, isDrag) => {
-				var tileX = Math.floor(camera.x + (x / camera.zoom));
-				var tileY = Math.floor(camera.y + (y / camera.zoom));
+			tool.setEvent('mousedown mousemove', (mouse, event) => {
 				/* White color if right clicking */
-				var color = buttons === 2 ? [255, 255, 255] : player.selectedColor;
-				switch (buttons) {
+				var color = mouse.buttons === 2 ? [255, 255, 255] : player.selectedColor;
+				switch (mouse.buttons) {
 				case 1:
 				case 2:
-					draw(tileX, tileY, color);
+					draw(mouse.tileX, mouse.tileY, color);
 					break;
 				case 4:
-					var pixel = misc.world.getPixel(tileX, tileY);
+					var pixel = misc.world.getPixel(mouse.tileX, mouse.tileY);
 					if (pixel) {
 						player.selectedColor = pixel;
 					}
