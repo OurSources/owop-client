@@ -167,7 +167,7 @@ eventSys.once(e.misc.toolsRendered, () => {
 	tools['move'] = new Tool('move', cursors.move, FXTYPE.NONE, false,
 		tool => {
 			function move(x, y, startX, startY) {
-				moveCameraBy((startX - x) / camera.zoom, (startY - y) / camera.zoom);
+				moveCameraBy((startX - x) / 16, (startY - y) / 16);
 			}
 			tool.setEvent('mousemove', (mouse, event) => {
 				if (mouse.buttons !== 0) {
