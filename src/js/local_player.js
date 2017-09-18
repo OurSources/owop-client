@@ -121,6 +121,7 @@ function selectTool(name) {
 		return;
 	}
 	toolSelected = tool;
+	mouse.cancelMouseDown();
 	tool.call("select");
 	updateToolWindow(name);
 	mouse.validClick = false;

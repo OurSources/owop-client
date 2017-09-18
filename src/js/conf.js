@@ -63,7 +63,7 @@ export const EVENTS = {
 
 export const options = {
 	serverAddress: [{
-		default: true,
+		default: false,
 		title: 'Official server',
 		proto: 'old',
 		url: 'ws://ourworldofpixels.com:443'

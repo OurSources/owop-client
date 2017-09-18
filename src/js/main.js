@@ -37,7 +37,8 @@ export const mouse = {
 	buttons: 0,
 	validTile: false,
 	insideViewport: false,
-	touches: []
+	touches: [],
+	cancelMouseDown: function() { this.buttons = 0; }
 };
 
 export const elements = {
@@ -511,20 +512,26 @@ function init() {
 	viewport.addEventListener("DOMMouseScroll", mousewheel); /* Firefox */
 	
 	// Touch support
-	const touchEvent = evtName => event => {
-		var moved = event.changedTouches[0];
-		if (moved) {
-			updateMouse(event, evtName, moved.pageX, moved.pageY);
-		}
-	};
 	const touchEventNoUpdate = evtName => event => {
 		var tool = player.tool;
+		mouse.buttons = 0;
 		if (tool !== null) {
 			player.tool.call(evtName, [mouse, event]);
 		}
 	};
-	viewport.addEventListener("touchstart", touchEvent('touchstart'), { passive: true });
-	viewport.addEventListener("touchmove", touchEvent('touchmove'), { passive: true });
+	viewport.addEventListener("touchstart", event => {
+		var moved = event.changedTouches[0];
+		mouse.buttons = 1;
+		if (moved) {
+			updateMouse(event, evtName, moved.pageX, moved.pageY);
+		}
+	}, { passive: true });
+	viewport.addEventListener("touchmove", event => {
+		var moved = event.changedTouches[0];
+		if (moved) {
+			updateMouse(event, evtName, moved.pageX, moved.pageY);
+		}
+	}, { passive: true });
 	viewport.addEventListener("touchend", touchEventNoUpdate('touchend'), { passive: true });
 	viewport.addEventListener("touchcancel", touchEventNoUpdate('touchcancel'), { passive: true });
 	

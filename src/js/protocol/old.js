@@ -335,6 +335,14 @@ class OldProtocolImpl extends Protocol {
             }
         }
     }
+
+    clearChunk(x, y) {
+        var array = new ArrayBuffer(9);
+        var dv = new DataView(array);
+        dv.setInt32(0, x, true);
+        dv.setInt32(4, y, true);
+        this.ws.send(array);
+    }
 }
 
 OldProtocol.class = OldProtocolImpl;

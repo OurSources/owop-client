@@ -166,32 +166,26 @@ eventSys.once(e.misc.toolsRendered, () => {
 	// Move tool
 	tools['move'] = new Tool('move', cursors.move, FXTYPE.NONE, false,
 		tool => {
-			var extra = tool.extra;
-			function move(x, y, isDrag) {
-				if (!isDrag) {
-					extra.startX = camera.x + (x / camera.zoom);
-					extra.startY = camera.y + (y / camera.zoom);
-				} else {
-					moveCameraTo(extra.startX - (x / camera.zoom), extra.startY - (y / camera.zoom));
-				}
+			function move(x, y, startX, startY) {
+				moveCameraBy((startX - x) / camera.zoom, (startY - y) / camera.zoom);
 			}
-			tool.setEvent("click", (x, y, buttons, isDrag) => {
-				move(x, y, isDrag);
+			tool.setEvent('mousemove', (mouse, event) => {
+				if (mouse.buttons !== 0) {
+					move(mouse.worldX, mouse.worldY, mouse.mouseDownWorldX, mouse.mouseDownWorldY);
+				}
 			});
-			tool.setEvent("touch", (touches, type) => {
-				move(touches[0].pageX, touches[0].pageY, type !== 0);
-			});
+			/*tool.setEvent('touchmove', (mouse, event) => {
+				var touch = event.changedTouches[0];
+				move(touch.pageX, touch.pageY, );
+			});*/
 		}
 	);
 	
 	// Pipette tool
 	tools['pipette'] = new Tool('pipette', cursors.pipette, FXTYPE.NONE, false,
 		tool => {
-			tool.setEvent("click", (x, y, buttons, isDrag) => {
-				var tileX = Math.floor(camera.x + (x / camera.zoom));
-				var tileY = Math.floor(camera.y + (y / camera.zoom));
-				
-				var color = misc.world.getPixel(tileX, tileY);
+			tool.setEvent('mousedown', (mouse, event) => {
+				var color = misc.world.getPixel(mouse.tileX, mouse.tileY);
 				if (color) {
 					player.selectedColor = color;
 				}
@@ -202,77 +196,63 @@ eventSys.once(e.misc.toolsRendered, () => {
 	// Erase/Fill tool
 	tools['erase'] = new Tool('erase', cursors.erase, FXTYPE.CHUNK_UPDATE, true,
 		tool => {
-			/*var chunk16X = Math.floor((camera.x + (x / camera.zoom)) / protocol.chunkSize);
-			var chunk16Y = Math.floor((camera.y + (y / camera.zoom)) / protocol.chunkSize);
-			
-			var fill = false;
-			var fl = Math.floor;
-			var chunk = this.chunks[[fl(chunk16X / protocol.chunkSize), fl(chunk16Y / protocol.chunkSize)]];
-			var color = buttons == 2 ? [255, 255, 255] : this.palette[this.paletteIndex];
-			if (!chunk || !net.isConnected()) {
-				return;
-			}
-			var offx = chunk16X * 16;
-			var offy = chunk16Y * 16;
-			for (var x = 16; x--;){
-				for (var y = 16; y--;) {
-					var cclr = this.getPixel(offx + x, offy + y);
-					if (!(cclr[0] == color[0] && cclr[1] == color[1] && cclr[2] == color[2])) {
-						fill = true;
-						chunk.update((offx + x) & 0xFF, (offy + y) & 0xFF, color);
+			function clearChunk(chunkX, chunkY) {
+				const clearColor = 0xFFFFFF; /* White */
+				var chunk = misc.world.getChunkAt(chunkX, chunkY);
+				if (chunk) {
+					var empty = true;
+					for (var i = 0; i < chunk.u32data.length; i++) {
+						if ((chunk.u32data[i] & 0xFFFFFF) != clearColor) {
+							empty = false;
+							break;
+						}
+					}
+					if (!empty) {
+						chunk.set(clearColor);
+						net.protocol.clearChunk(chunkX, chunkY);
 					}
 				}
 			}
-			if (fill) {
-				var array = new ArrayBuffer(10);
-				var dv = new DataView(array);
-				dv.setInt32(0, chunk16X, true);
-				dv.setInt32(4, chunk16Y, true);
-				dv.setUint16(8, u16_565(color[2], color[1], color[0]), true);
-				this.net.connection.send(array);
-			}*/
+			
+			tool.setEvent('mousedown mousemove', (mouse, event) => {
+				if (mouse.buttons === 1) {
+					clearChunk(Math.floor(mouse.tileX / protocol.chunkSize), Math.floor(mouse.tileY / protocol.chunkSize));
+				}
+			});
 		}
 	);
 	
 	// Zoom tool
 	tools['zoom'] = new Tool('zoom', cursors.zoom, -1, false,
 		tool => {
-			function zoom(x, y, buttons, isDrag) {
-				if (!isDrag) {
-					var lzoom = camera.zoom;
-					var offX = 0;
-					var offY = 0;
-					var w = window.innerWidth;
-					var h = window.innerHeight;
-					if (buttons === 1 && camera.zoom * (1 + options.zoomStrength) <= options.zoomLimitMax) {
-						// Zoom in
-						camera.zoom *= 1 + options.zoomStrength;
-						offX = (mouse.x - w / 2) / camera.zoom;
-						offY = (mouse.y - h / 2) / camera.zoom;
-					} else if (buttons === 2 && camera.zoom / (1 + options.zoomStrength) >= options.zoomLimitMin) {
-						// Zoom out
-						camera.zoom /= 1 + options.zoomStrength;
-						offX = (mouse.x - w / 2) * (3 / lzoom - 2 / camera.zoom);
-						offY = (mouse.y - h / 2) * (3 / lzoom - 2 / camera.zoom);
-					} else if (buttons === 3) {
-						// Reset zoom (right + left click)
-						camera.zoom = options.defaultZoom;
-					}
-					moveCameraBy(offX, offY);
+			function zoom(mouse, type) {
+				var lzoom = camera.zoom;
+				var offX = 0;
+				var offY = 0;
+				var w = window.innerWidth;
+				var h = window.innerHeight;
+				if (type === 1 && camera.zoom * (1 + options.zoomStrength) <= options.zoomLimitMax) {
+					// Zoom in
+					camera.zoom *= 1 + options.zoomStrength;
+					offX = (mouse.x - w / 2) / camera.zoom;
+					offY = (mouse.y - h / 2) / camera.zoom;
+				} else if (type === 2 && camera.zoom / (1 + options.zoomStrength) >= options.zoomLimitMin) {
+					// Zoom out
+					camera.zoom /= 1 + options.zoomStrength;
+					offX = (mouse.x - w / 2) * (3 / lzoom - 2 / camera.zoom);
+					offY = (mouse.y - h / 2) * (3 / lzoom - 2 / camera.zoom);
+				} else if (type === 3) {
+					// Reset zoom (right + left click)
+					camera.zoom = options.defaultZoom;
 				}
+				moveCameraBy(offX, offY);
 			}
 			
-			tool.setEvent("click", zoom);
-			tool.setEvent("touch", (touches, type) => {
-				var lzoom = camera.zoom;
-				if (type === 0 && touches[0].identifier === 1) {
-					// Zoom out
-					zoom()
-				}
-				/*if (lzoom !== this.camera.zoom) {
-					camera.zoom = 
-					eventSys.emit(e.camera.zoom, this.camera.zoom);
-				}*/
+			tool.setEvent("mousedown", (mouse, event) => {
+				zoom(mouse, mouse.buttons);
+			});
+			tool.setEvent("touchstart", (mouse, event) => {
+				zoom(mouse, event.changedTouches[0].identifier + 1);
 			});
 		}
 	);

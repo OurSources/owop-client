@@ -32,9 +32,15 @@ export class Chunk {
 	}
 
 	set(data) {
-		for (var i = 0; i < this.u32data.length; i++) {
-			var j = 3 * i;
-			this.u32data[i] = 0xFF000000 | data[j + 2] << 16 | data[j + 1] << 8 | data[j];
+		if (Number.isInteger(data)) {
+			for (var i = 0; i < this.u32data.length; i++) {
+				this.u32data[i] = 0xFF000000 | data;
+			}
+		} else {
+			for (var i = 0; i < this.u32data.length; i++) {
+				var j = 3 * i;
+				this.u32data[i] = 0xFF000000 | data[j + 2] << 16 | data[j + 1] << 8 | data[j];
+			}
 		}
 		this.needsRedraw = true;
 	}
@@ -162,7 +168,7 @@ export class World {
 	}
 
 	setPixel(x, y, color) {
-		var chunk = this.getChunkAt(x, y);
+		var chunk = this.getChunkAt(Math.floor(x / protocol.chunkSize), Math.floor(y / protocol.chunkSize));
 		if (chunk) {
 			var oldPixel = this.getPixel(x, y, chunk);
 			if ((oldPixel[0] === color[0] && oldPixel[1] === color[1] && oldPixel[2] === color[2])
@@ -177,9 +183,7 @@ export class World {
 	}
 
 	getChunkAt(x, y) {
-		var fl     = Math.floor;
-		var key    = [fl(x / protocol.chunkSize), fl(y / protocol.chunkSize)].join();
-		return this.chunks[key];
+		return this.chunks[[x, y]];
 	}
 	
 	getPixel(x, y, chunk) {
