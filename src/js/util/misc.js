@@ -81,6 +81,39 @@ export function loadScript(name) {
 	}));
 }
 
+export function setTooltip(element, message) {
+	var intr = 0;
+	var tip = null;
+	function tooltip() {
+		var epos = element.getBoundingClientRect();
+		tip = mkHTML('span', {
+			innerHTML: message,
+			className: 'framed tooltip whitetext',
+			style: `transform: translate(${mx}px,${my}px);`
+		});
+		document.body.appendChild(tip);
+		intr = 0;
+	}
+	const mleave = e => {
+		clearTimeout(intr);
+		intr = 0;
+		element.removeEventListener('mouseleave', mmove);
+		element.removeEventListener('click', mleave);
+		if (tip !== null) {
+			tip.remove();
+			tip = null;
+		}
+	};
+	const menter = e => {
+		if (tip === null && intr === 0) {
+			intr = setTimeout(tooltip, 500);
+			element.addEventListener('click', mleave);
+		}
+	};
+	element.addEventListener('mouseenter', menter);
+	element.addEventListener('mouseleave', mleave);
+}
+
 export function decompress(input) {
 	var originalLength = (((input[1] & 0xFF) << 8 | (input[0] & 0xFF)) + 1) * 2;
 	var output = new Uint8Array(originalLength);

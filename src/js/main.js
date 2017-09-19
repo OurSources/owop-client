@@ -608,7 +608,7 @@ eventSys.on(e.net.connected, () => {
 
 window.addEventListener("error", e => {
 	showDevChat(true);
-	var errmsg = e ? e.error && (e.error.stack || e.message || e.error.message) : "Unknown error occurred";
+	var errmsg = e && e.error ? (e.error.message || e.error.stack) : e.message || "Unknown error occurred";
 	errmsg = escapeHTML(errmsg);
 	errmsg = errmsg.split('\n');
 	for (var i = 0; i < errmsg.length; i++) {

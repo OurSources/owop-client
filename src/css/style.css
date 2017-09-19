@@ -44,6 +44,14 @@ html {
 	transform: translate(-50%, -50%);
 }
 
+.tooltip {
+	pointer-events: none;
+	position: absolute;
+	top: 0;
+	left: 0;
+	opacity: 0.9;
+}
+
 .owopdropdown {
 	pointer-events: none!important;
 	padding: 0!important;
