@@ -45,7 +45,7 @@ const rendererValues = {
 	clusters: {}
 };
 
-PublicAPI.rval = rendererValues;
+/*PublicAPI.rval = rendererValues;*/
 
 export const renderer = {
 	rendertype: {

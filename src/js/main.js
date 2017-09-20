@@ -67,7 +67,7 @@ export const misc = {
 	showEUCookieNag: cookiesEnabled() && getCookie("nagAccepted") !== "true"
 };
 
-PublicAPI.misc = misc;
+/*PublicAPI.misc = misc;*/
 
 function updateCamera() {
 	var time = getTime();

@@ -14,7 +14,7 @@ export const FXTYPE = {
 
 export const activeFx = [];
 
-PublicAPI.activeFx = activeFx;
+/*PublicAPI.activeFx = activeFx;*/
 
 export class Fx {
     constructor(type, x, y, options) {

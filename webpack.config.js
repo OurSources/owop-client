@@ -13,7 +13,7 @@ const config = {
 	output: {
 		filename: '[name].js',
 		path: `${__dirname}/dist`,
-		publicPath: '/beta'
+		publicPath: '/beta/'
 	},
 	devServer: {
 		contentBase: `${__dirname}/dist`
