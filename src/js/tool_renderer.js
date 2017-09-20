@@ -1,6 +1,6 @@
 'use strict';
-import { EVENTS as e } from './conf.js';
-import { eventSys } from './global.js';
+import { EVENTS as e, options } from './conf.js';
+import { eventSys, PublicAPI } from './global.js';
 
 export const cursors = {
 	set: new Image(),
@@ -20,6 +20,8 @@ export const cursors = {
 	ban: {imgpos: [3, 0], hotspot: [10, 4]},
 	write: {imgpos: [1, 3], hotspot: [10, 4]} // fix hotspot
 };
+
+PublicAPI.cursors = cursors;
 
 function reduce(canvas) { /* Removes unused space from the image */
 	var nw = canvas.width;
@@ -146,7 +148,7 @@ function load(oncomplete) {
 		});
 	};
 
-	cursors.set.src = "/img/toolset.png";
+	cursors.set.src = options.toolSetUrl;
 }
 
 eventSys.once(e.loaded, () => {

@@ -1,3 +1,6 @@
+@import url(/css/pixel_font.css);
+@import url(/css/styled_scrollbar.css);
+
 html, body {
 	font-family: pixel-op;
 	font-size: 16px;

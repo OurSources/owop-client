@@ -1,8 +1,9 @@
 "use strict";
 import { eventSys, PublicAPI } from './global.js';
+import toolSet from '../img/toolset.png';
 /* Important constants */
 
-export let protocol = null; /* TODO: switch depending on the server config, see below */
+export let protocol = null;
 
 /* The raw event ID numbers should NOT be used, instead import the EVENTS object in your file. */
 let evtId = 0;
@@ -63,12 +64,12 @@ export const EVENTS = {
 
 export const options = {
 	serverAddress: [{
-		default: false,
+		default: true,
 		title: 'Official server',
 		proto: 'old',
 		url: 'ws://ourworldofpixels.com:443'
 	},{
-		default: true,
+		default: false,
 		title: 'Localhost',
 		proto: 'old',
 		url: 'ws://localhost:25565'
@@ -80,7 +81,8 @@ export const options = {
 	defaultZoom: 16,
 	zoomStrength: 1,
 	zoomLimitMin: 2,
-	zoomLimitMax: 32
+	zoomLimitMax: 32,
+	toolSetUrl: toolSet
 };
 
 eventSys.on(EVENTS.net.connecting, server => {

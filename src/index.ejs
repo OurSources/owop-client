@@ -7,9 +7,7 @@
 		<meta name="description" content="Draw pixels with other people in real-time on an (almost) infinite canvas!">
 		<meta name="keywords" content="pixel, game, draw, online, cursors, canvas, world">
 		
-		<link href="/css/style.css" rel="stylesheet" type="text/css"/>
-		<link href="/css/styled_scrollbar.css" rel="stylesheet" type="text/css"/>
-		<link href="/css/pixel_font.css" rel="stylesheet" type="text/css"/>
+		<style><%=require('./css/style.css')%></style>
 	</head>
 	<body>
 		<div id="viewport">
@@ -19,7 +17,7 @@
 		<div id="load-scr">
 			<ul id="load-ul">
 				<li>
-					<img id="logo" src="/img/owop.png" width="224px" height="190px" alt="Our World Of Pixels" draggable="false"/>
+					<img id="logo" src="<%=require('./img/owop.png')%>" width="224px" height="190px" alt="Our World Of Pixels" draggable="false"/>
 				</li>
 				<noscript>
 					<li id="noscript-msg" class="whitetext framed">
@@ -28,7 +26,7 @@
 					</li>
 				</noscript>
 				<li id="status" class="whitetext hide">
-					<img id="spinner" src="/img/loading.gif"/>
+					<img id="spinner" src="<%=require('./img/loading.gif')%>"/>
 					<span id="status-msg">Loading...</span>
 				</li>
 				<li id="load-options" class="framed hide">

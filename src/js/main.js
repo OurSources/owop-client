@@ -396,13 +396,10 @@ function init() {
 					break;
 
 				case 90: /* Ctrl + Z */
-					if (!event.ctrlKey || undoHistory.length === 0) {
+					if (!event.ctrlKey || !misc.world) {
 						break;
 					}
-					var undo = undoHistory.pop();
-					if (!net.updatePixel(undo[0], undo[1], undo[2])) {
-						undoHistory.push(undo);
-					}
+					misc.world.undo();
 					event.preventDefault();
 					break;
 

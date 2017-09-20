@@ -1,6 +1,6 @@
 'use strict';
-/*import css from '../css/style.css';
-import css from '../css/styled_scrollbar.css';
+//import url from '../css/style.css';
+/*import css from '../css/styled_scrollbar.css';
 import css from '../css/pixel_font.css';*/
 
 import { EventEmitter } from 'events';

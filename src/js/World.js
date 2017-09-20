@@ -56,6 +56,7 @@ export class World {
 		this.chunks = {};
 		this.chunksLoading = {};
 		this.players = {};
+		this.undoHistory = [];
 		
 		const loadCFunc = chunk => this.chunkLoaded(chunk);
 		const unloadCFunc = chunk => this.chunkUnloaded(chunk);
@@ -167,19 +168,40 @@ export class World {
 		}
 	}
 
-	setPixel(x, y, color) {
+	setPixel(x, y, color, noUndo) {
 		var chunk = this.getChunkAt(Math.floor(x / protocol.chunkSize), Math.floor(y / protocol.chunkSize));
 		if (chunk) {
 			var oldPixel = this.getPixel(x, y, chunk);
-			if ((oldPixel[0] === color[0] && oldPixel[1] === color[1] && oldPixel[2] === color[2])
+			if (!oldPixel || (oldPixel[0] === color[0] && oldPixel[1] === color[1] && oldPixel[2] === color[2])
 			|| !net.protocol.updatePixel(x, y, color)) {
 				return false;
+			}
+			if (!noUndo) {
+				oldPixel.push(x, y);
+				this.undoHistory.push(oldPixel);
 			}
 			chunk.update(x, y, colorUtils.u24_888(color[0], color[1], color[2]));
 			eventSys.emit(e.renderer.updateChunk, chunk);
 			return true;
 		}
 		return false;
+	}
+
+	undo() {
+		if (this.undoHistory.length === 0) {
+			return false;
+		}
+		var remainingTries = this.undoHistory.length;
+		while (--remainingTries >= 0) {
+			var undo = this.undoHistory[remainingTries];
+			var px = this.getPixel(undo[3], undo[4]);
+			if (px[0] === undo[0] && px[1] === undo[1] && px[2] === undo[2]) {
+				this.undoHistory.splice(remainingTries, 1);
+			} else if (this.setPixel(undo[3], undo[4], undo, true)) {
+				this.undoHistory.splice(remainingTries, 1);
+				break;
+			}
+		}
 	}
 
 	getChunkAt(x, y) {

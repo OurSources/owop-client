@@ -1,8 +1,8 @@
 {
   "name": "owop-client",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Our World Of Pixels client",
-  "main": "src/main.js",
+  "main": "src/js/main.js",
   "scripts": {
     "build": "webpack",
     "watch": "webpack -w",
@@ -15,6 +15,8 @@
     "babel-core": "^6.26.0",
     "babel-loader": "^7.1.2",
     "babel-preset-env": "^1.6.0",
+    "css-loader": "^0.28.7",
+    "file-loader": "^0.11.2",
     "fs-extra": "^4.0.1",
     "html-webpack-plugin": "^2.30.1",
     "script-ext-html-webpack-plugin": "^1.8.5",
