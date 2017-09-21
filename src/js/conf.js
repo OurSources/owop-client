@@ -14,6 +14,8 @@ export const RANK = {
 	ADMIN: 2
 };
 
+PublicAPI.RANK = RANK;
+
 export const EVENTS = {
 	loaded: ++evtId,
 	init: ++evtId,
@@ -84,6 +86,8 @@ export const options = {
 	zoomLimitMax: 32,
 	toolSetUrl: toolSet
 };
+
+PublicAPI.options = options;
 
 eventSys.on(EVENTS.net.connecting, server => {
 	protocol = server.proto;

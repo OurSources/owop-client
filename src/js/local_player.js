@@ -117,7 +117,7 @@ function addPaletteColor(color) {
 
 function selectTool(name) {
 	let tool = tools[name];
-	if(name === toolSelected || !tool) {
+	if(!tool || tool === toolSelected) {
 		return;
 	}
 	toolSelected = tool;

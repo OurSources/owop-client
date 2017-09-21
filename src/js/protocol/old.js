@@ -7,6 +7,7 @@ import { Bucket } from './../util/Bucket.js';
 import { loadAndRequestCaptcha } from './../captcha.js';
 import { colorUtils as color } from './../util/color.js';
 import { player, shouldUpdate } from './../local_player.js';
+import { camera } from './../canvas_renderer.js';
 import { mouse } from './../main.js';
 
 export const captchaState = {
@@ -231,8 +232,8 @@ class OldProtocolImpl extends Protocol {
                 break;
                 
 			case oc.teleport: // Teleport
-				let x = dv.getInt32(1, true) - (window.innerWidth / this.camera.zoom / 2.5);
-                let y = dv.getInt32(5, true) - (window.innerHeight / this.camera.zoom / 2.5);
+				let x = dv.getInt32(1, true) - (window.innerWidth / camera.zoom / 2.5);
+                let y = dv.getInt32(5, true) - (window.innerHeight / camera.zoom / 2.5);
                 eventSys.emit(e.net.world.teleported, x, y);
                 break;
                 

@@ -52,6 +52,7 @@ export const elements = {
 /* Objects */
 PublicAPI.events = eventSys;
 PublicAPI.elements = elements;
+PublicAPI.mouse = mouse;
 
 export const misc = {
 	exceptionTimeout: null,

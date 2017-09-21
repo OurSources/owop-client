@@ -131,6 +131,8 @@ class Tool {
     }
 }
 
+PublicAPI.toolClass = Tool;
+
 eventSys.once(e.misc.toolsRendered, () => {
 	// Cursor tool
 	tools['cursor'] = new Tool('cursor', cursors.cursor, FXTYPE.PIXEL_SELECT, false,
