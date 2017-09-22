@@ -84,6 +84,7 @@ export const options = {
 	zoomStrength: 1,
 	zoomLimitMin: 2,
 	zoomLimitMax: 32,
+	unloadDistance: 30,
 	toolSetUrl: toolSet
 };
 

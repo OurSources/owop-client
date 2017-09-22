@@ -423,6 +423,10 @@ function moveCameraTo(x, y) {
 	onCameraMove();
 }
 
+eventSys.on(e.net.world.teleported, (x, y) => {
+	moveCameraTo(x, y);
+});
+
 eventSys.on(e.camera.zoom, z => {
 	setGridZoom(z);
 	/*cameraValues.lerpZoom.val = z;*/

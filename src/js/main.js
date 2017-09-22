@@ -521,13 +521,13 @@ function init() {
 		var moved = event.changedTouches[0];
 		mouse.buttons = 1;
 		if (moved) {
-			updateMouse(event, evtName, moved.pageX, moved.pageY);
+			updateMouse(event, 'touchstart', moved.pageX, moved.pageY);
 		}
 	}, { passive: true });
 	viewport.addEventListener("touchmove", event => {
 		var moved = event.changedTouches[0];
 		if (moved) {
-			updateMouse(event, evtName, moved.pageX, moved.pageY);
+			updateMouse(event, 'touchmove', moved.pageX, moved.pageY);
 		}
 	}, { passive: true });
 	viewport.addEventListener("touchend", touchEventNoUpdate('touchend'), { passive: true });

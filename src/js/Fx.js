@@ -51,6 +51,11 @@ export class Fx {
 	}
 }
 
+PublicAPI.fx = {
+	type: FXTYPE,
+	class: Fx
+};
+
 eventSys.on(e.net.world.tilesUpdated, tiles => {
 	let time = getTime(true);
 	let made = false;
@@ -69,4 +74,4 @@ eventSys.on(e.net.world.tilesUpdated, tiles => {
 eventSys.on(e.net.chunk.set, (chunkX, chunkY, data) => {
 	new Fx(FXTYPE.CHUNK_UPDATE, chunkX * protocol.chunkSize, chunkY * protocol.chunkSize, {time: getTime(true)});
 	renderer.render(renderer.rendertype.FX);
-})
+});

@@ -1,5 +1,5 @@
 "use strict";
-import { protocol, EVENTS as e } from './conf.js';
+import { protocol, EVENTS as e, options } from './conf.js';
 import { eventSys } from './global.js';
 import { colorUtils } from './util/color.js';
 import { net } from './networking.js';
