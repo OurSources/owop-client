@@ -104,9 +104,7 @@ class ChunkCluster {
 	
 	addChunk(chunk) {
 		this.chunks.push(chunk);
-		var offx = this.x * protocol.clusterChunkAmount;
-		var offy = this.y * protocol.clusterChunkAmount;
-		this.ctx.putImageData(chunk.data, (chunk.x - offx) * protocol.chunkSize, (chunk.y - offy) * protocol.chunkSize);
+		chunk.needsRedraw = true;
 	}
 	
 	delChunk(chunk) {
@@ -444,6 +442,11 @@ eventSys.on(e.renderer.addChunk, chunk => {
 		updateVisible();
 	}
 	cluster.addChunk(chunk);
+	if (!cluster.toUpdate) {
+		cluster.toUpdate = true;
+		rendererValues.updatedClusters.push(cluster);
+		requestRender(renderer.rendertype.WORLD);
+	}
 });
 
 eventSys.on(e.renderer.rmChunk, chunk => {
