@@ -1,3 +1,3 @@
 #!/bin/bash
 cd dist/
-rsync -vru --delete --max-delete=1 * root@ourworldofpixels.com:/var/www/html/beta/
+rsync -vru --checksum --delete --max-delete=2 * root@ourworldofpixels.com:/var/www/html/beta/

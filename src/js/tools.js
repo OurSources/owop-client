@@ -186,10 +186,12 @@ eventSys.once(e.misc.toolsRendered, () => {
 	// Pipette tool
 	tools['pipette'] = new Tool('pipette', cursors.pipette, FXTYPE.NONE, false,
 		tool => {
-			tool.setEvent('mousedown', (mouse, event) => {
-				var color = misc.world.getPixel(mouse.tileX, mouse.tileY);
-				if (color) {
-					player.selectedColor = color;
+			tool.setEvent('mousedown mousemove', (mouse, event) => {
+				if (mouse.buttons !== 0) {
+					var color = misc.world.getPixel(mouse.tileX, mouse.tileY);
+					if (color) {
+						player.selectedColor = color;
+					}
 				}
 			});
 		}

@@ -55,20 +55,40 @@ PublicAPI.elements = elements;
 PublicAPI.mouse = mouse;
 
 export const misc = {
+	_world: null,
 	exceptionTimeout: null,
 	tick: 0,
 	urlWorldName: null,
 	connecting: false,
 	tickInterval: null,
 	lastCleanup: 0,
-	world: null,
+	set world(value) {
+		/* The reason this is done is because the old functions may reference the old world object */
+		PublicAPI.world = getNewWorldApi();
+		return this._world = value;
+	},
+	get world() { return this._world; },
 	guiShown: false,
 	cookiesEnabled: cookiesEnabled(),
 	/* TODO: Make nag appear if this is set, and reCaptcha is going to be loaded (not after) */
 	showEUCookieNag: cookiesEnabled() && getCookie("nagAccepted") !== "true"
 };
 
-/*PublicAPI.misc = misc;*/
+function getNewWorldApi() {
+	var obj = {};
+	var defProp = function(prop) {
+		Object.defineProperty(obj, prop, {
+			get: function() { return misc.world && this['_' + prop] || (this['_' + prop] = misc.world[prop].bind(misc.world)); }
+		});
+	};
+	defProp('getPixel');
+	defProp('setPixel');
+	defProp('undo');
+	defProp('unloadFarChunks');
+	return obj;
+}
+
+PublicAPI.world = getNewWorldApi();
 
 function updateCamera() {
 	var time = getTime();
@@ -522,6 +542,8 @@ function init() {
 		mouse.buttons = 1;
 		if (moved) {
 			updateMouse(event, 'touchstart', moved.pageX, moved.pageY);
+			mouse.mouseDownWorldX = mouse.worldX;
+			mouse.mouseDownWorldY = mouse.worldY;
 		}
 	}, { passive: true });
 	viewport.addEventListener("touchmove", event => {
