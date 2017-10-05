@@ -51,8 +51,9 @@ export const elements = {
 };
 
 export const misc = {
-	chatModifier: null,
 	_world: null,
+	chatRecvModifier: msg => msg,
+	chatSendModifier: msg => msg,
 	exceptionTimeout: null,
 	tick: 0,
 	urlWorldName: null,
@@ -97,11 +98,9 @@ function updateCamera() {
 }
 
 function receiveMessage(text) {
-	const undefToNull = val => val === undefined ? null : val;
-	var modifiedText = undefToNull(misc.chatModifier && misc.chatModifier(text));
 	console.log(text);
-	text = modifiedText === null ? text : modifiedText;
-	if (text.length === 0) {
+	text = misc.chatRecvModifier(text);
+	if (!text) {
 		return;
 	}
 
@@ -404,7 +403,11 @@ function init() {
 		if (keyCode === 27) {
 			closeChat();
 		} else if (keyCode == 13) {
-			net.protocol.sendMessage(chatinput.value);
+			var text = chatinput.value;
+			if (text[0] !== '/') {
+				text = misc.chatSendModifier(text);
+			}
+			net.protocol.sendMessage(text);
 			chatinput.value = '';
 			closeChat();
 			event.stopPropagation();
@@ -704,6 +707,8 @@ PublicAPI.mouse = mouse;
 PublicAPI.world = getNewWorldApi();
 PublicAPI.chat = {
 	send: (msg) => net.protocol && net.protocol.sendMessage(msg),
-	get chatModifier() { return misc.chatModifier; },
-	set chatModifier(fn) { misc.chatModifier = fn; }
+	get recvModifier() { return misc.chatRecvModifier; },
+	set recvModifier(fn) { misc.chatRecvModifier = fn; },
+	get sendModifier() { return misc.chatSendModifier; },
+	set sendModifier(fn) { misc.chatSendModifier = fn; }
 };
