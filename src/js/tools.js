@@ -231,24 +231,26 @@ eventSys.once(e.misc.toolsRendered, () => {
 		tool => {
 			function zoom(mouse, type) {
 				var lzoom = camera.zoom;
+				var nzoom = camera.zoom;
 				var offX = 0;
 				var offY = 0;
 				var w = window.innerWidth;
 				var h = window.innerHeight;
-				if (type === 1 && camera.zoom * (1 + options.zoomStrength) <= options.zoomLimitMax) {
+				if (type === 1) {
 					// Zoom in
-					camera.zoom *= 1 + options.zoomStrength;
-					offX = (mouse.x - w / 2) / camera.zoom;
-					offY = (mouse.y - h / 2) / camera.zoom;
-				} else if (type === 2 && camera.zoom / (1 + options.zoomStrength) >= options.zoomLimitMin) {
+					nzoom *= 1 + options.zoomStrength;
+					offX = (mouse.x - w / 2) / nzoom;
+					offY = (mouse.y - h / 2) / nzoom;
+				} else if (type === 2) {
 					// Zoom out
-					camera.zoom /= 1 + options.zoomStrength;
-					offX = (mouse.x - w / 2) * (3 / lzoom - 2 / camera.zoom);
-					offY = (mouse.y - h / 2) * (3 / lzoom - 2 / camera.zoom);
+					nzoom /= 1 + options.zoomStrength;
+					offX = (mouse.x - w / 2) * (3 / lzoom - 2 / nzoom);
+					offY = (mouse.y - h / 2) * (3 / lzoom - 2 / nzoom);
 				} else if (type === 3) {
 					// Reset zoom (right + left click)
-					camera.zoom = options.defaultZoom;
+					nzoom = options.defaultZoom;
 				}
+				camera.zoom = nzoom;
 				moveCameraBy(offX, offY);
 			}
 			

@@ -56,7 +56,7 @@ export const OldProtocol = {
 
 for (const id in OldProtocol.tools) {
     if (Number.isInteger(+id)) {
-        OldProtocol.tools.id[OldProtocol.tools[id]] = id;
+        OldProtocol.tools.id[OldProtocol.tools[id]] = +id;
     }
 }
 

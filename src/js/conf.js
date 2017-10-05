@@ -82,7 +82,7 @@ export const options = {
 	movementSpeed: 32,
 	defaultZoom: 16,
 	zoomStrength: 1,
-	zoomLimitMin: 2,
+	zoomLimitMin: 1,
 	zoomLimitMax: 32,
 	unloadDistance: 30,
 	toolSetUrl: toolSet

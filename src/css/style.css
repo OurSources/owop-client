@@ -75,7 +75,7 @@ button.winframe:active {
 	text-shadow: -1px 0 #000, 0 1px #000, 1px 0 #000, 0 -1px #000;
 }
 
-body, #viewport, #xy-display, #tool-select, #palette, #windows {
+img, #clusters, #xy-display, #tool-select, #palette, #windows {
 	image-rendering: -moz-crisp-edges;
 	image-rendering: -o-crisp-edges;
 	image-rendering: -webkikt-optimize-contrast;

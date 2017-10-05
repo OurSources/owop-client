@@ -17,7 +17,8 @@ import { World } from './World.js';
 import { camera, renderer, moveCameraBy } from './canvas_renderer.js';
 import { net } from './networking.js';
 import { updateClientFx, player } from './local_player.js';
-import { resolveProtocols } from './protocol/all.js'
+import { resolveProtocols } from './protocol/all.js';
+import { windowSys } from './windowsys.js';
 
 export { showDevChat, statusMsg };
 
@@ -49,11 +50,6 @@ export const elements = {
 	devChat: null
 };
 
-/* Objects */
-PublicAPI.events = eventSys;
-PublicAPI.elements = elements;
-PublicAPI.mouse = mouse;
-
 export const misc = {
 	_world: null,
 	exceptionTimeout: null,
@@ -61,6 +57,7 @@ export const misc = {
 	urlWorldName: null,
 	connecting: false,
 	tickInterval: null,
+	lastMessage: null,
 	lastCleanup: 0,
 	set world(value) {
 		/* The reason this is done is because the old functions may reference the old world object */
@@ -88,8 +85,6 @@ function getNewWorldApi() {
 	return obj;
 }
 
-PublicAPI.world = getNewWorldApi();
-
 function updateCamera() {
 	var time = getTime();
 	if (misc.world !== null && time - misc.lastCleanup > 1000) {
@@ -102,21 +97,34 @@ function updateCamera() {
 
 function receiveMessage(text) {
 	var message = document.createElement("li");
+	var idIndex = text.indexOf(': '); /* This shouldn't be like this, change on proto switch */
+	var realText = text;
+	if (idIndex !== -1) {
+		var ntext = text.substr(0, idIndex);
+		realText = ntext.replace(/\d+/g, '') + text.slice(idIndex + 2);
+	}
 	var span = document.createElement("span");
-	/*if (options.oldserver) {*/
 	console.log(text);
-	text = escapeHTML(text);
-	/*} else {
-		var elem = htmlToElement(text);
-		if (elem.style) {
-			console.log("%c" + elem.innerText, elem.style.cssText);
-		} else {
-			console.log(text);
+	if (misc.lastMessage && misc.lastMessage.text === realText) {
+		misc.lastMessage.incCount();
+	} else {
+		misc.lastMessage = {
+			get text() { return realText; },
+			incCount: () => {
+				var times = span.recvTimes || 1;
+				span.innerHTML = `${text} [x${++times}]`;
+				span.recvTimes = times;
+			}
+		};
+		text = escapeHTML(text);
+		span.innerHTML = text;
+		message.appendChild(span);
+		elements.chatMessages.appendChild(message);
+		var childs = elements.chatMessages.children;
+		if (childs.length > 256) {
+			childs[0].remove();
 		}
-	}*/
-	span.innerHTML = text;
-	message.appendChild(span);
-	elements.chatMessages.appendChild(message);
+	}
 	scrollChatToBottom();
 }
 
@@ -137,7 +145,6 @@ function clearChat() {
 	elements.chatMessages.innerHTML = "";
 	elements.devChatMessages.innerHTML = "";
 }
-
 
 function tick() {
 	var tickNum = ++misc.tick;
@@ -211,8 +218,8 @@ function updateXYDisplay(x, y) {
 function updatePlayerCount(count) {
 	elements.playerCountDisplay.innerHTML = count + ' cursor' + (count !== 1 ? 's online' : ' online');
 }
-
-/*function openServerSelector() {
+/*
+function openServerSelector() {
 	windowsys.addWindow(new GUIWindow(0, 0, 250, 60, "Select a server", {
 			centered: true
 		}, wdow => {
@@ -225,25 +232,25 @@ function updatePlayerCount(count) {
 				w.net.connect();
 				win.wm.delWindow(win);
 				w.options.oldserver = true;
-			}.bind({w: this, win: wdow})
+			}
 		}));
 		wdow.addObj(mkHTML("button", {
 			innerHTML: "Beta server",
 			style: "width: 100%; height: 50%",
-			onclick: function() {
+			onclick: () => {
 				w.options.serverAddress = "ws://vanillaplay.ddns.net:25565";
 				w.net.connect();
 				win.wm.delWindow(win);
-			}.bind({w: this, win: wdow})
+			}
 		}));
 		wdow.addObj(mkHTML("button", {
 			innerHTML: "Localhost",
 			style: "width: 100%; height: 50%",
-			onclick: function() {
+			onclick: () => {
 				w.options.serverAddress = "ws://localhost:25565";
 				w.net.connect();
 				win.wm.delWindow(win);
-			}.bind({w: this, win: wdow})
+			}
 		}));
 		wdow.addObj(mkHTML("button", {
 			innerHTML: "Custom server",
@@ -261,9 +268,9 @@ function updatePlayerCount(count) {
 				}
 			}.bind({w: this, win: wdow})
 		}));
-	}.bind(this)));
-}*/
-
+	}));
+}
+*/
 function logoMakeRoom(bool) {
 	elements.loadUl.style.transform = bool ? "translateY(-75%) scale(0.5)" : "";
 }
@@ -681,3 +688,12 @@ window.addEventListener("load", () => {
 
 	eventSys.emit(e.loaded);
 });
+
+/* Public API definitions */
+PublicAPI.events = eventSys;
+PublicAPI.elements = elements;
+PublicAPI.mouse = mouse;
+PublicAPI.world = getNewWorldApi();
+PublicAPI.chat = {
+	send: (msg) => net.protocol && net.protocol.sendMessage(msg)
+};

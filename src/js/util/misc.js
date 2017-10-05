@@ -82,22 +82,31 @@ export function loadScript(name) {
 }
 
 export function setTooltip(element, message) {
+	const elementSpacing = 10;
 	var intr = 0;
 	var tip = null;
 	function tooltip() {
 		var epos = element.getBoundingClientRect();
+		var y = epos.top + epos.height / 2;
 		tip = mkHTML('span', {
 			innerHTML: message,
 			className: 'framed tooltip whitetext',
-			style: `transform: translate(${mx}px,${my}px);`
+			style: 'visibility: hidden;'
 		});
 		document.body.appendChild(tip);
+		var tpos = tip.getBoundingClientRect();
+		y -= tpos.height / 2;
+		var x = epos.left - tpos.width - elementSpacing;
+		if (x < elementSpacing) {
+			x = epos.right + tpos.width + elementSpacing;
+		}
+		tip.style = `transform: translate(${Math.round(x)}px,${Math.round(y)}px);`;
 		intr = 0;
 	}
 	const mleave = e => {
 		clearTimeout(intr);
 		intr = 0;
-		element.removeEventListener('mouseleave', mmove);
+		element.removeEventListener('mouseleave', mleave);
 		element.removeEventListener('click', mleave);
 		if (tip !== null) {
 			tip.remove();

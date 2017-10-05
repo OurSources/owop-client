@@ -15,8 +15,7 @@ const protobuf = {
     0x00: { /* Verify */
         toClient: {
             0x01: [ /* Protocol version */
-                { name: 'version',
-                type: 'u8' }
+                { name: 'version', type: 'u8' }
             ],
             0x02: [ /* Captcha status */
                 { name: 'status', type: 'u8' }
@@ -67,25 +66,45 @@ const protobuf = {
     },
     0x03: {
         toClient: {
-            0x01: [
+            0x01: [ /* Set ID */
                 { name: 'id', type: 'u32' }
             ],
             0x02: [ /* Chunk data */
-                { name: 'x', type: 'u32' },
-                { name: 'y', type: 'u32' },
-                { name: 'data', type: 'u8arr', size: null } /* read till message end if size not defined */
+                { name: 'x', type: 'i32' },
+                { name: 'y', type: 'i32' },
+                { name: 'data', type: 'compressedArray', itemType: 'u16' } /* Size is defined in the compressed data */
             ],
-            0x03: [
-
+            0x03: [ /* Area subscribe status */
+                { name: 'state', type: 'u8' },
+                { name: 'x', type: 'i32' },
+                { name: 'y', type: 'i32' }
             ],
-            0x04: [
-
+            0x04: [ /* Client sync */
+                { name: 'tool', type: 'u8' },
+                { name: 'x', type: 'i32' },
+                { name: 'y', type: 'i32' },
+                { name: 'perms', type: 'u8' }
             ],
-            0x05: [
-
+            0x05: [ /* Action rejected */
+                { name: 'action', type: 'u8' }
+                /* TODO - different data for different actions */
             ],
-            0x06: [
-
+            0x06: [ /* World state */
+                { name: 'players', type: 'array', itemType: [
+                    { name: 'id', type: 'u32' },
+                    { name: 'x', type: 'i32' },
+                    { name: 'y', type: 'i32' },
+                    { name: 'color', type: 'u16' }
+                ]},
+                { name: 'pixels', type: 'array', itemType: [
+                    { name: 'x', type: 'i32' },
+                    { name: 'y', type: 'i32' },
+                    { name: 'rgb', type: 'u16'}
+                ]},
+                { name: 'playersLeft', type: 'array', itemType: [
+                    { name: 'id', type: 'u32' }
+                ]},
+                { name: 'totalPlayers', type: 'u32' }
             ],
             0x07: [
 
