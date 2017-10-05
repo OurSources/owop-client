@@ -90,18 +90,19 @@ const protobuf = {
                 /* TODO - different data for different actions */
             ],
             0x06: [ /* World state */
-                { name: 'players', type: 'array', itemType: [
+                { name: 'players', type: 'array', sizeType: 'u8', itemType: [
                     { name: 'id', type: 'u32' },
                     { name: 'x', type: 'i32' },
                     { name: 'y', type: 'i32' },
-                    { name: 'color', type: 'u16' }
+                    { name: 'color', type: 'u16' },
+                    { name: 'tool', type: 'u8' }
                 ]},
-                { name: 'pixels', type: 'array', itemType: [
+                { name: 'pixels', type: 'array', sizeType: 'u16', itemType: [
                     { name: 'x', type: 'i32' },
                     { name: 'y', type: 'i32' },
                     { name: 'rgb', type: 'u16'}
                 ]},
-                { name: 'playersLeft', type: 'array', itemType: [
+                { name: 'playersLeft', type: 'array', sizeType: 'u8', itemType: [
                     { name: 'id', type: 'u32' }
                 ]},
                 { name: 'totalPlayers', type: 'u32' }

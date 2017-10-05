@@ -250,15 +250,24 @@ eventSys.once(e.misc.toolsRendered, () => {
 					// Reset zoom (right + left click)
 					nzoom = options.defaultZoom;
 				}
+				nzoom = Math.round(nzoom);
 				camera.zoom = nzoom;
-				moveCameraBy(offX, offY);
+				if (camera.zoom !== lzoom) {
+					moveCameraBy(offX, offY);
+				}
 			}
 			
 			tool.setEvent("mousedown", (mouse, event) => {
 				zoom(mouse, mouse.buttons);
 			});
 			tool.setEvent("touchstart", (mouse, event) => {
-				zoom(mouse, event.changedTouches[0].identifier + 1);
+				tool.extra.maxTouches = Math.max(tool.extra.maxTouches || 0, event.touches.length);
+			});
+			tool.setEvent("touchend", (mouse, event) => {
+				if (event.touches.length === 0) {
+					zoom(mouse, tool.extra.maxTouches);
+					tool.extra.maxTouches = 0;
+				}
 			});
 		}
 	);

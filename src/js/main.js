@@ -51,6 +51,7 @@ export const elements = {
 };
 
 export const misc = {
+	chatModifier: null,
 	_world: null,
 	exceptionTimeout: null,
 	tick: 0,
@@ -96,6 +97,14 @@ function updateCamera() {
 }
 
 function receiveMessage(text) {
+	const undefToNull = val => val === undefined ? null : val;
+	var modifiedText = undefToNull(misc.chatModifier && misc.chatModifier(text));
+	console.log(text);
+	text = modifiedText === null ? text : modifiedText;
+	if (text.length === 0) {
+		return;
+	}
+
 	var message = document.createElement("li");
 	var idIndex = text.indexOf(': '); /* This shouldn't be like this, change on proto switch */
 	var realText = text;
@@ -104,7 +113,6 @@ function receiveMessage(text) {
 		realText = ntext.replace(/\d+/g, '') + text.slice(idIndex + 2);
 	}
 	var span = document.createElement("span");
-	console.log(text);
 	if (misc.lastMessage && misc.lastMessage.text === realText) {
 		misc.lastMessage.incCount();
 	} else {
@@ -695,5 +703,7 @@ PublicAPI.elements = elements;
 PublicAPI.mouse = mouse;
 PublicAPI.world = getNewWorldApi();
 PublicAPI.chat = {
-	send: (msg) => net.protocol && net.protocol.sendMessage(msg)
+	send: (msg) => net.protocol && net.protocol.sendMessage(msg),
+	get chatModifier() { return misc.chatModifier; },
+	set chatModifier(fn) { misc.chatModifier = fn; }
 };
