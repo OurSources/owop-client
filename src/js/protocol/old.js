@@ -32,7 +32,7 @@ export const OldProtocol = {
         1: 'move',
         2: 'pipette',
         3: 'erase',
-        4: 'zoom' /* Not supported server-side atm */
+        4: 'zoom'
     },
     misc: {
         worldVerification: 1337,
@@ -86,6 +86,7 @@ class OldProtocolImpl extends Protocol {
         this.worldName = worldName ? worldName : "main";
         this.players = {};
         this.chunksLoading = {}; /* duplicate */
+        this.waitingForChunks = 0;
         this.id = null;
 
         var params = OldProtocol.chatBucket;
@@ -220,11 +221,13 @@ class OldProtocolImpl extends Protocol {
                     eventSys.emit(e.net.chunk.set, chunkX, chunkY, u8data);
 				} else {
                     delete this.chunksLoading[key];
+                    this.waitingForChunks--;
                     var u32data = new Uint32Array(OldProtocol.chunkSize * OldProtocol.chunkSize);
                     for (var i = 0, u = 0; i < u8data.length; i += 3) { /* Need to make a copy ;-; */
-                        u32data[u++] = 0xFF000000 | u8data[i + 2] << 16
-                                        | u8data[i + 1] << 8
-                                        | u8data[i];
+                        var color = u8data[i + 2] << 16
+                            | u8data[i + 1] << 8
+                            | u8data[i]
+                        u32data[u++] = color != 0xFFFFFF || !options.backgroundUrl ? 0xFF000000 | color : color;
                     }
 					var chunk = new Chunk(chunkX, chunkY, u32data);
 					eventSys.emit(e.net.chunk.load, chunk);
@@ -279,11 +282,16 @@ class OldProtocolImpl extends Protocol {
             return;
         }
         this.chunksLoading[key] = true;
+        this.waitingForChunks++;
         var array = new ArrayBuffer(8);
         var dv = new DataView(array);
         dv.setInt32(0, x, true);
         dv.setInt32(4, y, true);
         this.ws.send(array);
+    }
+
+    allChunksLoaded() {
+        return this.waitingForChunks === 0;
     }
         
     updatePixel(x, y, rgb) {

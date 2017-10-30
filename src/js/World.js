@@ -21,7 +21,7 @@ export class Chunk {
 		/* WARNING: Should absMod if not power of two */
 		x &= (protocol.chunkSize - 1);
 		y &= (protocol.chunkSize - 1);
-		this.u32data[y * protocol.chunkSize + x] = 0xFF000000 | color;
+		this.u32data[y * protocol.chunkSize + x] = color != 0xFFFFFF || !options.backgroundUrl ? 0xFF000000 | color : color;
 		this.needsRedraw = true;
 	}
 
@@ -34,12 +34,13 @@ export class Chunk {
 	set(data) {
 		if (Number.isInteger(data)) {
 			for (var i = 0; i < this.u32data.length; i++) {
-				this.u32data[i] = 0xFF000000 | data;
+				this.u32data[i] = data != 0xFFFFFF || !options.backgroundUrl ? 0xFF000000 | data : data;
 			}
 		} else {
 			for (var i = 0; i < this.u32data.length; i++) {
 				var j = 3 * i;
-				this.u32data[i] = 0xFF000000 | data[j + 2] << 16 | data[j + 1] << 8 | data[j];
+				var color = data[j + 2] << 16 | data[j + 1] << 8 | data[j];
+				this.u32data[i] = color != 0xFFFFFF || !options.backgroundUrl ? 0xFF000000 | color : color;
 			}
 		}
 		this.needsRedraw = true;
@@ -54,7 +55,6 @@ export class World {
 	constructor(worldName) {
 		this.name = worldName;
 		this.chunks = {};
-		this.chunksLoading = {};
 		this.players = {};
 		this.undoHistory = [];
 		
@@ -91,6 +91,10 @@ export class World {
 		if (!this.chunks[key] && net.isConnected()) {
 			net.protocol.requestChunk(x, y);
 		}
+	}
+
+	allChunksLoaded() {
+		return net.protocol.allChunksLoaded();
 	}
 	
 	unloadFarChunks() { /* Slow? */

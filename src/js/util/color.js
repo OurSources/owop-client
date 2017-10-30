@@ -15,7 +15,7 @@ export const colorUtils = {
 	arrFrom565: color => [color & 0b11111, color >> 5 & 0b111111, color >> 11 & 0b11111],
 	/* Takes an integer, and gives an html compatible color */
 	toHTML: color => {
-		color = color.toString(16); //(color >> 16 & 0xFF | color & 0xFF00 | color << 16 & 0xFF0000).toString(16);
+		color = (color >> 16 & 0xFF | color & 0xFF00 | color << 16 & 0xFF0000).toString(16);
 		return '#' + ('000000' + color).substring(color.length);
 	}
 };

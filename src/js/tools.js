@@ -265,7 +265,9 @@ eventSys.once(e.misc.toolsRendered, () => {
 			});
 			tool.setEvent("touchend", (mouse, event) => {
 				if (event.touches.length === 0) {
-					zoom(mouse, tool.extra.maxTouches);
+					if (tool.extra.maxTouches > 1) {
+						zoom(mouse, tool.extra.maxTouches);
+					}
 					tool.extra.maxTouches = 0;
 				}
 			});

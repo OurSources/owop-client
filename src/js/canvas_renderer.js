@@ -40,19 +40,22 @@ const rendererValues = {
 	animContext: null,
 	gridShown: true,
 	gridPattern: null, /* Rendered each time the zoom changes */
+	unloadedPattern: null,
+	worldBackground: null,
 	minGridZoom: 4, /* minimum zoom level where the grid shows up */
 	updatedClusters: [], /* Clusters to render for the next frame */
-	clusters: {}
+	clusters: {},
+	visibleClusters: [],
+	currentFontSize: -1
 };
 
 /*PublicAPI.rval = rendererValues;*/
 
 export const renderer = {
 	rendertype: {
-		ALL:      0b111,
-		FX:       0b001,
-		WORLD:    0b010,
-		VIEWPORT: 0b100
+		ALL:      0b11,
+		FX:       0b01,
+		WORLD:    0b10
 	},
 	render: requestRender,
 	showGrid: setGridVisibility,
@@ -75,7 +78,7 @@ class ChunkCluster {
 		this.canvas.height = protocol.chunkSize * protocol.clusterChunkAmount;
 		this.ctx = this.canvas.getContext("2d");
 		this.chunks = [];
-		this.canvas.style.transform = "translate(" + (x * protocol.chunkSize * protocol.clusterChunkAmount) + "px," + (y * protocol.chunkSize * protocol.clusterChunkAmount) + "px)";
+		//this.canvas.style.transform = "translate(" + (x * protocol.chunkSize * protocol.clusterChunkAmount) + "px," + (y * protocol.chunkSize * protocol.clusterChunkAmount) + "px)";
 	}
 	
 	render() {
@@ -98,7 +101,6 @@ class ChunkCluster {
 		}
 		this.canvas.width = 0;
 		this.chunks = [];
-		this.canvas.remove();
 		delete rendererValues.clusters[[this.x, this.y]];
 	}
 	
@@ -139,7 +141,7 @@ function isVisible(x, y, w, h) {
 	var czoom = camera.zoom;
 	var cw    = window.innerWidth;
 	var ch    = window.innerHeight;
-	return x + w >= cx && y + h >= cy &&
+	return x + w > cx && y + h > cy &&
 	       x <= cx + cw / czoom && y <= cy + ch / czoom;
 }
 
@@ -159,47 +161,89 @@ function render(type) {
 		rendererValues.updatedClusters = [];
 	}
 	
-	if (type & renderer.rendertype.FX) {
+	if (type & renderer.rendertype.FX && misc.world !== null) {
 		var ctx = rendererValues.animContext;
-		ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+		var visible = rendererValues.visibleClusters;
+		var clusterCanvasSize = protocol.chunkSize * protocol.clusterChunkAmount;
+		var modx = Math.ceil(window.innerWidth / clusterCanvasSize);
+		var mody = Math.ceil(window.innerHeight / clusterCanvasSize);
+		var background = rendererValues.worldBackground;
+		ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 		ctx.lineWidth = 2.5 / 16 * zoom;
+
+		ctx.scale(zoom, zoom);
+
+		for (var i = 0; i < visible.length; i++) {
+			var cluster = visible[i];
+			var gx = -(camx - cluster.x * clusterCanvasSize) % (modx * clusterCanvasSize);
+			var gy = -(camy - cluster.y * clusterCanvasSize) % (mody * clusterCanvasSize);
+			ctx.drawImage(cluster.canvas, gx, gy);
+		}
+
+		ctx.scale(1 / zoom, 1 / zoom); /* probably faster than ctx.save(), ctx.restore() */
 		
-		if (rendererValues.gridShown && rendererValues.gridPattern) {
-			var gx = -(camx * zoom) % (16 * zoom);
-			var gy = -(camy * zoom) % (16 * zoom);
+		if (background != null) {
+			var newscale = zoom / options.defaultZoom;
+			var oldscale = options.defaultZoom / zoom;
+			var gx = -(camx * zoom) % (background.width * newscale);
+			var gy = -(camy * zoom) % (background.height * newscale);
 			ctx.translate(gx, gy);
-			ctx.fillStyle = rendererValues.gridPattern;
-			ctx.fillRect(-gx, -gy, ctx.canvas.width, ctx.canvas.height);
+
+			ctx.fillStyle = background;
+			ctx.globalCompositeOperation = "destination-over";
+			
+			ctx.scale(newscale, newscale);
+			ctx.fillRect(-gx / newscale, -gy / newscale, ctx.canvas.width * oldscale, ctx.canvas.height * oldscale);
+			ctx.scale(oldscale, oldscale);
+
 			ctx.translate(-gx, -gy);
 		}
 
-		if (misc.world !== null) {
-			for (var i = 0; i < activeFx.length; i++) {
-				switch (renderFx(activeFx[i], time)) {
-				case 0: /* Anim not finished */
-					needsRender |= renderer.rendertype.FX;
-					break;
-				case 2: /* Obj deleted from array, prevent flickering */
-					--i;
-					break;
-				}
+		var gx = -(camx * zoom) % (16 * zoom);
+		var gy = -(camy * zoom) % (16 * zoom);
+		ctx.translate(gx, gy);
+
+		if (rendererValues.gridShown && rendererValues.gridPattern) {
+			ctx.fillStyle = rendererValues.gridPattern;
+			ctx.globalCompositeOperation = "source-atop";
+			ctx.fillRect(-gx, -gy, ctx.canvas.width, ctx.canvas.height);
+		}
+
+		if (rendererValues.unloadedPattern != null && (!misc.world.allChunksLoaded() || background != null)) {
+			ctx.fillStyle = rendererValues.unloadedPattern;
+			ctx.globalCompositeOperation = "destination-over";
+			ctx.fillRect(-gx, -gy, ctx.canvas.width, ctx.canvas.height);
+		}
+
+		ctx.translate(-gx, -gy);
+
+		ctx.globalCompositeOperation = "source-over";
+
+		for (var i = 0; i < activeFx.length; i++) {
+			switch (renderFx(activeFx[i], time)) {
+			case 0: /* Anim not finished */
+				needsRender |= renderer.rendertype.FX;
+				break;
+			case 2: /* Obj deleted from array, prevent flickering */
+				--i;
+				break;
 			}
-			ctx.globalAlpha = 1;
-			var players = misc.world.players;
-			var fontsize = 10 / 16 * zoom | 0;
+		}
+		ctx.globalAlpha = 1;
+		var players = misc.world.players;
+		var fontsize = 10 / 16 * zoom | 0;
+		if (rendererValues.currentFontSize != fontsize) {
 			ctx.font = fontsize + "px sans-serif";
-			for (var p in players) {
-				var player = players[p];
-				if (!renderPlayer(player, fontsize)) {
-					needsRender |= renderer.rendertype.FX;
-				}
+			rendererValues.currentFontSize = fontsize;
+		}
+		for (var p in players) {
+			var player = players[p];
+			if (!renderPlayer(player, fontsize)) {
+				needsRender |= renderer.rendertype.FX;
 			}
 		}
 	}
 
-	if (type & renderer.rendertype.VIEWPORT) {
-		elements.clusterDiv.style.transform = "scale(" + zoom + ") translate(" + (-camera.x) + "px," + (-camera.y) + "px)";
-	}
 	requestRender(needsRender);
 }
 
@@ -315,18 +359,20 @@ function renderGrid(zoom) {
 	var ctx = tmpcanvas.getContext("2d");
 	tmpcanvas.width = tmpcanvas.height = 16 * zoom;
 	ctx.setLineDash([1]);
-	ctx.globalAlpha = .2;
-	for (var i = 16; --i;) {
-		ctx.beginPath();
-		ctx.moveTo(i * zoom + .5, 0);
-		ctx.lineTo(i * zoom + .5, 16 * zoom);
-		ctx.stroke();
-		ctx.beginPath();
-		ctx.moveTo(0, i * zoom + .5);
-		ctx.lineTo(16 * zoom, i * zoom + .5);
-		ctx.stroke();
+	if (zoom >= 4) {
+		ctx.globalAlpha = .2;
+		for (var i = 16; --i;) {
+			ctx.beginPath();
+			ctx.moveTo(i * zoom + .5, 0);
+			ctx.lineTo(i * zoom + .5, 16 * zoom);
+			ctx.stroke();
+			ctx.beginPath();
+			ctx.moveTo(0, i * zoom + .5);
+			ctx.lineTo(16 * zoom, i * zoom + .5);
+			ctx.stroke();
+		}
+		ctx.globalAlpha = 1;
 	}
-	ctx.globalAlpha = 1;
 	ctx.beginPath();
 	ctx.moveTo(0, 0);
 	ctx.lineTo(0, 16 * zoom);
@@ -345,16 +391,17 @@ function setGridZoom(zoom) {
 
 function updateVisible() {
 	var clusters = rendererValues.clusters;
-	var clusterDiv = elements.clusterDiv;
+	var visiblecl = rendererValues.visibleClusters;
 	for (var c in clusters) {
 		c = clusters[c];
-		var visible = isVisible(c.x * protocol.chunkSize * protocol.clusterChunkAmount, c.y * protocol.chunkSize * protocol.clusterChunkAmount, protocol.chunkSize * protocol.clusterChunkAmount, protocol.chunkSize * protocol.clusterChunkAmount);
+		var size = protocol.chunkSize * protocol.clusterChunkAmount;
+		var visible = isVisible(c.x * size, c.y * size, size, size);
 		if (!visible && c.shown) {
 			c.shown = false;
-			clusterDiv.removeChild(c.canvas);
+			visiblecl.splice(visiblecl.indexOf(c), 1);
 		} else if (visible && !c.shown) {
 			c.shown = true;
-			clusterDiv.appendChild(c.canvas);
+			visiblecl.push(c);
 			requestRender(renderer.rendertype.WORLD);
 		}
 	}
@@ -364,6 +411,7 @@ function onResize() {
 	elements.animCanvas.width = window.innerWidth;
 	elements.animCanvas.height = window.innerHeight;
 	rendererValues.animContext.imageSmoothingEnabled = false;
+	rendererValues.currentFontSize = -1;
 	onCameraMove();
 }
 
@@ -394,7 +442,7 @@ function onCameraMove() {
 	if (misc.world !== null) {
 		requestMissingChunks();
 	}
-	requestRender(renderer.rendertype.FX | renderer.rendertype.VIEWPORT);
+	requestRender(renderer.rendertype.FX);
 }
 
 function getCenterPixel() {
@@ -428,7 +476,7 @@ eventSys.on(e.net.world.teleported, (x, y) => {
 eventSys.on(e.camera.zoom, z => {
 	setGridZoom(z);
 	/*cameraValues.lerpZoom.val = z;*/
-	requestRender(renderer.rendertype.VIEWPORT | (rendererValues.gridShown ? renderer.rendertype.FX : 0));
+	requestRender(renderer.rendertype.FX);
 });
 
 eventSys.on(e.renderer.addChunk, chunk => {
@@ -445,8 +493,8 @@ eventSys.on(e.renderer.addChunk, chunk => {
 	if (!cluster.toUpdate) {
 		cluster.toUpdate = true;
 		rendererValues.updatedClusters.push(cluster);
-		requestRender(renderer.rendertype.WORLD);
 	}
+	requestRender(renderer.rendertype.WORLD | renderer.rendertype.FX);	
 });
 
 eventSys.on(e.renderer.rmChunk, chunk => {
@@ -473,7 +521,7 @@ eventSys.on(e.renderer.updateChunk, chunk => {
 		rendererValues.updatedClusters.push(cluster);
 	}
 	if (isVisible(chunk.x * protocol.chunkSize, chunk.y * protocol.chunkSize, protocol.chunkSize, protocol.chunkSize)) {
-		requestRender(renderer.rendertype.WORLD);
+		requestRender(renderer.rendertype.WORLD | renderer.rendertype.FX);
 	}
 });
 
@@ -482,11 +530,34 @@ eventSys.on(e.misc.worldInitialized, () => {
 });
 
 eventSys.once(e.init, () => {
-	rendererValues.animContext = elements.animCanvas.getContext("2d");
+	rendererValues.animContext = elements.animCanvas.getContext("2d", { alpha: false });
 	window.addEventListener("resize", onResize);
 	onResize();
 	camera.zoom = options.defaultZoom;
 	centerCameraTo(0, 0);
+
+	const mkPatternFromUrl = (url, cb) => {
+		var patImg = new Image();
+		patImg.onload = () => {
+			var pat = rendererValues.animContext.createPattern(patImg, "repeat");
+			pat.width = patImg.width;
+			pat.height = patImg.height;
+			cb(pat);
+		};
+		patImg.src = url;
+	};
+
+	/* Create the pattern images */
+	mkPatternFromUrl(options.unloadedPatternUrl, pat => {
+		rendererValues.unloadedPattern = pat;
+	});
+
+	if (options.backgroundUrl != null) {
+		mkPatternFromUrl(options.backgroundUrl, pat => {
+			rendererValues.worldBackground = pat;
+		});
+	}
+
 	function frameLoop() {
 		let type;
 		if ((type = rendererValues.updateRequired) !== 0) {

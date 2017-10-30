@@ -192,7 +192,7 @@ function updateMouse(event, eventName, mouseX, mouseY) {
 	mouse.y = mouseY;
 	
 	var tool = player.tool;
-	if (tool !== null) {
+	if (tool !== null && misc.world !== null) {
 		player.tool.call(eventName, [mouse, event]);
 
 		if (updateClientFx()) {
@@ -426,7 +426,7 @@ function init() {
 		if (document.activeElement.tagName !== "INPUT" && misc.world !== null) {
 			keysDown[keyCode] = true;
 			var tool = player.tool;
-			if (tool !== null && tool.call('keydown', [keysDown, event])) {
+			if (tool !== null && misc.world !== null && tool.call('keydown', [keysDown, event])) {
 				return false;
 			}
 			switch (keyCode) {
@@ -496,7 +496,7 @@ function init() {
 		delete keysDown[keyCode];
 		if (document.activeElement.tagName !== "INPUT") {
 			var tool = player.tool;
-			if (!(tool !== null && tool.call('keyup', [keysDown, event]))) {
+			if (!(tool !== null && misc.world !== null && tool.call('keyup', [keysDown, event]))) {
 				if (keyCode == 13) {
 					elements.chatInput.focus();
 				} else if (keyCode == 16) {
@@ -516,7 +516,7 @@ function init() {
 		mouse.buttons = event.buttons;
 
 		var tool = player.tool;
-		if (tool !== null) {
+		if (tool !== null && misc.world !== null) {
 			player.tool.call('mousedown', [mouse, event]);
 		}
 	});
@@ -524,7 +524,7 @@ function init() {
 	window.addEventListener("mouseup", event => {
 		mouse.buttons = event.buttons;
 		var tool = player.tool;
-		if (tool !== null) {
+		if (tool !== null && misc.world !== null) {
 			player.tool.call('mouseup', [mouse, event]);
 		}
 	});
@@ -551,7 +551,7 @@ function init() {
 	const touchEventNoUpdate = evtName => event => {
 		var tool = player.tool;
 		mouse.buttons = 0;
-		if (tool !== null) {
+		if (tool !== null && misc.world !== null) {
 			player.tool.call(evtName, [mouse, event]);
 		}
 	};
@@ -690,7 +690,6 @@ window.addEventListener("load", () => {
 	elements.paletteCreate = document.getElementById("palette-create");
 	
 	elements.animCanvas = document.getElementById("animations");
-	elements.clusterDiv = document.getElementById("clusters");
 
 	elements.viewport = document.getElementById("viewport");
 	elements.windows = document.getElementById("windows");

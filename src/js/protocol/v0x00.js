@@ -100,7 +100,7 @@ const protobuf = {
                 { name: 'pixels', type: 'array', sizeType: 'u16', itemType: [
                     { name: 'x', type: 'i32' },
                     { name: 'y', type: 'i32' },
-                    { name: 'rgb', type: 'u16'}
+                    { name: 'rgb', type: 'u16' }
                 ]},
                 { name: 'playersLeft', type: 'array', sizeType: 'u8', itemType: [
                     { name: 'id', type: 'u32' }

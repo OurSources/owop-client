@@ -2,8 +2,7 @@
 @import url(/css/styled_scrollbar.css);
 
 html, body {
-	font-family: pixel-op;
-	font-size: 16px;
+	font: 16px pixel-op;
 	width: 100%;
 	height: 100%;
 	margin: 0;
@@ -72,6 +71,7 @@ button.winframe:active {
 
 .whitetext, #xy-display, #chat-messages, #dev-chat-messages, #playercount-display {
 	color: #FFF;
+	font: 16px pixel-op, 16px sans-serif;
 	text-shadow: -1px 0 #000, 0 1px #000, 1px 0 #000, 0 -1px #000;
 }
 
@@ -116,11 +116,12 @@ img, #clusters, #xy-display, #tool-select, #palette, #windows {
 }
 
 #noscript-msg, #status {
-	font: initial;
+	font: 16px pixel-op;
 }
 
 #status-msg {
 	vertical-align: super;
+	text-shadow: -1px 0 #000, 0 1px #000, 1px 0 #000, 0 -1px #000, 0 0 2px #000;
 }
 
 #spinner {
@@ -223,7 +224,6 @@ button:focus {
 #animations {
 	top: 0;
 	left: 0;
-	pointer-events: none;
 }
 #xy-display, #playercount-display, #palette {
 	position: absolute;
@@ -326,7 +326,7 @@ button:focus {
 	max-width: 450px;
 	max-height: 40%;
 	display: flex;
-	font-family: monospace;
+	font-family: pixel-op, monospace;
 	flex-direction: column;
 	background-color: none;
 	pointer-events: none;
@@ -347,7 +347,7 @@ button:focus {
 	flex: 1;
 	margin: 0;
 	padding: 0;
-	font-size: 14px;
+	font-size: 16px;
 	word-wrap: break-word;
 	overflow: inherit;
 	vertical-align: bottom;

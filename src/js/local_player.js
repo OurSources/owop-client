@@ -1,7 +1,7 @@
 'use strict';
 import { eventSys, PublicAPI } from './global.js';
 import { EVENTS as e, RANK } from './conf.js';
-import { openColorPicker, absMod } from './util/misc.js';
+import { openColorPicker, absMod, setTooltip } from './util/misc.js';
 import { elements, mouse, misc, showDevChat } from './main.js';
 import { colorUtils as color } from './util/color.js';
 import { renderer } from './canvas_renderer.js';
@@ -78,6 +78,7 @@ function updatePalette() {
 		var element = document.createElement("div");
 		var clr = palette[i];
 		element.style.backgroundColor = "rgb(" + clr[0] + "," + clr[1] + "," + clr[2] + ")";
+		setTooltip(element, color.toHTML(color.u24_888(clr[0], clr[1], clr[2])));
 		element.onmouseup = function(e) {
 			switch(e.button) {
 				case 0:
@@ -136,7 +137,7 @@ function updateClientFx(force) {
 	var tileX   = Math.floor(mouse.worldX / 16);
 	var tileY   = Math.floor(mouse.worldY / 16);
 	var rgb = player.selectedColor;
-	    rgb = color.u24_888(rgb[2], rgb[1], rgb[0]);
+	    rgb = color.u24_888(rgb[0], rgb[1], rgb[2]);
 	var tool = toolSelected;
 	if (tool && (fxtileX !== tileX || fxtileY !== tileY || force)) {
 		var valid = misc.world !== null && misc.world.validMousePos(tileX, tileY);

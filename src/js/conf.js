@@ -1,6 +1,9 @@
 "use strict";
 import { eventSys, PublicAPI } from './global.js';
+import { propertyDefaults, storageEnabled } from './util/misc.js';
 import toolSet from '../img/toolset.png';
+import unloadedPat from '../img/unloaded.png';
+import halloweenPat from '../img/halloween-pattern.png';
 /* Important constants */
 
 export let protocol = null;
@@ -64,7 +67,7 @@ export const EVENTS = {
 	}
 };
 
-export const options = {
+export const options = propertyDefaults(storageEnabled() && JSON.parse(localStorage.getItem('owopOptions') || '{}'), {
 	serverAddress: [{
 		default: true,
 		title: 'Official server',
@@ -79,14 +82,16 @@ export const options = {
 	fps: 30, // Fps used if requestAnimationFrame is not supported (not used atm)
 	netUpdateSpeed: 20, // How many times per second to send updates to server
 	tickSpeed: 30, // How many times per second to run a tick
-	movementSpeed: 32,
+	movementSpeed: 30,
 	defaultZoom: 16,
 	zoomStrength: 1,
 	zoomLimitMin: 1,
 	zoomLimitMax: 32,
 	unloadDistance: 30,
-	toolSetUrl: toolSet
-};
+	toolSetUrl: toolSet,
+	unloadedPatternUrl: unloadedPat,
+	backgroundUrl: halloweenPat
+});
 
 PublicAPI.options = options;
 

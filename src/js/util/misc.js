@@ -34,6 +34,17 @@ export function storageEnabled() {
 	}
 }
 
+export function propertyDefaults(obj, defaults) {
+	if (obj) {
+		for (var prop in obj) {
+			if (obj.hasOwnProperty(prop)) {
+				defaults[prop] = obj[prop];
+			}
+		}
+	}
+	return defaults;
+}
+
 // This fixes modulo to work on negative numbers (-1 % 16 = 15)
 export function absMod(n1, n2) {
 	return ((n1 % n2) + n2) % n2;
@@ -46,7 +57,7 @@ export function openColorPicker(defColor, callback) {
 		callback([parseInt(value[1], 16), parseInt(value[2], 16), parseInt(value[3], 16)]);
 	};
 	colorI.type = 'color';
-	colorI.value = color.toHTML(color.u24_888(defColor[2], defColor[1], defColor[0]));
+	colorI.value = color.toHTML(color.u24_888(defColor[0], defColor[1], defColor[2]));
 	colorI.click();
 }
 
@@ -108,6 +119,7 @@ export function setTooltip(element, message) {
 		intr = 0;
 		element.removeEventListener('mouseleave', mleave);
 		element.removeEventListener('click', mleave);
+		element.removeEventListener('DOMNodeRemoved', mleave);
 		if (tip !== null) {
 			tip.remove();
 			tip = null;
@@ -117,10 +129,18 @@ export function setTooltip(element, message) {
 		if (tip === null && intr === 0) {
 			intr = setTimeout(tooltip, 500);
 			element.addEventListener('click', mleave);
+			element.addEventListener('mouseleave', mleave);
+			element.addEventListener('DOMNodeRemoved', mleave);
 		}
 	};
+	/*var observer = new MutationObserver(e => { // Why does this not fire at all?
+		console.log(e, tip, intr);
+		if (e[0].removedNodes && (tip !== null || intr !== 0)) {
+			mleave();
+		}
+	});
+	observer.observe(element, { childList: true, subtree: true });*/
 	element.addEventListener('mouseenter', menter);
-	element.addEventListener('mouseleave', mleave);
 }
 
 export function decompress(input) {

@@ -47,7 +47,7 @@ export class Player {
         this.rgb = rgb;
         tool = tools[tool];
         let toolfx = tool ? tool.fxType : FXTYPE.NONE;
-        this.fx.update(toolfx, Math.floor(x / 16), Math.floor(y / 16), {color: color.u24_888(rgb[2], rgb[1], rgb[0])});
+        this.fx.update(toolfx, Math.floor(x / 16), Math.floor(y / 16), {color: color.u24_888(rgb[0], rgb[1], rgb[2])});
     }
 
     disconnect() {
