@@ -83,7 +83,7 @@ class OldProtocolImpl extends Protocol {
         this.lastSentX = 0;
         this.lastSentY = 0;
         this.playercount = 1;
-        this.worldName = worldName ? worldName : "main";
+        this.worldName = worldName ? worldName : options.defaultWorld;
         this.players = {};
         this.chunksLoading = {}; /* duplicate */
         this.waitingForChunks = 0;
@@ -160,10 +160,6 @@ class OldProtocolImpl extends Protocol {
 						eventSys.emit(e.net.playerCount, this.playercount);
 	  					this.players[pid] = true;
 	  				}
-					/*if (this.isVisible(pmx / 16, pmy / 16, 4, 4)
-					|| (player && this.isVisible(player.x / 16, player.y / 16, 4, 4))) {
-						shouldrender |= 1; /* Re-render players and fx
-                    }*/
                 }
                 if (updated) {
                     eventSys.emit(e.net.world.playersMoved, updates);

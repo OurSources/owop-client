@@ -28,6 +28,15 @@ const config = {
 				}
 			}]
 		},{
+			include: `${srcDir}/js/polyfill`,
+			use: [{
+				loader: 'file-loader',
+				options: {
+					outputPath: 'polyfill/',
+					name: '[name].[ext]'
+				}
+			}]
+		},{
 			include: `${srcDir}/img`,
 			use: [{
 				loader: 'file-loader',
@@ -91,9 +100,8 @@ module.exports = async env => {
 		await fs.remove(config.output.path);
 	}
 
-	/* Copy the following files/directories from the src folder to the dist folder */
-	/*await Promise.all(['img', 'css', 'font']
-		.map(file => fs.copy(`${srcDir}/${file}`, `${config.output.path}/${file}`)));*/
+	/* Copy files/directories from the src folder to the dist folder */
+	//await fs.copy(`${srcDir}/js/polyfill`, `${config.output.path}/polyfill`);
 
 	return config;
 };

@@ -83,6 +83,7 @@ export const options = propertyDefaults(storageEnabled() && JSON.parse(localStor
 	netUpdateSpeed: 20, // How many times per second to send updates to server
 	tickSpeed: 30, // How many times per second to run a tick
 	movementSpeed: 30,
+	defaultWorld: 'main',
 	defaultZoom: 16,
 	zoomStrength: 1,
 	zoomLimitMin: 1,

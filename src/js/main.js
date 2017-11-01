@@ -9,7 +9,7 @@
 'use strict';
 import { CHUNK_SIZE, EVENTS as e } from './conf.js';
 import { Bucket } from './util/Bucket.js';
-import { escapeHTML, getTime, getCookie, cookiesEnabled } from './util/misc.js';
+import { escapeHTML, getTime, getCookie, cookiesEnabled, loadScript } from './util/misc.js';
 
 import { eventSys, PublicAPI } from './global.js';
 import { options } from './conf.js';
@@ -351,7 +351,7 @@ function retryingConnect(server, worldName) {
 	tryConnect(0);
 }
 
-function init() {
+function checkFunctionality(callback) {
 	/* Multi Browser Support */
 	window.requestAnimationFrame =
 		window.requestAnimationFrame ||
@@ -361,7 +361,6 @@ function init() {
 		function(f) {
 			setTimeout(f, 1000 / options.fps);
 		};
-	HTMLCanvasElement.prototype.toBlob = HTMLCanvasElement.prototype.toBlob || HTMLCanvasElement.prototype.msToBlob;
 
 	/* I don't think this is useful anymore,
 	 * since too much stuff used doesn't work on very old browsers.
@@ -381,7 +380,17 @@ function init() {
 			return str + this[i];
 		};
 	}
+
+	var toBlob = HTMLCanvasElement.prototype.toBlob = HTMLCanvasElement.prototype.toBlob || HTMLCanvasElement.prototype.msToBlob;
 	
+	if (!toBlob) { /* Load toBlob polyfill */
+		loadScript(require('./polyfill/canvas-toBlob.js'), callback);
+	} else {
+		callback();
+	}
+}
+
+function init() {
 	var viewport = elements.viewport;
 	var chatinput = elements.chatInput;
 
@@ -696,7 +705,7 @@ window.addEventListener("load", () => {
 
 	elements.chatInput = document.getElementById("chat-input");
 
-	eventSys.emit(e.loaded);
+	checkFunctionality(() => eventSys.emit(e.loaded));
 });
 
 /* Public API definitions */

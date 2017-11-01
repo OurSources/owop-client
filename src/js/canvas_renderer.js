@@ -461,7 +461,12 @@ function updateVisible() {
 function onResize() {
 	elements.animCanvas.width = window.innerWidth;
 	elements.animCanvas.height = window.innerHeight;
-	rendererValues.animContext.imageSmoothingEnabled = false;
+	var ctx = rendererValues.animContext;
+	ctx.imageSmoothingEnabled       = false;
+	ctx.webkitImageSmoothingEnabled = false;
+	ctx.mozImageSmoothingEnabled    = false;
+	ctx.msImageSmoothingEnabled     = false;
+	ctx.oImageSmoothingEnabled      = false;
 	rendererValues.currentFontSize = -1;
 	onCameraMove();
 }

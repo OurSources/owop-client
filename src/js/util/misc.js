@@ -85,10 +85,11 @@ export function mkHTML(tag, opts) {
 	return elm;
 }
 
-export function loadScript(name) {
+export function loadScript(name, callback) {
 	document.getElementsByTagName('head')[0].appendChild(mkHTML("script", {
 		type: "text/javascript",
-		src: name
+		src: name,
+		onload: callback
 	}));
 }
 
