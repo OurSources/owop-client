@@ -12,36 +12,38 @@ export class Chunk {
 		this.needsRedraw = false;
 		this.x = x;
 		this.y = y;
-		this.data = new ImageData(protocol.chunkSize, protocol.chunkSize);
+		this.tmpChunkBuf = netdata;
+		this.view = null;
+		/*this.data = new ImageData(protocol.chunkSize, protocol.chunkSize);
 		this.u32data = new Uint32Array(this.data.data.buffer);
-		this.u32data.set(netdata);
+		this.u32data.set(netdata);*/
 	}
 	
 	update(x, y, color) {
 		/* WARNING: Should absMod if not power of two */
 		x &= (protocol.chunkSize - 1);
 		y &= (protocol.chunkSize - 1);
-		this.u32data[y * protocol.chunkSize + x] = color != 0xFFFFFF || !options.backgroundUrl ? 0xFF000000 | color : color;
+		this.view.set(x, y, 0xFF000000 | color);
 		this.needsRedraw = true;
 	}
 
 	get(x, y) {
 		x &= (protocol.chunkSize - 1);
 		y &= (protocol.chunkSize - 1);
-		return this.u32data[y * protocol.chunkSize + x];
+		return this.view.get(x, y);
 	}
 
 	set(data) {
 		if (Number.isInteger(data)) {
-			for (var i = 0; i < this.u32data.length; i++) {
-				this.u32data[i] = data != 0xFFFFFF || !options.backgroundUrl ? 0xFF000000 | data : data;
-			}
+			this.view.fill(0xFF000000 | data);
 		} else {
-			for (var i = 0; i < this.u32data.length; i++) {
+			var u32 = new Uint32Array(this.view.width, this.view.height);
+			for (var i = 0; i < u32.length; i++) {
 				var j = 3 * i;
 				var color = data[j + 2] << 16 | data[j + 1] << 8 | data[j];
-				this.u32data[i] = color != 0xFFFFFF || !options.backgroundUrl ? 0xFF000000 | color : color;
+				u32[i] = 0xFF000000 | color;
 			}
+			this.view.fillFromBuf(u32);
 		}
 		this.needsRedraw = true;
 	}

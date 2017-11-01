@@ -90,7 +90,7 @@ export const options = propertyDefaults(storageEnabled() && JSON.parse(localStor
 	unloadDistance: 30,
 	toolSetUrl: toolSet,
 	unloadedPatternUrl: unloadedPat,
-	backgroundUrl: halloweenPat
+	backgroundUrl: null
 });
 
 PublicAPI.options = options;

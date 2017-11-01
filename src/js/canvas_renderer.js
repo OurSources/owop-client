@@ -66,6 +66,41 @@ export const renderer = {
 PublicAPI.camera = camera;
 PublicAPI.renderer = renderer;
 
+class BufView {
+	constructor(u32data, x, y, w, h, realw) {
+		this.data = u32data;
+		this.offx = x;
+		this.offy = y;
+		this.realwidth = realw;
+		this.width = w;
+		this.height = h;
+	}
+
+	get(x, y) {
+		return this.data[(this.offx + x) + (this.offy + y) * this.realwidth];
+	}
+
+	set(x, y, data) {
+		this.data[(this.offx + x) + (this.offy + y) * this.realwidth] = data;
+	}
+
+	fill(data) {
+		for (var i = 0; i < this.height; i++) {
+			for (var j = 0; j < this.width; j++) {
+				this.data[(this.offx + j) + (this.offy + i) * this.realwidth] = data;
+			}
+		}
+	}
+
+	fillFromBuf(u32buf) {
+		for (var i = 0; i < this.height; i++) {
+			for (var j = 0; j < this.width; j++) {
+				this.data[(this.offx + j) + (this.offy + i) * this.realwidth] = u32buf[j + i * this.width];
+			}
+		}
+	}
+}
+
 class ChunkCluster {
 	constructor(x, y) {
 		this.removed = false;
@@ -77,19 +112,20 @@ class ChunkCluster {
 		this.canvas.width = protocol.chunkSize * protocol.clusterChunkAmount;
 		this.canvas.height = protocol.chunkSize * protocol.clusterChunkAmount;
 		this.ctx = this.canvas.getContext("2d");
+		this.data = this.ctx.createImageData(this.canvas.width, this.canvas.height);
+		this.u32data = new Uint32Array(this.data.data.buffer);
 		this.chunks = [];
 		//this.canvas.style.transform = "translate(" + (x * protocol.chunkSize * protocol.clusterChunkAmount) + "px," + (y * protocol.chunkSize * protocol.clusterChunkAmount) + "px)";
 	}
 	
 	render() {
 		this.toUpdate = false;
-		var offx = this.x * protocol.clusterChunkAmount;
-		var offy = this.y * protocol.clusterChunkAmount;
 		for (var i = this.chunks.length; i--;) {
 			var c = this.chunks[i];
 			if (c.needsRedraw) {
 				c.needsRedraw = false;
-				this.ctx.putImageData(c.data, (c.x - offx) * protocol.chunkSize, (c.y - offy) * protocol.chunkSize);
+				this.ctx.putImageData(this.data, 0, 0,
+					c.view.offx, c.view.offy, c.view.width, c.view.height);
 			}
 		}
 	}
@@ -100,16 +136,31 @@ class ChunkCluster {
 			this.shown = false;
 		}
 		this.canvas.width = 0;
+		this.u32data = this.data = null;
+		for (var i = 0; i < this.chunks.length; i++) {
+			this.chunks[i].view = null;
+		}
 		this.chunks = [];
 		delete rendererValues.clusters[[this.x, this.y]];
 	}
 	
 	addChunk(chunk) {
+		/* WARNING: Should absMod if not power of two */
+		var x = chunk.x & (protocol.clusterChunkAmount - 1);
+		var y = chunk.y & (protocol.clusterChunkAmount - 1);
+		var s = protocol.chunkSize;
+		var view = new BufView(this.u32data, x * s, y * s, s, s, protocol.clusterChunkAmount * s);
+		if (chunk.tmpChunkBuf) {
+			view.fillFromBuf(chunk.tmpChunkBuf);
+			chunk.tmpChunkBuf = null;
+		}
+		chunk.view = view;
 		this.chunks.push(chunk);
 		chunk.needsRedraw = true;
 	}
 	
 	delChunk(chunk) {
+		chunk.view = null;
 		/* There is no real need to clearRect the chunk area */
 		var i = this.chunks.indexOf(chunk);
 		if (i !== -1) {

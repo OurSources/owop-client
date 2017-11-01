@@ -227,7 +227,7 @@ class OldProtocolImpl extends Protocol {
                         var color = u8data[i + 2] << 16
                             | u8data[i + 1] << 8
                             | u8data[i]
-                        u32data[u++] = color != 0xFFFFFF || !options.backgroundUrl ? 0xFF000000 | color : color;
+                        u32data[u++] = 0xFF000000 | color;
                     }
 					var chunk = new Chunk(chunkX, chunkY, u32data);
 					eventSys.emit(e.net.chunk.load, chunk);
