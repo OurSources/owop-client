@@ -3,7 +3,7 @@ import { eventSys, PublicAPI } from './global.js';
 import { propertyDefaults, storageEnabled } from './util/misc.js';
 import toolSet from '../img/toolset.png';
 import unloadedPat from '../img/unloaded.png';
-import halloweenPat from '../img/halloween-pattern.png';
+
 /* Important constants */
 
 export let protocol = null;
@@ -37,6 +37,7 @@ export const EVENTS = {
 		updateChunk: ++evtId
 	},
 	camera: {
+		moved: ++evtId,
 		zoom: ++evtId /* (zoom value), note that this event should not be used to SET zoom level. */
 	},
 	net: {
@@ -88,11 +89,20 @@ export const options = propertyDefaults(storageEnabled() && JSON.parse(localStor
 	zoomStrength: 1,
 	zoomLimitMin: 1,
 	zoomLimitMax: 32,
-	unloadDistance: 30,
+	unloadDistance: 10,
 	toolSetUrl: toolSet,
 	unloadedPatternUrl: unloadedPat,
-	backgroundUrl: null
+	backgroundUrl: null,
+	/* Bug only affects Windows users with an Intel graphics card,
+	 * since we can't easily know the client's GPU,
+	 * activate for all windows users ¯\_(ツ)_/¯
+	 */
+	chunkBugWorkaround: navigator.userAgent.indexOf('Windows NT') !== -1
 });
+
+if (options.chunkBugWorkaround) {
+	console.debug('Chunk bug workaround enabled!');
+}
 
 PublicAPI.options = options;
 

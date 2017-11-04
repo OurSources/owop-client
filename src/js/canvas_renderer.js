@@ -5,6 +5,7 @@ import { elements, misc } from './main.js';
 import { player } from './local_player.js';
 import { activeFx, FXTYPE } from './Fx.js';
 import { getTime } from './util/misc.js';
+import { colorUtils as color } from './util/color.js';
 import { Lerp } from './util/Lerp.js';
 import { tools } from './tools.js';
 
@@ -60,7 +61,8 @@ export const renderer = {
 	render: requestRender,
 	showGrid: setGridVisibility,
 	get gridShown() { return rendererValues.gridShown; },
-	updateCamera: onCameraMove
+	updateCamera: onCameraMove,
+	unloadFarClusters: unloadFarClusters
 };
 
 PublicAPI.camera = camera;
@@ -69,6 +71,9 @@ PublicAPI.renderer = renderer;
 class BufView {
 	constructor(u32data, x, y, w, h, realw) {
 		this.data = u32data;
+		if (options.chunkBugWorkaround) {
+			this.changes = [];
+		}
 		this.offx = x;
 		this.offy = y;
 		this.realwidth = realw;
@@ -82,6 +87,9 @@ class BufView {
 
 	set(x, y, data) {
 		this.data[(this.offx + x) + (this.offy + y) * this.realwidth] = data;
+		if (options.chunkBugWorkaround) {
+			this.changes.push([0, x, y, data]);
+		}
 	}
 
 	fill(data) {
@@ -90,12 +98,19 @@ class BufView {
 				this.data[(this.offx + j) + (this.offy + i) * this.realwidth] = data;
 			}
 		}
+		if (options.chunkBugWorkaround) {
+			this.changes.push([1, 0, 0, data]);
+		}
 	}
 
 	fillFromBuf(u32buf) {
 		for (var i = 0; i < this.height; i++) {
 			for (var j = 0; j < this.width; j++) {
 				this.data[(this.offx + j) + (this.offy + i) * this.realwidth] = u32buf[j + i * this.width];
+				if (options.chunkBugWorkaround) {
+					/* Terrible */
+					this.changes.push([0, j, i, u32buf[j + i * this.width]]);
+				}
 			}
 		}
 	}
@@ -115,7 +130,9 @@ class ChunkCluster {
 		this.data = this.ctx.createImageData(this.canvas.width, this.canvas.height);
 		this.u32data = new Uint32Array(this.data.data.buffer);
 		this.chunks = [];
-		//this.canvas.style.transform = "translate(" + (x * protocol.chunkSize * protocol.clusterChunkAmount) + "px," + (y * protocol.chunkSize * protocol.clusterChunkAmount) + "px)";
+		if (options.chunkBugWorkaround) {
+			this.currentColor = 0;
+		}
 	}
 	
 	render() {
@@ -124,8 +141,29 @@ class ChunkCluster {
 			var c = this.chunks[i];
 			if (c.needsRedraw) {
 				c.needsRedraw = false;
-				this.ctx.putImageData(this.data, 0, 0,
-					c.view.offx, c.view.offy, c.view.width, c.view.height);
+				if (options.chunkBugWorkaround) {
+					var arr = c.view.changes;
+					var s = protocol.chunkSize;
+					for (var j = 0; j < arr.length; j++) {
+						var current = arr[j];
+						if (this.currentColor !== current[3]) {
+							this.currentColor = current[3];
+							this.ctx.fillStyle = color.toHTML(current[3]);
+						}
+						switch (current[0]) {
+						case 0:
+							this.ctx.fillRect(c.view.offx + current[1], c.view.offy + current[2], 1, 1);
+							break;
+						case 1:
+							this.ctx.fillRect(c.view.offx, c.view.offy, s, s);
+							break;
+						}
+					}
+					c.view.changes = [];
+				} else {
+					this.ctx.putImageData(this.data, 0, 0,
+						c.view.offx, c.view.offy, c.view.width, c.view.height);
+				}
 			}
 		}
 	}
@@ -133,15 +171,18 @@ class ChunkCluster {
 	remove() {
 		this.removed = true;
 		if (this.shown) {
+			var visiblecl = rendererValues.visibleClusters;
+			visiblecl.splice(visiblecl.indexOf(c), 1);
 			this.shown = false;
 		}
 		this.canvas.width = 0;
 		this.u32data = this.data = null;
+		delete rendererValues.clusters[`${this.x},${this.y}`];
 		for (var i = 0; i < this.chunks.length; i++) {
 			this.chunks[i].view = null;
+			this.chunks[i].remove();
 		}
 		this.chunks = [];
-		delete rendererValues.clusters[[this.x, this.y]];
 	}
 	
 	addChunk(chunk) {
@@ -196,6 +237,29 @@ function isVisible(x, y, w, h) {
 	       x <= cx + cw / czoom && y <= cy + ch / czoom;
 }
 
+export function unloadFarClusters() { /* Slow? */
+	var camx = camera.x;
+	var camy = camera.y;
+	var zoom = camera.zoom;
+	var camw = window.innerWidth / zoom | 0;
+	var camh = window.innerHeight / zoom | 0;
+	var ctrx = camx + camw / 2;
+	var ctry = camy + camh / 2;
+	var s = protocol.clusterChunkAmount * protocol.chunkSize;
+	for (var c in rendererValues.clusters) {
+		c = rendererValues.clusters[c];
+		if (!isVisible(c.x * s, c.y * s, s, s)) {
+			var dx = Math.abs(ctrx / s - c.x) | 0;
+			var dy = Math.abs(ctry / s - c.y) | 0;
+			var dist = dx + dy; /* no sqrt please */
+			//console.log(dist);
+			if (dist > options.unloadDistance) {
+				c.remove();
+			}
+		}
+	}
+}
+
 function render(type) {
 	var time = getTime(true);
 	var camx = camera.x;
@@ -216,8 +280,8 @@ function render(type) {
 		var ctx = rendererValues.animContext;
 		var visible = rendererValues.visibleClusters;
 		var clusterCanvasSize = protocol.chunkSize * protocol.clusterChunkAmount;
-		var modx = Math.ceil(window.innerWidth / clusterCanvasSize);
-		var mody = Math.ceil(window.innerHeight / clusterCanvasSize);
+		var cwidth = window.innerWidth;
+		var cheight = window.innerHeight;
 		var background = rendererValues.worldBackground;
 		ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 		ctx.lineWidth = 2.5 / 16 * zoom;
@@ -226,9 +290,21 @@ function render(type) {
 
 		for (var i = 0; i < visible.length; i++) {
 			var cluster = visible[i];
-			var gx = -(camx - cluster.x * clusterCanvasSize) % (modx * clusterCanvasSize);
-			var gy = -(camy - cluster.y * clusterCanvasSize) % (mody * clusterCanvasSize);
-			ctx.drawImage(cluster.canvas, gx, gy);
+			var gx = -(camx - cluster.x * clusterCanvasSize);
+			var gy = -(camy - cluster.y * clusterCanvasSize);
+			var clipx = gx < 0 ? -gx : 0;
+			var clipy = gy < 0 ? -gy : 0;
+			var x = gx < 0 ? 0 : gx;
+			var y = gy < 0 ? 0 : gy;
+			var clipw = clusterCanvasSize - clipx;
+			var cliph = clusterCanvasSize - clipy;
+			clipw = clipw + x < cwidth / zoom ? clipw : cwidth / zoom - x;
+			cliph = cliph + y < cheight / zoom ? cliph : cheight / zoom - y;
+			clipw = (clipw + 1) | 0; /* Math.ceil */
+			cliph = (cliph + 1) | 0;
+			if (clipw > 0 && cliph > 0) {
+				ctx.drawImage(cluster.canvas, clipx, clipy, clipw, cliph, x, y, clipw, cliph);
+			}
 		}
 
 		ctx.scale(1 / zoom, 1 / zoom); /* probably faster than ctx.save(), ctx.restore() */
@@ -462,19 +538,19 @@ function onResize() {
 	elements.animCanvas.width = window.innerWidth;
 	elements.animCanvas.height = window.innerHeight;
 	var ctx = rendererValues.animContext;
-	ctx.imageSmoothingEnabled       = false;
+	ctx.imageSmoothingEnabled = false;
 	ctx.webkitImageSmoothingEnabled = false;
-	ctx.mozImageSmoothingEnabled    = false;
-	ctx.msImageSmoothingEnabled     = false;
-	ctx.oImageSmoothingEnabled      = false;
+	ctx.mozImageSmoothingEnabled = false;
+	ctx.msImageSmoothingEnabled = false;
+	ctx.oImageSmoothingEnabled = false;
 	rendererValues.currentFontSize = -1;
 	onCameraMove();
 }
 
 function alignCamera() {
 	var zoom = cameraValues.zoom;
-	var alignedX = (cameraValues.x * zoom | 0) / zoom;
-	var alignedY = (cameraValues.y * zoom | 0) / zoom;
+	var alignedX = Math.floor(cameraValues.x * zoom) / zoom;
+	var alignedY = Math.floor(cameraValues.y * zoom) / zoom;
 	cameraValues.x = alignedX;
 	cameraValues.y = alignedY;
 }
@@ -493,6 +569,7 @@ function requestMissingChunks() { /* TODO: move this to World */
 }
 
 function onCameraMove() {
+	eventSys.emit(e.camera.moved, camera);
 	alignCamera();
 	updateVisible();
 	if (misc.world !== null) {
@@ -502,8 +579,8 @@ function onCameraMove() {
 }
 
 function getCenterPixel() {
-	var x = Math.ceil(cameraValues.x + window.innerWidth / camera.zoom / 2);
-	var y = Math.ceil(cameraValues.y + window.innerHeight / camera.zoom / 2);
+	var x = Math.round(cameraValues.x + window.innerWidth / camera.zoom / 2);
+	var y = Math.round(cameraValues.y + window.innerHeight / camera.zoom / 2);
 	return [x, y];
 }
 
@@ -538,7 +615,7 @@ eventSys.on(e.camera.zoom, z => {
 eventSys.on(e.renderer.addChunk, chunk => {
 	var clusterX = Math.floor(chunk.x / protocol.clusterChunkAmount);
 	var clusterY = Math.floor(chunk.y / protocol.clusterChunkAmount);
-	var key = [clusterX, clusterY].join();
+	var key = `${clusterX},${clusterY}`;
 	var clusters = rendererValues.clusters;
 	var cluster = clusters[key];
 	if (!cluster) {
@@ -550,18 +627,22 @@ eventSys.on(e.renderer.addChunk, chunk => {
 		cluster.toUpdate = true;
 		rendererValues.updatedClusters.push(cluster);
 	}
-	requestRender(renderer.rendertype.WORLD | renderer.rendertype.FX);	
+	var size = protocol.chunkSize;
+	if (cluster.toUpdate || isVisible(chunk.x * size, chunk.y * size, size, size)) {
+		requestRender(renderer.rendertype.WORLD | renderer.rendertype.FX);
+	}
 });
 
 eventSys.on(e.renderer.rmChunk, chunk => {
 	var clusterX = Math.floor(chunk.x / protocol.clusterChunkAmount);
 	var clusterY = Math.floor(chunk.y / protocol.clusterChunkAmount);
-	var key = [clusterX, clusterY].join();
+	var key = `${clusterX},${clusterY}`;
 	var clusters = rendererValues.clusters;
 	var cluster = clusters[key];
 	if (cluster) {
 		cluster.delChunk(chunk);
-		if (!cluster.removed) {
+		if (!cluster.removed && !cluster.toUpdate) {
+			cluster.toUpdate = true;
 			rendererValues.updatedClusters.push(cluster);
 		}
 	}
@@ -570,13 +651,14 @@ eventSys.on(e.renderer.rmChunk, chunk => {
 eventSys.on(e.renderer.updateChunk, chunk => {
 	var clusterX = Math.floor(chunk.x / protocol.clusterChunkAmount);
 	var clusterY = Math.floor(chunk.y / protocol.clusterChunkAmount);
-	var key = [clusterX, clusterY].join();
+	var key = `${clusterX},${clusterY}`;
 	var cluster = rendererValues.clusters[key];
 	if (cluster && !cluster.toUpdate) {
 		cluster.toUpdate = true;
 		rendererValues.updatedClusters.push(cluster);
 	}
-	if (isVisible(chunk.x * protocol.chunkSize, chunk.y * protocol.chunkSize, protocol.chunkSize, protocol.chunkSize)) {
+	var size = protocol.chunkSize;
+	if (isVisible(chunk.x * size, chunk.y * size, size, size)) {
 		requestRender(renderer.rendertype.WORLD | renderer.rendertype.FX);
 	}
 });

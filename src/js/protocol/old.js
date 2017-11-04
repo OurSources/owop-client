@@ -212,7 +212,7 @@ class OldProtocolImpl extends Protocol {
 				var chunkX = dv.getInt32(1, true);
 				var chunkY = dv.getInt32(5, true);
                 var u8data = new Uint8Array(message, 9, message.byteLength - 9);
-                var key = [chunkX, chunkY].join();
+                var key = `${chunkX},${chunkY}`;
 				if (!this.chunksLoading[key]) {
                     eventSys.emit(e.net.chunk.set, chunkX, chunkY, u8data);
 				} else {
@@ -273,7 +273,7 @@ class OldProtocolImpl extends Protocol {
         
     requestChunk(x, y) {
         let wb = OldProtocol.worldBorder;
-        var key = [x, y].join();
+        var key = `${x},${y}`;
         if (x > wb || y > wb || x < ~wb || y < ~wb || this.chunksLoading[key]) {
             return;
         }

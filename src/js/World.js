@@ -14,11 +14,8 @@ export class Chunk {
 		this.y = y;
 		this.tmpChunkBuf = netdata;
 		this.view = null;
-		/*this.data = new ImageData(protocol.chunkSize, protocol.chunkSize);
-		this.u32data = new Uint32Array(this.data.data.buffer);
-		this.u32data.set(netdata);*/
 	}
-	
+
 	update(x, y, color) {
 		/* WARNING: Should absMod if not power of two */
 		x &= (protocol.chunkSize - 1);
@@ -47,7 +44,7 @@ export class Chunk {
 		}
 		this.needsRedraw = true;
 	}
-	
+
 	remove() { /* Can be called when manually unloading too */
 		eventSys.emit(e.net.chunk.unload, this);
 	}
@@ -89,7 +86,7 @@ export class World {
 	}
 	
 	loadChunk(x, y) {
-		var key = [x, y].join();
+		var key = `${x},${y}`;
 		if (!this.chunks[key] && net.isConnected()) {
 			net.protocol.requestChunk(x, y);
 		}
@@ -98,41 +95,17 @@ export class World {
 	allChunksLoaded() {
 		return net.protocol.allChunksLoaded();
 	}
-	
-	unloadFarChunks() { /* Slow? */
-		var camx = camera.x;
-		var camy = camera.y;
-		var zoom = camera.zoom;
-		var camw = window.innerWidth / zoom | 0;
-		var camh = window.innerHeight / zoom | 0;
-		var ctrx = camx + camw / 2;
-		var ctry = camy + camh / 2;
-		var delay = 0;
-		for (var c in this.chunks) {
-			c = this.chunks[c];
-			if (!isVisible(c.x * protocol.chunkSize, c.y * protocol.chunkSize, protocol.chunkSize, protocol.chunkSize)) {
-				var dx = Math.abs(ctrx / protocol.chunkSize - c.x) | 0;
-				var dy = Math.abs(ctry / protocol.chunkSize - c.y) | 0;
-				var dist = dx + dy; /* no sqrt please */
-				//console.log(dist);
-				if (dist > 30) {
-					/* Slowly unload chunks to prevent lag spikes */
-					setTimeout(c => c.remove(), ++delay, c);
-				}
-			}
-		}
-	}
 
 	tilesUpdated(tiles) {
 		var chunksUpdated = {};
+		var chunkSize = protocol.chunkSize;
 		for (var i = 0; i < tiles.length; i++) {
 			var t = tiles[i];
-			var key = [Math.floor(t.x / protocol.chunkSize), Math.floor(t.y / protocol.chunkSize)].join();
+			var key = `${Math.floor(t.x / chunkSize)},${Math.floor(t.y / chunkSize)}`;
 			var chunk = this.chunks[key];
 			if (chunk) {
 				chunksUpdated[key] = chunk;
-				/* WARNING: should absMod if not power of two */
-				chunk.update(t.x & (protocol.chunkSize - 1), t.y & (protocol.chunkSize - 1), t.rgb);
+				chunk.update(t.x, t.y, t.rgb);
 			}
 		}
 		for (var c in chunksUpdated) {
@@ -175,7 +148,8 @@ export class World {
 	}
 
 	setPixel(x, y, color, noUndo) {
-		var chunk = this.getChunkAt(Math.floor(x / protocol.chunkSize), Math.floor(y / protocol.chunkSize));
+		var chunkSize = protocol.chunkSize;
+		var chunk = this.chunks[`${Math.floor(x / chunkSize)},${Math.floor(y / chunkSize)}`];
 		if (chunk) {
 			var oldPixel = this.getPixel(x, y, chunk);
 			if (!oldPixel || (oldPixel[0] === color[0] && oldPixel[1] === color[1] && oldPixel[2] === color[2])
@@ -212,14 +186,13 @@ export class World {
 	}
 
 	getChunkAt(x, y) {
-		return this.chunks[[x, y]];
+		return this.chunks[`${x},${y}`];
 	}
-	
+
 	getPixel(x, y, chunk) {
 		if (!chunk) {
-			var fl     = Math.floor;
-			var key    = [fl(x / protocol.chunkSize), fl(y / protocol.chunkSize)].join();
-			chunk = this.chunks[key];
+			var chunkSize = protocol.chunkSize;
+			chunk = this.chunks[`${Math.floor(x / chunkSize)},${Math.floor(y / chunkSize)}`];
 		}
 		
 		if (chunk) {
@@ -234,17 +207,17 @@ export class World {
 	}
 	
 	chunkLoaded(chunk) {
-		this.chunks[[chunk.x, chunk.y]] = chunk;
+		this.chunks[`${chunk.x},${chunk.y}`] = chunk;
 		eventSys.emit(e.renderer.addChunk, chunk);
 	}
 	
 	chunkUnloaded(chunk) {
-		delete this.chunks[[chunk.x, chunk.y]];
+		delete this.chunks[`${chunk.x},${chunk.y}`];
 		eventSys.emit(e.renderer.rmChunk, chunk);
 	}
 
 	chunkPasted(x, y, data) {
-		var chunk = this.chunks[[x, y]];
+		var chunk = this.chunks[`${x},${y}`];
 		if (chunk) {
 			chunk.set(data);
 			eventSys.emit(e.renderer.updateChunk, chunk);

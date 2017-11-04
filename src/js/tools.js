@@ -88,7 +88,8 @@ class Tool {
 			touchcancel: null,
             select: null,
 			keydown: null,
-			keyup: null
+			keyup: null,
+			scroll: null
         };
         onInit(this);
     }
@@ -140,8 +141,6 @@ eventSys.once(e.misc.toolsRendered, () => {
 			function draw(tileX, tileY, color) {
 				var pixel = misc.world.getPixel(tileX, tileY);
 				if (pixel !== null && !(color[0] === pixel[0] && color[1] === pixel[1] && color[2] === pixel[2])) {
-					// TODO
-					//wop.undoHistory.push([tileX, tileY, pixel]);
 					misc.world.setPixel(tileX, tileY, color);
 				}
 			}
@@ -175,6 +174,12 @@ eventSys.once(e.misc.toolsRendered, () => {
 				if (mouse.buttons !== 0) {
 					move(mouse.worldX, mouse.worldY, mouse.mouseDownWorldX, mouse.mouseDownWorldY);
 				}
+			});
+			tool.setEvent('scroll', (mouse, event) => {
+				var dx = Math.max(-500, Math.min(event.deltaX, 500));
+				var dy = Math.max(-500, Math.min(event.deltaY, 500));
+				var pxAmount = Math.max(camera.zoom, 2);
+				moveCameraBy(event.deltaX / pxAmount, event.deltaY / pxAmount);
 			});
 			/*tool.setEvent('touchmove', (mouse, event) => {
 				var touch = event.changedTouches[0];

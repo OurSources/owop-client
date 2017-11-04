@@ -28,6 +28,7 @@ const config = {
 				}
 			}]
 		},{
+			/* Polyfills shouldn't be merged with app.js, resolve them with an url */
 			include: `${srcDir}/js/polyfill`,
 			use: [{
 				loader: 'file-loader',

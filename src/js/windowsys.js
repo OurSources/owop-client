@@ -171,7 +171,7 @@ export function GUIWindow(title, options, initfunc) {
 	this.mdownfunc = function(e) {
 		var offx = e.clientX - this.x;
 		var offy = e.clientY - this.y;
-		if (e.toElement === this.frame && !this.opt.immobile) {
+		if (e.target === this.frame && !this.opt.immobile) {
 			this.currentaction = function(x, y) {
 				this.move(x - offx, y - offy);
 			}

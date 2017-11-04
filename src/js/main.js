@@ -87,16 +87,6 @@ function getNewWorldApi() {
 	return obj;
 }
 
-function updateCamera() {
-	var time = getTime();
-	if (misc.world !== null && time - misc.lastCleanup > 1000) {
-		misc.lastCleanup = time;
-		misc.world.unloadFarChunks();
-	}
-
-	renderer.updateCamera();
-}
-
 function receiveMessage(text) {
 	console.log(text);
 	text = misc.chatRecvModifier(text);
@@ -543,6 +533,9 @@ function init() {
 	});
 
 	const mousewheel = event => {
+		/*if (player.tool !== null && misc.world !== null) {
+			player.tool.call('scroll', [mouse, event]);
+		}*/
 		var delta = Math.max(-1, Math.min(1, (event.deltaY || event.detail)));
 		var pIndex = player.paletteIndex;
 		if (delta > 0) {
@@ -553,8 +546,14 @@ function init() {
 		player.paletteIndex = pIndex;
 	};
 
-	viewport.addEventListener("mousewheel", mousewheel, { passive: true });
-	viewport.addEventListener("DOMMouseScroll", mousewheel); /* Firefox */
+	viewport.addEventListener("wheel", mousewheel, { passive: true });
+	viewport.addEventListener("wheel", e => {
+		e.preventDefault();
+		return false;
+	}, { passive: false });
+	if (!('onwheel' in document)) {
+		viewport.addEventListener("DOMMouseScroll", mousewheel); /* Old Firefox */
+	}
 	
 	// Touch support
 	const touchEventNoUpdate = evtName => event => {
@@ -651,6 +650,14 @@ eventSys.on(e.net.world.join, world => {
 
 eventSys.on(e.net.connected, () => {
 	clearChat();
+});
+
+eventSys.on(e.camera.moved, camera => {
+	var time = getTime();
+	if (misc.world !== null && time - misc.lastCleanup > 1000) {
+		misc.lastCleanup = time;
+		renderer.unloadFarClusters();
+	}
 });
 
 window.addEventListener("error", e => {
