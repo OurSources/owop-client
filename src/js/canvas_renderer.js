@@ -43,8 +43,8 @@ const rendererValues = {
 	gridPattern: null, /* Rendered each time the zoom changes */
 	unloadedPattern: null,
 	worldBackground: null,
-	minGridZoom: 4, /* minimum zoom level where the grid shows up */
-	updatedClusters: [], /* Clusters to render for the next frame */
+	minGridZoom: options.minGridZoom,
+	updatedClusters: [], /* Clusters to render in the next frame */
 	clusters: {},
 	visibleClusters: [],
 	currentFontSize: -1
@@ -172,7 +172,7 @@ class ChunkCluster {
 		this.removed = true;
 		if (this.shown) {
 			var visiblecl = rendererValues.visibleClusters;
-			visiblecl.splice(visiblecl.indexOf(c), 1);
+			visiblecl.splice(visiblecl.indexOf(this), 1);
 			this.shown = false;
 		}
 		this.canvas.width = 0;
@@ -486,18 +486,16 @@ function renderGrid(zoom) {
 	var ctx = tmpcanvas.getContext("2d");
 	tmpcanvas.width = tmpcanvas.height = 16 * zoom;
 	ctx.setLineDash([1]);
+	ctx.globalAlpha = .2;
 	if (zoom >= 4) {
-		ctx.globalAlpha = .2;
+		ctx.beginPath();
 		for (var i = 16; --i;) {
-			ctx.beginPath();
 			ctx.moveTo(i * zoom + .5, 0);
 			ctx.lineTo(i * zoom + .5, 16 * zoom);
-			ctx.stroke();
-			ctx.beginPath();
 			ctx.moveTo(0, i * zoom + .5);
 			ctx.lineTo(16 * zoom, i * zoom + .5);
-			ctx.stroke();
 		}
+		ctx.stroke();
 		ctx.globalAlpha = 1;
 	}
 	ctx.beginPath();

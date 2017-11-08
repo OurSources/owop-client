@@ -68,7 +68,16 @@ export const EVENTS = {
 	}
 };
 
-export const options = propertyDefaults(storageEnabled() && JSON.parse(localStorage.getItem('owopOptions') || '{}'), {
+let userOptions = {};
+if (storageEnabled()) {
+	try {
+		userOptions = JSON.parse(localStorage.getItem('owopOptions') || '{}');
+	} catch (e) {
+		console.error('Error while parsing user options!', e);
+	}
+}
+
+export const options = propertyDefaults(userOptions, {
 	serverAddress: [{
 		default: true,
 		title: 'Official server',
@@ -80,9 +89,10 @@ export const options = propertyDefaults(storageEnabled() && JSON.parse(localStor
 		proto: 'old',
 		url: 'ws://localhost:25565'
 	}], // The server address that websockets connect to
-	fps: 30, // Fps used if requestAnimationFrame is not supported (not used atm)
-	netUpdateSpeed: 20, // How many times per second to send updates to server
+	fallbackFps: 30, // Fps used if requestAnimationFrame is not supported
+	maxChatBuffer: 256, // How many chat messages to retain in the chatbox
 	tickSpeed: 30, // How many times per second to run a tick
+	minGridZoom: 1, /* Minimum zoom level where the grid shows up */
 	movementSpeed: 30,
 	defaultWorld: 'main',
 	defaultZoom: 16,

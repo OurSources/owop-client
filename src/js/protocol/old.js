@@ -21,6 +21,7 @@ export const captchaState = {
 export const OldProtocol = {
     class: null,
     chunkSize: 16,
+    netUpdateSpeed: 20,
     clusterChunkAmount: 64,
     maxWorldNameLength: 24,
     worldBorder: 0xFFFFF,
@@ -97,7 +98,7 @@ class OldProtocolImpl extends Protocol {
         this.interval = null;
 
         this.joinFunc = () => {
-            this.interval = setInterval(() => this.sendUpdates(), 1000 / options.netUpdateSpeed);
+            this.interval = setInterval(() => this.sendUpdates(), 1000 / OldProtocol.netUpdateSpeed);
         };
 
         eventSys.once(e.net.world.join, this.joinFunc);

@@ -152,7 +152,7 @@ function updateClientFx(force) {
 	return false;
 }
 
-eventSys.on(e.misc.toolsInitialized, () => {
+eventSys.once(e.misc.toolsInitialized, () => {
 	player.tool = "cursor";
 });
 

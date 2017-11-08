@@ -58,7 +58,7 @@ export function openColorPicker(defColor, callback) {
 	};
 	colorI.type = 'color';
 	colorI.value = color.toHTML(color.u24_888(defColor[0], defColor[1], defColor[2]));
-	colorI.click();
+	colorI.click(); /* fixme: doesn't work on chrome <~42 */
 }
 
 export function htmlToElement(html) {
@@ -102,8 +102,7 @@ export function setTooltip(element, message) {
 		var y = epos.top + epos.height / 2;
 		tip = mkHTML('span', {
 			innerHTML: message,
-			className: 'framed tooltip whitetext',
-			style: 'visibility: hidden;'
+			className: 'framed tooltip whitetext'
 		});
 		document.body.appendChild(tip);
 		var tpos = tip.getBoundingClientRect();
@@ -112,7 +111,7 @@ export function setTooltip(element, message) {
 		if (x < elementSpacing) {
 			x = epos.right + tpos.width + elementSpacing;
 		}
-		tip.style = `transform: translate(${Math.round(x)}px,${Math.round(y)}px);`;
+		tip.style.transform = `translate(${Math.round(x)}px,${Math.round(y)}px)`;
 		intr = 0;
 	}
 	const mleave = e => {

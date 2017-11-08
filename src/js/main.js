@@ -118,7 +118,7 @@ function receiveMessage(text) {
 		message.appendChild(span);
 		elements.chatMessages.appendChild(message);
 		var childs = elements.chatMessages.children;
-		if (childs.length > 256) {
+		if (childs.length > options.maxChatBuffer) {
 			childs[0].remove();
 		}
 	}
@@ -349,7 +349,7 @@ function checkFunctionality(callback) {
 		window.webkitRequestAnimationFrame ||
 		window.msRequestAnimationFrame ||
 		function(f) {
-			setTimeout(f, 1000 / options.fps);
+			setTimeout(f, 1000 / options.fallbackFps);
 		};
 
 	/* I don't think this is useful anymore,
@@ -512,7 +512,17 @@ function init() {
 		mouse.y = event.pageY;
 		mouse.mouseDownWorldX = mouse.worldX;
 		mouse.mouseDownWorldY = mouse.worldY;
-		mouse.buttons = event.buttons;
+		if ('buttons' in event) {
+			mouse.buttons = event.buttons;
+		} else {
+			var realBtn = event.button;
+			if (realBtn === 2) {
+				realBtn = 1;
+			} else if (realBtn === 1) {
+				realBtn = 2;
+			}
+			mouse.buttons |= 1 << realBtn;
+		}
 
 		var tool = player.tool;
 		if (tool !== null && misc.world !== null) {
@@ -521,7 +531,17 @@ function init() {
 	});
 
 	window.addEventListener("mouseup", event => {
-		mouse.buttons = event.buttons;
+		if ('buttons' in event) {
+			mouse.buttons = event.buttons;
+		} else {
+			var realBtn = event.button;
+			if (realBtn === 2) {
+				realBtn = 1;
+			} else if (realBtn === 1) {
+				realBtn = 2;
+			}
+			mouse.buttons &= ~(1 << realBtn);
+		}
 		var tool = player.tool;
 		if (tool !== null && misc.world !== null) {
 			player.tool.call('mouseup', [mouse, event]);
