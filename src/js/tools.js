@@ -13,8 +13,6 @@ export const tools = {};
 export let toolsWindow = null;
 let windowShown = false;
 
-PublicAPI.tools = tools;
-
 export function updateToolWindow(name) {
 	if (!toolsWindow) {
 		return;
@@ -31,6 +29,10 @@ export function updateToolWindow(name) {
 }
 
 export function updateToolbar(win = toolsWindow) {
+	if (!win) {
+		return;
+	}
+	
 	const container = win.container;
 	const toolButtonClick = name => event => player.tool = name;
 	
@@ -68,6 +70,11 @@ export function showToolsWindow(bool) {
 	}
 }
 
+export function addTool(tool) {
+	tools[tool.name] = tool;
+	updateToolbar();
+}
+
 class Tool {
     constructor(name, cursor, fxType, isAdminTool, onInit) {
 		this.name = name;
@@ -89,7 +96,8 @@ class Tool {
             select: null,
 			keydown: null,
 			keyup: null,
-			scroll: null
+			scroll: null,
+			tick: null
         };
         onInit(this);
     }
@@ -132,11 +140,16 @@ class Tool {
     }
 }
 
-PublicAPI.toolClass = Tool;
+PublicAPI.tool = {
+	class: Tool,
+	addTool,
+	updateToolbar,
+	allTools: tools
+};
 
 eventSys.once(e.misc.toolsRendered, () => {
 	// Cursor tool
-	tools['cursor'] = new Tool('cursor', cursors.cursor, FXTYPE.PIXEL_SELECT, false,
+	addTool(new Tool('cursor', cursors.cursor, FXTYPE.PIXEL_SELECT, false,
 		tool => {
 			function draw(tileX, tileY, color) {
 				var pixel = misc.world.getPixel(tileX, tileY);
@@ -162,10 +175,10 @@ eventSys.once(e.misc.toolsRendered, () => {
 				}
 			});
 		}
-	);
+	));
 	
 	// Move tool
-	tools['move'] = new Tool('move', cursors.move, FXTYPE.NONE, false,
+	addTool(new Tool('move', cursors.move, FXTYPE.NONE, false,
 		tool => {
 			function move(x, y, startX, startY) {
 				moveCameraBy((startX - x) / 16, (startY - y) / 16);
@@ -186,10 +199,10 @@ eventSys.once(e.misc.toolsRendered, () => {
 				move(touch.pageX, touch.pageY, );
 			});*/
 		}
-	);
+	));
 	
 	// Pipette tool
-	tools['pipette'] = new Tool('pipette', cursors.pipette, FXTYPE.NONE, false,
+	addTool(new Tool('pipette', cursors.pipette, FXTYPE.NONE, false,
 		tool => {
 			tool.setEvent('mousedown mousemove', (mouse, event) => {
 				if (mouse.buttons !== 0) {
@@ -200,20 +213,22 @@ eventSys.once(e.misc.toolsRendered, () => {
 				}
 			});
 		}
-	);
+	));
 	
 	// Erase/Fill tool
-	tools['erase'] = new Tool('erase', cursors.erase, FXTYPE.CHUNK_UPDATE, true,
+	addTool(new Tool('erase', cursors.erase, FXTYPE.CHUNK_UPDATE, true,
 		tool => {
 			function clearChunk(chunkX, chunkY) {
 				const clearColor = 0xFFFFFF; /* White */
 				var chunk = misc.world.getChunkAt(chunkX, chunkY);
 				if (chunk) {
 					var empty = true;
-					for (var i = 0; i < chunk.u32data.length; i++) {
-						if ((chunk.u32data[i] & 0xFFFFFF) != clearColor) {
-							empty = false;
-							break;
+					firstLoop: for (var y = 0; y < protocol.chunkSize; y++) {
+						for (var x = 0; x < protocol.chunkSize; x++) {
+							if ((chunk.get(x, y) & 0xFFFFFF) != clearColor) {
+								empty = false;
+								break firstLoop;
+							}
 						}
 					}
 					if (!empty) {
@@ -229,10 +244,10 @@ eventSys.once(e.misc.toolsRendered, () => {
 				}
 			});
 		}
-	);
+	));
 	
 	// Zoom tool
-	tools['zoom'] = new Tool('zoom', cursors.zoom, -1, false,
+	addTool(new Tool('zoom', cursors.zoom, -1, false,
 		tool => {
 			function zoom(mouse, type) {
 				var lzoom = camera.zoom;
@@ -277,17 +292,19 @@ eventSys.once(e.misc.toolsRendered, () => {
 				}
 			});
 		}
-	);
+	));
 	eventSys.emit(e.misc.toolsInitialized);
 });
 
-eventSys.once(e.misc.toolsInitialized, () => {
+eventSys.once(e.init, () => {
 	toolsWindow = new GUIWindow('Tools', {}, wdow => {
 		wdow.container.id = "toole-container";
 		wdow.container.style = "max-width: 40px";
-		updateToolbar(wdow);
 	}).move(5, 32);
+});
 
+eventSys.once(e.misc.toolsInitialized, () => {
+	updateToolbar();
 	if (windowShown) {
 		windowSys.addWindow(toolsWindow);
 	}

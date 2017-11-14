@@ -214,18 +214,18 @@ class OldProtocolImpl extends Protocol {
 				var chunkY = dv.getInt32(5, true);
                 var u8data = new Uint8Array(message, 9, message.byteLength - 9);
                 var key = `${chunkX},${chunkY}`;
+                var u32data = new Uint32Array(OldProtocol.chunkSize * OldProtocol.chunkSize);
+                for (var i = 0, u = 0; i < u8data.length; i += 3) { /* Need to make a copy ;-; */
+                    var color = u8data[i + 2] << 16
+                        | u8data[i + 1] << 8
+                        | u8data[i]
+                    u32data[u++] = 0xFF000000 | color;
+                }
 				if (!this.chunksLoading[key]) {
-                    eventSys.emit(e.net.chunk.set, chunkX, chunkY, u8data);
+                    eventSys.emit(e.net.chunk.set, chunkX, chunkY, u32data);
 				} else {
                     delete this.chunksLoading[key];
                     this.waitingForChunks--;
-                    var u32data = new Uint32Array(OldProtocol.chunkSize * OldProtocol.chunkSize);
-                    for (var i = 0, u = 0; i < u8data.length; i += 3) { /* Need to make a copy ;-; */
-                        var color = u8data[i + 2] << 16
-                            | u8data[i + 1] << 8
-                            | u8data[i]
-                        u32data[u++] = 0xFF000000 | color;
-                    }
 					var chunk = new Chunk(chunkX, chunkY, u32data);
 					eventSys.emit(e.net.chunk.load, chunk);
 				}

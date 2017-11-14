@@ -175,6 +175,9 @@ function tick() {
 	}
 
 	eventSys.emit(e.tick, tickNum);
+	if (player.tool !== null && misc.world !== null) {
+		player.tool.call('tick', mouse);
+	}
 }
 
 function updateMouse(event, eventName, mouseX, mouseY) {
@@ -736,7 +739,10 @@ window.addEventListener("load", () => {
 });
 
 /* Public API definitions */
-PublicAPI.events = eventSys;
+PublicAPI.emit = eventSys.emit.bind(eventSys);
+PublicAPI.on = eventSys.on.bind(eventSys);
+PublicAPI.once = eventSys.once.bind(eventSys);
+PublicAPI.removeListener = eventSys.removeListener.bind(eventSys);
 PublicAPI.elements = elements;
 PublicAPI.mouse = mouse;
 PublicAPI.world = getNewWorldApi();

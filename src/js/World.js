@@ -34,13 +34,7 @@ export class Chunk {
 		if (Number.isInteger(data)) {
 			this.view.fill(0xFF000000 | data);
 		} else {
-			var u32 = new Uint32Array(this.view.width, this.view.height);
-			for (var i = 0; i < u32.length; i++) {
-				var j = 3 * i;
-				var color = data[j + 2] << 16 | data[j + 1] << 8 | data[j];
-				u32[i] = 0xFF000000 | color;
-			}
-			this.view.fillFromBuf(u32);
+			this.view.fillFromBuf(data);
 		}
 		this.needsRedraw = true;
 	}

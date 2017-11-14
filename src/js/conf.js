@@ -68,6 +68,14 @@ export const EVENTS = {
 	}
 };
 
+export const PUBLIC_EVENTS = {
+	loaded: EVENTS.loaded,
+	init: EVENTS.init,
+	tick: EVENTS.tick
+};
+
+PublicAPI.events = PUBLIC_EVENTS;
+
 let userOptions = {};
 if (storageEnabled()) {
 	try {

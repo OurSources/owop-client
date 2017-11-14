@@ -601,7 +601,7 @@ function moveCameraTo(x, y) {
 }
 
 eventSys.on(e.net.world.teleported, (x, y) => {
-	moveCameraTo(x, y);
+	centerCameraTo(x, y);
 });
 
 eventSys.on(e.camera.zoom, z => {
