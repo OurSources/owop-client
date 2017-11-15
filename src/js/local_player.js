@@ -7,7 +7,7 @@ import { colorUtils as color } from './util/color.js';
 import { renderer } from './canvas_renderer.js';
 import { cursors } from './tool_renderer.js';
 import { tools, updateToolbar, updateToolWindow } from './tools.js';
-import { Fx } from './Fx.js';
+import { Fx, PLAYERFX } from './Fx.js';
 import { net } from './networking.js';
 
 export { updateClientFx };
@@ -19,16 +19,45 @@ let paletteIndex = 0;
 
 export const undoHistory = [];
 
-const clientFx = new Fx(-1, 0, 0, { color: 0 });
+const clientFx = new Fx(PLAYERFX.NONE, {
+	isLocalPlayer: true,
+	player: {
+		get x() { return mouse.worldX; },
+		get y() { return mouse.worldY; },
+		get htmlRgb() {
+			return player.htmlRgb;
+		},
+		get tool() {
+			return player.tool;
+		}
+	}
+});
+
+clientFx.setVisibleFunc(() => {
+	return mouse.insideViewport && mouse.validTile;
+});
 
 let rank = RANK.NONE;
 let somethingChanged = false;
+
+let cachedHtmlRgb = [null, ""];
 
 export const player = {
 	get paletteIndex() { return paletteIndex; },
 	set paletteIndex(i) {
 		paletteIndex = absMod(i, palette.length);
 		updatePalette();
+	},
+	get htmlRgb() {
+		var selClr = player.selectedColor;
+		if (cachedHtmlRgb[0] === selClr) {
+			return cachedHtmlRgb[1];
+		} else {
+			var str = color.toHTML(color.u24_888(selClr[0], selClr[1], selClr[2]));
+			cachedHtmlRgb[0] = selClr;
+			cachedHtmlRgb[1] = str;
+			return str;
+		}
 	},
 	get selectedColor() { return palette[paletteIndex]; },
 	set selectedColor(c) {
@@ -51,7 +80,7 @@ export function shouldUpdate() { /* sets colorChanged to false when called */
 }
 
 function changedColor() {
-	updateClientFx(true);
+	updateClientFx();
 	updatePaletteIndex();
 	somethingChanged = true;
 }
@@ -121,35 +150,21 @@ function selectTool(name) {
 	if(!tool || tool === toolSelected) {
 		return;
 	}
+	if (toolSelected) {
+		toolSelected.call('deselect');
+	}
 	toolSelected = tool;
 	mouse.cancelMouseDown();
-	tool.call("select");
+	tool.call('select');
 	updateToolWindow(name);
 	mouse.validClick = false;
-	clientFx.type = tool.fxType;
+	clientFx.setRenderer(tool.fxRenderer);
 	somethingChanged = true;
-	updateClientFx(true);
+	updateClientFx();
 }
 
-function updateClientFx(force) {
-	var fxtileX = clientFx.x;
-	var fxtileY = clientFx.y;
-	var tileX   = Math.floor(mouse.worldX / 16);
-	var tileY   = Math.floor(mouse.worldY / 16);
-	var rgb = player.selectedColor;
-	    rgb = color.u24_888(rgb[0], rgb[1], rgb[2]);
-	var tool = toolSelected;
-	if (tool && (fxtileX !== tileX || fxtileY !== tileY || force)) {
-		var valid = misc.world !== null && misc.world.validMousePos(tileX, tileY);
-		if (valid) {
-			clientFx.update(tool.fxType, tileX, tileY, {color: rgb});
-		} else {
-			clientFx.update(-1, tileX, tileY, {color: rgb});
-		}
-		renderer.render(renderer.rendertype.FX);
-		return true;
-	}
-	return false;
+function updateClientFx() {
+	renderer.render(renderer.rendertype.FX);
 }
 
 eventSys.once(e.misc.toolsInitialized, () => {

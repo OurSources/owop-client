@@ -33,7 +33,9 @@ export const OldProtocol = {
         1: 'move',
         2: 'pipette',
         3: 'erase',
-        4: 'zoom'
+        4: 'zoom',
+        5: 'fill',
+        6: 'paste'
     },
     misc: {
         worldVerification: 1337,
@@ -169,7 +171,7 @@ class OldProtocolImpl extends Protocol {
                 // Tile updates
                 updated = false;
                 updates = [];
-	  			for (var j = dv.getUint16(off, true); j--;) {
+	  			for (var i = dv.getUint16(off, true), j = 0; j < i; j++) {
                     updated = true;
 	  				var bpx = dv.getInt32(2 + off + j * 11, true);
 	  				var bpy = dv.getInt32(2 + off + j * 11 + 4, true);
@@ -292,7 +294,9 @@ class OldProtocolImpl extends Protocol {
     }
         
     updatePixel(x, y, rgb) {
-        if (this.isConnected() && this.placeBucket.canSpend(1)) {
+        var distx = Math.trunc(x / OldProtocol.chunkSize) - Math.trunc(this.lastSentX / (OldProtocol.chunkSize * 16)); distx *= distx;
+        var disty = Math.trunc(y / OldProtocol.chunkSize) - Math.trunc(this.lastSentY / (OldProtocol.chunkSize * 16)); disty *= disty;
+        if (this.isConnected() && Math.sqrt(distx + disty) <= 3 && this.placeBucket.canSpend(1)) {
             var array = new ArrayBuffer(11);
             var dv = new DataView(array);
             dv.setInt32(0,  x, true);
@@ -340,6 +344,19 @@ class OldProtocolImpl extends Protocol {
                 return false;
             }
         }
+    }
+
+    setChunk(x, y, data) {
+        var buf = new Uint8Array(8 + OldProtocol.chunkSize * OldProtocol.chunkSize * 3);
+        var dv = new DataView(buf.buffer);
+        dv.setInt32(0, x, true);
+        dv.setInt32(4, y, true);
+        for (var i = 0, b = 8; i < data.length; i++, b += 3) {
+            buf[b] = data[i] & 0xFF;
+            buf[b + 1] = data[i] >> 8 & 0xFF;
+            buf[b + 2] = data[i] >> 16 & 0xFF;
+        }
+        this.ws.send(buf.buffer);
     }
 
     clearChunk(x, y) {

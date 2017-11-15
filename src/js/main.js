@@ -52,6 +52,7 @@ export const elements = {
 
 export const misc = {
 	_world: null,
+	lastXYDisplay: [-1, -1],
 	chatRecvModifier: msg => msg,
 	chatSendModifier: msg => msg,
 	exceptionTimeout: null,
@@ -111,6 +112,9 @@ function receiveMessage(text) {
 				var times = span.recvTimes || 1;
 				span.innerHTML = `${text} [x${++times}]`;
 				span.recvTimes = times;
+				message.style.animation = 'none'; /* Reset fading anim */
+				message.offsetHeight; /* Reflow */
+				message.style.animation = null;
 			}
 		};
 		text = escapeHTML(text);
@@ -183,13 +187,13 @@ function tick() {
 function updateMouse(event, eventName, mouseX, mouseY) {
 	mouse.x = mouseX;
 	mouse.y = mouseY;
-	
-	var tool = player.tool;
-	if (tool !== null && misc.world !== null) {
-		player.tool.call(eventName, [mouse, event]);
-
-		if (updateClientFx()) {
-			updateXYDisplay(mouse.tileX, mouse.tileY);
+	if (misc.world !== null) {
+		mouse.validTile = misc.world.validMousePos(mouse.tileX, mouse.tileY);
+		if (player.tool !== null) {
+			player.tool.call(eventName, [mouse, event]);
+		}
+		if (updateXYDisplay(mouse.tileX, mouse.tileY)) {
+			updateClientFx();
 		}
 	}
 }
@@ -197,12 +201,14 @@ function updateMouse(event, eventName, mouseX, mouseY) {
 function openChat() {
 	elements.chat.className = "active selectable";
 	elements.devChat.className = "active selectable";
+	elements.chatMessages.className = "active";
 	scrollChatToBottom();
 }
 
 function closeChat() {
 	elements.chat.className = "";
 	elements.devChat.className = "";
+	elements.chatMessages.className = "";
 	elements.chatInput.blur();
 	scrollChatToBottom();
 }
@@ -212,7 +218,12 @@ function showDevChat(bool) {
 }
 
 function updateXYDisplay(x, y) {
-	elements.xyDisplay.innerHTML = "X: " + x + ", Y: " + y;
+	if (misc.lastXYDisplay[0] !== x || misc.lastXYDisplay[1] !== y) {
+		misc.lastXYDisplay = [x, y];
+		elements.xyDisplay.innerHTML = "X: " + x + ", Y: " + y;
+		return true;
+	}
+	return false;
 }
 
 function updatePlayerCount(count) {
@@ -393,11 +404,11 @@ function init() {
 
 	viewport.addEventListener("mouseenter", () => {
 		mouse.insideViewport = true;
-		updateClientFx(true);
+		updateClientFx();
 	});
 	viewport.addEventListener("mouseleave", () => {
 		mouse.insideViewport = false;
-		updateClientFx(true);
+		updateClientFx();
 	});
 
 	chatinput.addEventListener("keyup", event => {

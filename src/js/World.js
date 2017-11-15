@@ -197,7 +197,7 @@ export class World {
 	}
 
 	validMousePos(tileX, tileY) {
-		return mouse.insideViewport && this.getPixel(tileX, tileY);
+		return this.getPixel(tileX, tileY) !== null;
 	}
 	
 	chunkLoaded(chunk) {

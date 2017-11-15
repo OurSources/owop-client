@@ -1,27 +1,28 @@
 'use strict';
 import { Lerp } from './util/Lerp.js';
 import { colorUtils as color } from './util/color.js';
+import { misc } from './main.js';
 import { Fx, FXTYPE } from './Fx.js';
 import { tools } from './tools.js';
 
 export class Player {
     constructor(x, y, rgb, tool, id) {
-        this.id   = id.toString(); /* Prevents calling .toString every frame */
-        this._x    = new Lerp(x, x, 65);
-        this._y    = new Lerp(y, y, 65);
-        this.tool = tool;
+        this.id = id.toString(); /* Prevents calling .toString every frame */
+        this._x = new Lerp(x, x, 65);
+        this._y = new Lerp(y, y, 65);
+
+        this.tool   = tools[tool];
+        this.fx = new Fx(tool ? tool.fxType : FXTYPE.NONE, { player: this });
+        this.fx.setVisible(misc.world.validMousePos(
+            Math.floor(this.endX / 16), Math.floor(this.endY / 16)));
+
+        this.rgb = rgb;
+        this.htmlRgb = color.toHTML(color.u24_888(rgb[0], rgb[1], rgb[2]));
 
         this.clr = (((id + 75387) * 67283 + 53143) % 256) << 16
                  | (((id + 9283)  * 4673  + 7483)  % 256) << 8
                  | (  id * 3000                    % 256);
         this.clr = color.toHTML(this.clr);
-    
-        this.rgb    = rgb;
-        
-        tool = tools[tool];
-        var toolfx = tool ? tool.fxType : FXTYPE.NONE;
-        /* TODO: Lerp Fx position */
-        this.fx = new Fx(toolfx, Math.floor(x / 16), Math.floor(y / 16), {color: color.u24_888(rgb[2], rgb[1], rgb[0])});
     }
 
     get endX() {
@@ -43,11 +44,12 @@ export class Player {
     update(x, y, rgb, tool) {
         this._x.val = x;
         this._y.val = y;
-        this.tool = tool;
+        this.tool = tools[tool];
+        this.fx.setRenderer(this.tool.fxRenderer);
+        this.fx.setVisible(misc.world.validMousePos(
+            Math.floor(this.endX / 16), Math.floor(this.endY / 16)));
         this.rgb = rgb;
-        tool = tools[tool];
-        let toolfx = tool ? tool.fxType : FXTYPE.NONE;
-        this.fx.update(toolfx, Math.floor(x / 16), Math.floor(y / 16), {color: color.u24_888(rgb[0], rgb[1], rgb[2])});
+        this.htmlRgb = color.toHTML(color.u24_888(rgb[0], rgb[1], rgb[2]));
     }
 
     disconnect() {

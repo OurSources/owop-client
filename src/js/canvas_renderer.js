@@ -347,7 +347,7 @@ function render(type) {
 		ctx.globalCompositeOperation = "source-over";
 
 		for (var i = 0; i < activeFx.length; i++) {
-			switch (renderFx(activeFx[i], time)) {
+			switch (activeFx[i].render(ctx, time)) {
 			case 0: /* Anim not finished */
 				needsRender |= renderer.rendertype.FX;
 				break;
@@ -374,66 +374,13 @@ function render(type) {
 	requestRender(needsRender);
 }
 
-function renderFx(fx, time) { /* Move this to Fx proto maybe */
-	var camx = camera.x;
-	var camy = camera.y;
-	var context = rendererValues.animContext;
-	var cnvs = context.canvas;
-	var zoom = camera.zoom;
-	var fl = Math.floor;
-
-	var fxx = fl(fx.x * zoom) - camx * zoom;
-	var fxy = fl(fx.y * zoom) - camy * zoom;
-
-	if ((fxx < -zoom || fxy < -zoom
-	|| fxx > cnvs.width || fxy > cnvs.height) && fx.type != 3) {
-		return 1; /* 1 = Finished rendering */
-	}
-
-	switch (fx.type) {
-	case FXTYPE.PIXEL_SELECT: /* Only used for the local client */
-		context.globalAlpha = 0.8;
-		context.strokeStyle = fx.options.colorhex;
-		context.strokeRect(fxx, fxy, zoom, zoom);
-		break;
-
-	case FXTYPE.PIXEL_UPDATE:
-		var alpha = 1 - (time - fx.options.time) / 1000;
-		if (alpha <= 0) {
-			fx.delete();
-			return 2; /* 2 = An FX object was deleted */
-		}
-		context.globalAlpha = alpha;
-		context.strokeStyle = fx.options.colorhex;
-		context.strokeRect(fxx, fxy, zoom, zoom);
-		return 0; /* 0 = Animation not finished */
-		break;
-
-	case FXTYPE.CHUNK_UPDATE:
-		var alpha = 1 - (time - fx.options.time) / 1000;
-		if (alpha <= 0) {
-			fx.delete();
-			return 2;
-			break;
-		}
-		context.globalAlpha = alpha;
-		context.strokeStyle = fx.options.colorhex;
-		context.strokeRect((fl(fx.x / 16) * 16 - camx) * zoom,
-		                   (fl(fx.y / 16) * 16 - camy) * zoom,
-		                   zoom * 16, zoom * 16);
-		return 0;
-		break;
-	}
-	return 1;
-}
-
 function renderPlayer(targetPlayer, fontsize) {
 	var camx = camera.x * 16;
 	var camy = camera.y * 16;
 	var zoom = camera.zoom;
 	var ctx  = rendererValues.animContext;
 	var cnvs = ctx.canvas;
-	var tool = tools[targetPlayer.tool];
+	var tool = targetPlayer.tool;
 	if (!tool) {
 		/* Render the default tool if the selected one isn't defined */
 		tool = tools['cursor'];
