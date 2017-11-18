@@ -633,7 +633,7 @@ function init() {
 
 	updateXYDisplay(0, 0);
 
-	misc.urlWorldName = decodeURIComponent(window.location.pathname).replace(/^(\/beta(?:\/)|\/)/g, "");
+	misc.urlWorldName = decodeURIComponent(window.location.pathname);
 
 	const defaultServer = (serverList => {
 		for (var i = 0; i < serverList.length; i++) {

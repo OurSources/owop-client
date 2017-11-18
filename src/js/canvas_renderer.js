@@ -284,7 +284,11 @@ function render(type) {
 		var cheight = window.innerHeight;
 		var background = rendererValues.worldBackground;
 		var allChunksLoaded = misc.world.allChunksLoaded();
-		ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+
+		if (!allChunksLoaded) {
+			ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+		}
+		
 		ctx.lineWidth = 2.5 / 16 * zoom;
 
 		ctx.scale(zoom, zoom);
