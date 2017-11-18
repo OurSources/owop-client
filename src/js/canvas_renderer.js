@@ -283,6 +283,7 @@ function render(type) {
 		var cwidth = window.innerWidth;
 		var cheight = window.innerHeight;
 		var background = rendererValues.worldBackground;
+		var allChunksLoaded = misc.world.allChunksLoaded();
 		ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 		ctx.lineWidth = 2.5 / 16 * zoom;
 
@@ -332,11 +333,13 @@ function render(type) {
 
 		if (rendererValues.gridShown && rendererValues.gridPattern) {
 			ctx.fillStyle = rendererValues.gridPattern;
-			ctx.globalCompositeOperation = "source-atop";
+			if (!allChunksLoaded) {
+				ctx.globalCompositeOperation = "source-atop";
+			}
 			ctx.fillRect(-gx, -gy, ctx.canvas.width, ctx.canvas.height);
 		}
 
-		if (rendererValues.unloadedPattern != null && (!misc.world.allChunksLoaded() || background != null)) {
+		if (rendererValues.unloadedPattern != null && (!allChunksLoaded || background != null)) {
 			ctx.fillStyle = rendererValues.unloadedPattern;
 			ctx.globalCompositeOperation = "destination-over";
 			ctx.fillRect(-gx, -gy, ctx.canvas.width, ctx.canvas.height);

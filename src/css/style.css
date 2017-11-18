@@ -17,12 +17,7 @@ body {
 }
 
 html {
-	-webkit-touch-callout: none; /* iOS Safari */
-	  -webkit-user-select: none; /* Chrome/Safari/Opera */
-	   -khtml-user-select: none; /* Konqueror */
-	     -moz-user-select: none; /* Firefox */
-	      -ms-user-select: none; /* Internet Explorer/Edge */
-	          user-select: none; /* Non-prefixed version */
+	user-select: none;
 }
 
 .hide {
@@ -30,12 +25,7 @@ html {
 }
 
 .selectable {
-	-webkit-touch-callout: text;
-	  -webkit-user-select: text;
-	   -khtml-user-select: text;
-	     -moz-user-select: text;
-	      -ms-user-select: text;
-	          user-select: text;
+	user-select: text;
 }
 
 .centered {
@@ -75,13 +65,8 @@ button.winframe:active {
 	text-shadow: -1px 0 #000, 0 1px #000, 1px 0 #000, 0 -1px #000;
 }
 
-img, #clusters, #xy-display, #tool-select, #palette, #windows {
-	image-rendering: -moz-crisp-edges;
-	image-rendering: -o-crisp-edges;
-	image-rendering: -webkikt-optimize-contrast;
+img, #tool-select {
 	image-rendering: pixelated;
-	image-rendering: crisp-edges;
-	-ms-interpolation-mode: crisp-edges;
 }
 
 #load-scr {

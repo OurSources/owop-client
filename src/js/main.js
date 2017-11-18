@@ -161,16 +161,16 @@ function tick() {
 		keysDown[109] = keysDown[189] = false; /* Only register keydown */
 	}
 	if (keysDown[38]) { // Up
-		offY -= options.movementSpeed / options.tickSpeed;
+		offY -= options.movementSpeed;
 	}
 	if (keysDown[37]) { // Left
-		offX -= options.movementSpeed / options.tickSpeed;
+		offX -= options.movementSpeed;
 	}
 	if (keysDown[40]) { // Down
-		offY += options.movementSpeed / options.tickSpeed;
+		offY += options.movementSpeed;
 	}
 	if (keysDown[39]) { // Right
-		offX += options.movementSpeed / options.tickSpeed;
+		offX += options.movementSpeed;
 	}
 	if (offX !== 0 || offY !== 0 || offZoom !== 0) {
 		moveCameraBy(offX, offY);

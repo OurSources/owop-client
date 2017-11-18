@@ -101,7 +101,7 @@ export const options = propertyDefaults(userOptions, {
 	maxChatBuffer: 256, // How many chat messages to retain in the chatbox
 	tickSpeed: 30, // How many times per second to run a tick
 	minGridZoom: 1, /* Minimum zoom level where the grid shows up */
-	movementSpeed: 30,
+	movementSpeed: 1, /* Pixels per tick */
 	defaultWorld: 'main',
 	defaultZoom: 16,
 	zoomStrength: 1,

@@ -13,7 +13,7 @@ const config = {
 	output: {
 		filename: '[name].js',
 		path: `${__dirname}/dist`,
-		publicPath: '/beta/'
+		publicPath: '/'
 	},
 	devServer: {
 		contentBase: `${__dirname}/dist`
@@ -61,8 +61,11 @@ const config = {
 				loader: 'css-loader',
 				options: {
 					root: '..',
-					minimize: true
+					minimize: true,
+					importLoaders: 1
 				}
+			},{
+				loader: 'postcss-loader'
 			}]/*ExtractTextPlugin.extract({
 				fallback: 'style-loader',
 				use: ['css-loader']
