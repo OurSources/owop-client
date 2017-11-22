@@ -172,7 +172,6 @@ export class World {
 			if (px[0] === undo[0] && px[1] === undo[1] && px[2] === undo[2]) {
 				this.undoHistory.splice(remainingTries, 1);
 			} else if (this.setPixel(undo[3], undo[4], undo, true)) {
-				/* TODO: move cursor to pixel pos */
 				this.undoHistory.splice(remainingTries, 1);
 				break;
 			}

@@ -69,7 +69,7 @@ export const player = {
 	set tool(name) {
 		selectTool(name);
 	},
-	get toolId() { return tools[toolSelected].id; }, /* TODO */
+	get toolId() { return net.currentServer.proto.tools.id[toolSelected.name]; },
 	get tools() { return tools; }
 };
 

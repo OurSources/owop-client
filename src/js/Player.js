@@ -11,7 +11,7 @@ export class Player {
         this._x = new Lerp(x, x, 65);
         this._y = new Lerp(y, y, 65);
 
-        this.tool   = tools[tool];
+        this.tool = tools[tool] || tools['cursor'];
         this.fx = new Fx(tool ? tool.fxType : FXTYPE.NONE, { player: this });
         this.fx.setVisible(misc.world.validMousePos(
             Math.floor(this.endX / 16), Math.floor(this.endY / 16)));
@@ -44,7 +44,7 @@ export class Player {
     update(x, y, rgb, tool) {
         this._x.val = x;
         this._y.val = y;
-        this.tool = tools[tool];
+        this.tool = tools[tool] || tools['cursor'];
         this.fx.setRenderer(this.tool.fxRenderer);
         this.fx.setVisible(misc.world.validMousePos(
             Math.floor(this.endX / 16), Math.floor(this.endY / 16)));

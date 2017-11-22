@@ -1,12 +1,11 @@
 /*
- * TODO:
- *   Mabye bookmarks
- *   IE support by adding .cur cursors
+ * TODO List: https://trello.com/b/v6F6isSv/worldofpixels
+ * NOTE: Let's stick with the correct way of storing colors, 
+ * first byte should be red value: 0xAABBGGRR, or [r, g, b]
  */
- /* NOTE: Let's stick with the correct way of storing colors, 
-  * first byte should be red value: 0xAABBGGRR, or [r, g, b]
-  */
 'use strict';
+import { normalizeWheel } from './util/normalizeWheel.js';
+
 import { CHUNK_SIZE, EVENTS as e } from './conf.js';
 import { Bucket } from './util/Bucket.js';
 import { escapeHTML, getTime, getCookie, cookiesEnabled, loadScript } from './util/misc.js';
@@ -70,7 +69,6 @@ export const misc = {
 	get world() { return this._world; },
 	guiShown: false,
 	cookiesEnabled: cookiesEnabled(),
-	/* TODO: Make nag appear if this is set, and reCaptcha is going to be loaded (not after) */
 	showEUCookieNag: cookiesEnabled() && getCookie("nagAccepted") !== "true"
 };
 
@@ -570,24 +568,29 @@ function init() {
 		/*if (player.tool !== null && misc.world !== null) {
 			player.tool.call('scroll', [mouse, event]);
 		}*/
-		var delta = Math.max(-1, Math.min(1, (event.deltaY || event.detail)));
-		var pIndex = player.paletteIndex;
-		if (delta > 0) {
-			pIndex++;
+		const nevt = normalizeWheel(event);
+		if (event.ctrlKey) {
+			camera.zoom += Math.max(-1, Math.min(1, -nevt.pixelY));
+			//-nevt.spinY * camera.zoom / options.zoomLimitMax;
 		} else {
-			pIndex--;
+			var delta = Math.max(-1, Math.min(1, nevt.spinY));
+			var pIndex = player.paletteIndex;
+			if (delta > 0) {
+				pIndex++;
+			} else if (delta < 0) {
+				pIndex--;
+			}
+			player.paletteIndex = pIndex;
 		}
-		player.paletteIndex = pIndex;
 	};
 
-	viewport.addEventListener("wheel", mousewheel, { passive: true });
-	viewport.addEventListener("wheel", e => {
+	var wheelEventName = ('onwheel' in document) ? 'wheel' : ('onmousewheel' in document) ? 'mousewheel': 'DOMMouseScroll';
+
+	viewport.addEventListener(wheelEventName, mousewheel, { passive: true });
+	viewport.addEventListener(wheelEventName, e => {
 		e.preventDefault();
 		return false;
 	}, { passive: false });
-	if (!('onwheel' in document)) {
-		viewport.addEventListener("DOMMouseScroll", mousewheel); /* Old Firefox */
-	}
 	
 	// Touch support
 	const touchEventNoUpdate = evtName => event => {
@@ -633,7 +636,12 @@ function init() {
 
 	updateXYDisplay(0, 0);
 
-	misc.urlWorldName = decodeURIComponent(window.location.pathname);
+	var worldName = decodeURIComponent(window.location.pathname);
+	if (worldName[0] === '/') {
+		worldName = worldName.slice(1);
+	}
+
+	misc.urlWorldName = worldName;
 
 	const defaultServer = (serverList => {
 		for (var i = 0; i < serverList.length; i++) {
@@ -691,6 +699,15 @@ eventSys.on(e.camera.moved, camera => {
 	if (misc.world !== null && time - misc.lastCleanup > 1000) {
 		misc.lastCleanup = time;
 		renderer.unloadFarClusters();
+	}
+	if (updateXYDisplay(mouse.tileX, mouse.tileY)) {
+		updateClientFx();
+	}
+});
+
+eventSys.on(e.camera.zoom, camera => {
+	if (updateXYDisplay(mouse.tileX, mouse.tileY)) {
+		updateClientFx();
 	}
 });
 

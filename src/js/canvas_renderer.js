@@ -438,24 +438,28 @@ function setGridVisibility(enabled) {
 function renderGrid(zoom) {
 	var tmpcanvas = document.createElement("canvas");
 	var ctx = tmpcanvas.getContext("2d");
-	tmpcanvas.width = tmpcanvas.height = 16 * zoom;
+	var size = tmpcanvas.width = tmpcanvas.height = Math.round(16 * zoom);
 	ctx.setLineDash([1]);
-	ctx.globalAlpha = .2;
+	ctx.globalAlpha = 0.2;
 	if (zoom >= 4) {
+		var fadeMult = Math.min(1, zoom - 4);
+		if (fadeMult < 1) {
+			ctx.globalAlpha = 0.2 * fadeMult;
+		}
 		ctx.beginPath();
 		for (var i = 16; --i;) {
 			ctx.moveTo(i * zoom + .5, 0);
-			ctx.lineTo(i * zoom + .5, 16 * zoom);
+			ctx.lineTo(i * zoom + .5, size);
 			ctx.moveTo(0, i * zoom + .5);
-			ctx.lineTo(16 * zoom, i * zoom + .5);
+			ctx.lineTo(size, i * zoom + .5);
 		}
 		ctx.stroke();
-		ctx.globalAlpha = 1;
+		ctx.globalAlpha = Math.max(0.2, 1 * fadeMult);
 	}
 	ctx.beginPath();
 	ctx.moveTo(0, 0);
-	ctx.lineTo(0, 16 * zoom);
-	ctx.lineTo(16 * zoom, 16 * zoom);
+	ctx.lineTo(0, size);
+	ctx.lineTo(size, size);
 	ctx.stroke();
 	return ctx.createPattern(tmpcanvas, "repeat");
 }
