@@ -69,7 +69,8 @@ export const misc = {
 	get world() { return this._world; },
 	guiShown: false,
 	cookiesEnabled: cookiesEnabled(),
-	showEUCookieNag: cookiesEnabled() && getCookie("nagAccepted") !== "true"
+	showEUCookieNag: cookiesEnabled() && getCookie("nagAccepted") !== "true",
+	usingFirefox: navigator.userAgent.indexOf("Firefox") !== -1
 };
 
 function getNewWorldApi() {
@@ -543,7 +544,10 @@ function init() {
 	});
 
 	window.addEventListener("mouseup", event => {
-		if ('buttons' in event) {
+		/* Old versions of firefox have the buttons property as the
+		 * buttons released, instead of the currently pressed buttons.
+		 **/
+		if ('buttons' in event && !misc.usingFirefox) {
 			mouse.buttons = event.buttons;
 		} else {
 			var realBtn = event.button;
@@ -571,7 +575,7 @@ function init() {
 		const nevt = normalizeWheel(event);
 		if (event.ctrlKey) {
 			camera.zoom += Math.max(-1, Math.min(1, -nevt.pixelY));
-			//-nevt.spinY * camera.zoom / options.zoomLimitMax;
+			//-nevt.spinY * camera.zoom / options.zoomLimitMax; // <- needs to be nicer
 		} else {
 			var delta = Math.max(-1, Math.min(1, nevt.spinY));
 			var pIndex = player.paletteIndex;
