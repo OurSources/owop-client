@@ -9,11 +9,12 @@ import unloadedPat from '../img/unloaded.png';
 export let protocol = null;
 
 /* The raw event ID numbers should NOT be used, instead import the EVENTS object in your file. */
-let evtId = 0;
+let evtId = 777; /* It's your lucky day */
 
 export const RANK = {
-	NONE: 0,
-	USER: 1,
+	NONE: -1,
+	USER: 0,
+	MODERATOR: 1,
 	ADMIN: 2
 };
 
@@ -71,7 +72,8 @@ export const EVENTS = {
 export const PUBLIC_EVENTS = {
 	loaded: EVENTS.loaded,
 	init: EVENTS.init,
-	tick: EVENTS.tick
+	tick: EVENTS.tick,
+	toolsInitialized: EVENTS.misc.toolsInitialized
 };
 
 PublicAPI.events = PUBLIC_EVENTS;

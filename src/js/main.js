@@ -384,6 +384,10 @@ function checkFunctionality(callback) {
 		};
 	}
 
+	if (!Number.isInteger) {
+		Number.isInteger = n => Math.floor(n) === n && Math.abs(n) !== Infinity;
+	}
+
 	var toBlob = HTMLCanvasElement.prototype.toBlob = HTMLCanvasElement.prototype.toBlob || HTMLCanvasElement.prototype.msToBlob;
 	
 	if (!toBlob) { /* Load toBlob polyfill */

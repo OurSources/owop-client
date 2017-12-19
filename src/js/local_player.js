@@ -9,6 +9,7 @@ import { cursors } from './tool_renderer.js';
 import { tools, updateToolbar, updateToolWindow } from './tools.js';
 import { Fx, PLAYERFX } from './Fx.js';
 import { net } from './networking.js';
+import { Bucket } from './util/Bucket.js';
 
 export { updateClientFx };
 
@@ -174,18 +175,19 @@ eventSys.once(e.misc.toolsInitialized, () => {
 eventSys.on(e.net.sec.rank, newRank => {
 	rank = newRank;
 	switch (newRank) {
-		case RANK.NONE:
-			break;
-
 		case RANK.USER:
 			showDevChat(false);
+			break;
+
+		case RANK.MODERATOR:
+			showDevChat(false);
+			net.protocol.placeBucket = new Bucket(32, 2); /* TODO */
 			break;
 
 		case RANK.ADMIN:
 			showDevChat(true);
 			net.protocol.placeBucket.time = 0;
 			net.protocol.chatBucket.time = 0;
-			updateToolbar();
 			break;
 	}
 	updateToolbar();
