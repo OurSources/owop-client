@@ -384,9 +384,8 @@ function checkFunctionality(callback) {
 		};
 	}
 
-	if (!Number.isInteger) {
-		Number.isInteger = n => Math.floor(n) === n && Math.abs(n) !== Infinity;
-	}
+	Number.isInteger = Number.isInteger || (n => Math.floor(n) === n && Math.abs(n) !== Infinity);
+	Math.trunc = Math.trunc || (n => n | 0);
 
 	var toBlob = HTMLCanvasElement.prototype.toBlob = HTMLCanvasElement.prototype.toBlob || HTMLCanvasElement.prototype.msToBlob;
 	
@@ -763,6 +762,7 @@ window.addEventListener("load", () => {
 	elements.palette = document.getElementById("palette");
 	elements.paletteColors = document.getElementById("palette-colors");
 	elements.paletteCreate = document.getElementById("palette-create");
+	elements.paletteInput = document.getElementById("palette-input");
 	
 	elements.animCanvas = document.getElementById("animations");
 

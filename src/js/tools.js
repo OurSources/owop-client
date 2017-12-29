@@ -1,7 +1,7 @@
 'use strict';
 import { PublicAPI, eventSys } from './global.js';
 import { EVENTS as e, protocol, options, RANK } from './conf.js';
-import { absMod } from './util/misc.js';
+import { absMod, setTooltip } from './util/misc.js';
 import { cursors } from './tool_renderer.js';
 import { net } from './networking.js';
 import { player } from './local_player.js';
@@ -45,6 +45,7 @@ export function updateToolbar(win = toolsWindow) {
 		if (!tool.adminTool || player.rank === RANK.ADMIN) {
 			var element = document.createElement("button");
 			var mask = document.createElement("div");
+			setTooltip(element, tool.name + " tool");
 			element.id = "tool-" + name;
 			element.addEventListener("click", toolButtonClick(name));
 			if (tool === player.tool) {
@@ -72,7 +73,7 @@ export function showToolsWindow(bool) {
 }
 
 export function addTool(tool) {
-	tools[tool.name] = tool;
+	tools[tool.name.toLowerCase()] = tool;
 	updateToolbar();
 }
 
@@ -156,7 +157,7 @@ PublicAPI.tool = {
 
 eventSys.once(e.misc.toolsRendered, () => {
 	// Cursor tool
-	addTool(new Tool('cursor', cursors.cursor, PLAYERFX.RECT_SELECT_ALIGNED(1), false,
+	addTool(new Tool('Cursor', cursors.cursor, PLAYERFX.RECT_SELECT_ALIGNED(1), false,
 		tool => {
 			function draw(tileX, tileY, color) {
 				var pixel = misc.world.getPixel(tileX, tileY);
@@ -185,7 +186,7 @@ eventSys.once(e.misc.toolsRendered, () => {
 	));
 	
 	// Move tool
-	addTool(new Tool('move', cursors.move, PLAYERFX.NONE, false,
+	addTool(new Tool('Move', cursors.move, PLAYERFX.NONE, false,
 		tool => {
 			function move(x, y, startX, startY) {
 				moveCameraBy((startX - x) / 16, (startY - y) / 16);
@@ -209,7 +210,7 @@ eventSys.once(e.misc.toolsRendered, () => {
 	));
 	
 	// Pipette tool
-	addTool(new Tool('pipette', cursors.pipette, PLAYERFX.NONE, false,
+	addTool(new Tool('Pipette', cursors.pipette, PLAYERFX.NONE, false,
 		tool => {
 			tool.setEvent('mousedown mousemove', (mouse, event) => {
 				if (mouse.buttons !== 0) {
@@ -223,7 +224,7 @@ eventSys.once(e.misc.toolsRendered, () => {
 	));
 	
 	// Erase/Fill tool
-	addTool(new Tool('erase', cursors.erase, PLAYERFX.RECT_SELECT_ALIGNED(16), true,
+	addTool(new Tool('Eraser', cursors.erase, PLAYERFX.RECT_SELECT_ALIGNED(16), true,
 		tool => {
 			function clearChunk(chunkX, chunkY) {
 				const clearColor = 0xFFFFFF; /* White */
@@ -254,7 +255,7 @@ eventSys.once(e.misc.toolsRendered, () => {
 	));
 	
 	// Zoom tool
-	addTool(new Tool('zoom', cursors.zoom, PLAYERFX.NONE, false,
+	addTool(new Tool('Zoom', cursors.zoom, PLAYERFX.NONE, false,
 		tool => {
 			function zoom(mouse, type) {
 				var lzoom = camera.zoom;
@@ -302,7 +303,7 @@ eventSys.once(e.misc.toolsRendered, () => {
 	));
 
 	// Fill tool
-	addTool(new Tool('fill', cursors.fill, PLAYERFX.NONE, true, tool => {
+	addTool(new Tool('Fill', cursors.fill, PLAYERFX.NONE, true, tool => {
 		var queue = [];
 		var fillingColor = null;
 		var defaultFx = PLAYERFX.RECT_SELECT_ALIGNED(1);
@@ -362,7 +363,7 @@ eventSys.once(e.misc.toolsRendered, () => {
 		});
 	}));
 
-	addTool(new Tool('paste', cursors.paste, PLAYERFX.NONE, true, tool => {
+	addTool(new Tool('Paste', cursors.paste, PLAYERFX.NONE, true, tool => {
 		tool.setFxRenderer((fx, ctx, time) => {
 			var z = camera.zoom;
 			var x = fx.extra.player.x;
@@ -478,7 +479,7 @@ eventSys.once(e.misc.toolsRendered, () => {
 eventSys.once(e.init, () => {
 	toolsWindow = new GUIWindow('Tools', {}, wdow => {
 		wdow.container.id = "toole-container";
-		wdow.container.style = "max-width: 40px";
+		wdow.container.style.cssText = "max-width: 40px";
 	}).move(5, 32);
 });
 

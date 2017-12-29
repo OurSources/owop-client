@@ -32,7 +32,7 @@ function requestVerification() {
 			centered: true
 	}, wdow => {
 		var id = grecaptcha.render(wdow.addObj(mkHTML("div", {
-			style: "margin: -4px;"
+			style: "margin: -4px;" /* NOTE: not setting cssText */
 		})), {
 			theme: "light",
 			sitekey: SITEKEY,
@@ -41,8 +41,8 @@ function requestVerification() {
 				wdow.close();
 			}
 		});
-		wdow.frame.style = "";
-		wdow.container.style = "overflow: hidden; background-color: #F9F9F9";
+		wdow.frame.style.cssText = "";
+		wdow.container.style.cssText = "overflow: hidden; background-color: #F9F9F9";
 	}));
 }
 

@@ -81,7 +81,7 @@ export function OWOPDropDown() {
 	},
 	function(win) {
 		win.frame.className = "owopdropdown";
-		win.container.style = "border: none;\
+		win.container.style.cssText = "border: none;\
 			background-color: initial;\
 			pointer-events: none;\
 			margin: 0;";

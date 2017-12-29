@@ -1,7 +1,7 @@
 'use strict';
 import { eventSys, PublicAPI } from './global.js';
 import { EVENTS as e, RANK } from './conf.js';
-import { openColorPicker, absMod, setTooltip } from './util/misc.js';
+import { absMod, setTooltip } from './util/misc.js';
 import { elements, mouse, misc, showDevChat } from './main.js';
 import { colorUtils as color } from './util/color.js';
 import { renderer } from './canvas_renderer.js';
@@ -194,6 +194,15 @@ eventSys.on(e.net.sec.rank, newRank => {
 });
 
 eventSys.once(e.init, () => {
-	elements.paletteCreate.onclick = () => openColorPicker(player.selectedColor, addPaletteColor);
+	elements.paletteInput.onclick = function() {
+		var c = player.selectedColor;
+		this.value = color.toHTML(color.u24_888(c[0], c[1], c[2]));;
+	};
+	elements.paletteInput.onchange = function() {
+		var value = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(this.value);
+		addPaletteColor([parseInt(value[1], 16), parseInt(value[2], 16), parseInt(value[3], 16)]);
+	};
+	elements.paletteCreate.onclick = () => elements.paletteInput.click();
+	setTooltip(elements.paletteCreate, "Add color");
 	updatePalette();
 });

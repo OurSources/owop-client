@@ -50,17 +50,6 @@ export function absMod(n1, n2) {
 	return ((n1 % n2) + n2) % n2;
 }
 
-export function openColorPicker(defColor, callback) {
-	var colorI = document.createElement('input');
-	colorI.onchange = function() {
-		var value = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(this.value);
-		callback([parseInt(value[1], 16), parseInt(value[2], 16), parseInt(value[3], 16)]);
-	};
-	colorI.type = 'color';
-	colorI.value = color.toHTML(color.u24_888(defColor[0], defColor[1], defColor[2]));
-	colorI.click(); /* fixme: doesn't work on chrome <~42 */
-}
-
 export function htmlToElement(html) {
 	return mkHTML("template", {
 		innerHTML: html
@@ -109,7 +98,7 @@ export function setTooltip(element, message) {
 		y -= tpos.height / 2;
 		var x = epos.left - tpos.width - elementSpacing;
 		if (x < elementSpacing) {
-			x = epos.right + tpos.width + elementSpacing;
+			x = epos.right + elementSpacing;
 		}
 		tip.style.transform = `translate(${Math.round(x)}px,${Math.round(y)}px)`;
 		intr = 0;
