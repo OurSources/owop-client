@@ -16,7 +16,7 @@ import { World } from './World.js';
 import { camera, renderer, moveCameraBy } from './canvas_renderer.js';
 import { net } from './networking.js';
 import { updateClientFx, player } from './local_player.js';
-import { resolveProtocols } from './protocol/all.js';
+import { resolveProtocols, definedProtos } from './protocol/all.js';
 import { windowSys } from './windowsys.js';
 
 export { showDevChat, statusMsg };
@@ -148,6 +148,7 @@ function clearChat() {
 
 function tick() {
 	var tickNum = ++misc.tick;
+	var speed = Math.max(Math.min(options.movementSpeed, 64), 0);
 	var offX = 0;
 	var offY = 0;
 	var offZoom = 0;
@@ -160,16 +161,16 @@ function tick() {
 		keysDown[109] = keysDown[189] = false; /* Only register keydown */
 	}
 	if (keysDown[38]) { // Up
-		offY -= options.movementSpeed;
+		offY -= speed;
 	}
 	if (keysDown[37]) { // Left
-		offX -= options.movementSpeed;
+		offX -= speed;
 	}
 	if (keysDown[40]) { // Down
-		offY += options.movementSpeed;
+		offY += speed;
 	}
 	if (keysDown[39]) { // Right
-		offX += options.movementSpeed;
+		offX += speed;
 	}
 	if (offX !== 0 || offY !== 0 || offZoom !== 0) {
 		moveCameraBy(offX, offY);
@@ -324,20 +325,26 @@ function inGameDisconnected() {
 	misc.world = null;
 }
 
-function retryingConnect(server, worldName) {
+function retryingConnect(serverGetter, worldName) {
 	if (misc.connecting && !net.isConnected()) { /* We're already connected/trying to connect */
 		return;
 	}
 	misc.connecting = true;
+	var currentServer = serverGetter(false);
 	const tryConnect = (tryN) => {
+		if (tryN >= (currentServer.maxRetries || 3)) {
+			currentServer = serverGetter(true);
+			tryN = 0;
+		}
 		eventSys.once(e.net.connecting, () => {
-			statusMsg(true, "Connecting...");
+			console.debug(`Trying '${currentServer.title}' (${currentServer.url})...`)
+			statusMsg(true, `Connecting to '${currentServer.title}'...`);
 			showLoadScr(true, false);
 		});
-		net.connect(server, worldName);
+		net.connect(currentServer, worldName);
 		const disconnected = () => {
 			++tryN;
-			statusMsg(true, `Could not connect to server, retrying... (${tryN})`);
+			statusMsg(true, `Couldn't connect to server, retrying... (${tryN})`);
 			setTimeout(tryConnect, Math.min(tryN * 2000, 10000), tryN);
 			eventSys.removeListener(e.net.connected, connected);
 		};
@@ -364,25 +371,6 @@ function checkFunctionality(callback) {
 		function(f) {
 			setTimeout(f, 1000 / options.fallbackFps);
 		};
-
-	/* I don't think this is useful anymore,
-	 * since too much stuff used doesn't work on very old browsers.
-	 ***/
-	if (typeof Uint8Array.prototype.join === "undefined") {
-		Uint8Array.prototype.join = function(e) {
-			if (typeof e === "undefined") {
-				e = ',';
-			} else if (typeof e !== "string") {
-				e = e.toString();
-			}
-			var str = "";
-			var i = 0;
-			do {
-				str += this[i] + e;
-			} while (++i < length - 1);
-			return str + this[i];
-		};
-	}
 
 	Number.isInteger = Number.isInteger || (n => Math.floor(n) === n && Math.abs(n) !== Infinity);
 	Math.trunc = Math.trunc || (n => n | 0);
@@ -441,8 +429,10 @@ function init() {
 		if (document.activeElement.tagName !== "INPUT" && misc.world !== null) {
 			keysDown[keyCode] = true;
 			var tool = player.tool;
-			if (tool !== null && misc.world !== null && tool.call('keydown', [keysDown, event])) {
-				return false;
+			if (tool !== null && misc.world !== null && tool.isEventDefined('keydown')) {
+				if (tool.call('keydown', [keysDown, event])) {
+					return false;
+				}
 			}
 			switch (keyCode) {
 				case 16: /* Shift */
@@ -511,12 +501,15 @@ function init() {
 		delete keysDown[keyCode];
 		if (document.activeElement.tagName !== "INPUT") {
 			var tool = player.tool;
-			if (!(tool !== null && misc.world !== null && tool.call('keyup', [keysDown, event]))) {
-				if (keyCode == 13) {
-					elements.chatInput.focus();
-				} else if (keyCode == 16) {
-					player.tool = "cursor";
+			if (tool !== null && misc.world !== null && tool.isEventDefined('keyup')) {
+				if (tool.call('keyup', [keysDown, event])) {
+					return false;
 				}
+			}
+			if (keyCode == 13) {
+				elements.chatInput.focus();
+			} else if (keyCode == 16) {
+				player.tool = "cursor";
 			}
 		}
 	});
@@ -572,10 +565,12 @@ function init() {
 	});
 
 	const mousewheel = event => {
-		/*if (player.tool !== null && misc.world !== null) {
-			player.tool.call('scroll', [mouse, event]);
-		}*/
 		const nevt = normalizeWheel(event);
+		if (player.tool !== null && misc.world !== null && player.tool.isEventDefined('scroll')) {
+			if (player.tool.call('scroll', [mouse, nevt, event])) {
+				return;
+			}
+		}
 		if (event.ctrlKey) {
 			camera.zoom += Math.max(-1, Math.min(1, -nevt.pixelY));
 			//-nevt.spinY * camera.zoom / options.zoomLimitMax; // <- needs to be nicer
@@ -650,18 +645,35 @@ function init() {
 
 	misc.urlWorldName = worldName;
 
-	const defaultServer = (serverList => {
+
+	const serverGetter = (serverList => {
+		var defaults = [];
+		var availableServers = [];
 		for (var i = 0; i < serverList.length; i++) {
 			if (serverList[i].default) {
-				return serverList[i];
+				defaults.push(serverList[i]);
+			} else {
+				availableServers.push(serverList[i]);
 			}
 		}
-		return null;
+		var index = 0;
+		return (next) => {
+			if (next) {
+				defaults.pop();
+				++index;
+			}
+			if (defaults.length) {
+				var sv = defaults[0];
+				availableServers.push(sv);
+				return sv;
+			}
+			return availableServers[index % availableServers.length];
+		};
 	})(options.serverAddress);
 	
-	retryingConnect(defaultServer, misc.urlWorldName);
+	retryingConnect(serverGetter, misc.urlWorldName);
 
-	elements.reconnectBtn.onclick = () => retryingConnect(defaultServer, misc.urlWorldName);
+	elements.reconnectBtn.onclick = () => retryingConnect(serverGetter, misc.urlWorldName);
 
 	misc.tickInterval = setInterval(tick, 1000 / options.tickSpeed);
 }
@@ -677,6 +689,10 @@ eventSys.on(e.net.playerCount, updatePlayerCount);
 
 eventSys.on(e.net.chat, receiveMessage);
 eventSys.on(e.net.devChat, receiveDevMessage);
+
+eventSys.on(e.net.world.setId, id => {
+
+});
 
 eventSys.on(e.misc.windowAdded, window => {
 	if (misc.world === null) {
@@ -757,6 +773,7 @@ window.addEventListener("load", () => {
 	elements.chat = document.getElementById("chat");
 	elements.devChatMessages = document.getElementById("dev-chat-messages");
 	elements.chatMessages = document.getElementById("chat-messages");
+	elements.chatStatus = document.getElementById("chat-status");
 	elements.playerCountDisplay = document.getElementById("playercount-display");
 
 	elements.palette = document.getElementById("palette");
@@ -775,7 +792,7 @@ window.addEventListener("load", () => {
 });
 
 /* Public API definitions */
-PublicAPI.emit = eventSys.emit.bind(eventSys);
+PublicAPI.tool = eventSys.emit.bind(eventSys);
 PublicAPI.on = eventSys.on.bind(eventSys);
 PublicAPI.once = eventSys.once.bind(eventSys);
 PublicAPI.removeListener = eventSys.removeListener.bind(eventSys);

@@ -2,7 +2,7 @@
 import { elements } from './main.js';
 import { EVENTS as e } from './conf.js';
 import { PublicAPI, eventSys } from './global.js';
-import { mkHTML } from './util/misc.js';
+import { mkHTML, waitFrames } from './util/misc.js';
 
 export const windowSys = {
 	windows: {},
@@ -21,7 +21,7 @@ PublicAPI.windowSys = windowSys;
 
 export function UtilInput(title, message, inputType, cb) {
 	this.win = new GUIWindow(title, {
-		centered: true,
+		centerOnce: true,
 		closeable: true
 	}, function(win) {
 		this.inputField = win.addObj(mkHTML("input", {
@@ -173,15 +173,18 @@ export function GUIWindow(title, options, initfunc) {
 		var offy = e.clientY - this.y;
 		if (e.target === this.frame && !this.opt.immobile) {
 			this.currentaction = function(x, y) {
+				x = x <= 0 ? 0 : x > window.innerWidth ? window.innerWidth : x;
+				y = y <= 0 ? 0 : y > window.innerHeight ? window.innerHeight : y;
 				this.move(x - offx, y - offy);
 			}
 		}
 	}.bind(this);
 	
-	/*if (options.centerOnce) {
-		// does not work
-		this.wm.centerWindow(this);
-	}*/
+	if (options.centerOnce) {
+		/* Ugly solution to wait for offset(Height, Width) values to be available */
+		this.move(window.innerWidth, window.innerHeight);
+		waitFrames(2, () => centerWindow(this));
+	}
 	
 	this.frame.addEventListener("mousedown", this.mdownfunc);
 	
@@ -277,7 +280,3 @@ export function centerWindow(win) {
 	win = win.getWindow();
 	win.move(window.innerWidth / 2 - win.realw / 2 | 0, window.innerHeight / 2 - win.realh / 2 | 0);
 }
-
-/*eventSys.init("init", function() {
-	this.windiv = document.getElementById("windows");
-}.bind(WorldOfPixels.windowsys));*/

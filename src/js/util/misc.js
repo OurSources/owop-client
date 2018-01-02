@@ -132,6 +132,13 @@ export function setTooltip(element, message) {
 	element.addEventListener('mouseenter', menter);
 }
 
+/* Waits n frames */
+export function waitFrames(n, cb) {
+	window.requestAnimationFrame(() => {
+		return n > 0 ? waitFrames(--n, cb) : cb();
+	})
+}
+
 export function decompress(input) {
 	var originalLength = (((input[1] & 0xFF) << 8 | (input[0] & 0xFF)) + 1) * 2;
 	var output = new Uint8Array(originalLength);

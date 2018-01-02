@@ -26,7 +26,12 @@ export const OldProtocol = {
     maxWorldNameLength: 24,
     worldBorder: 0xFFFFF,
     chatBucket: [4, 6],
-    placeBucket: [32, 4],
+    placeBucket: {
+        [RANK.NONE]: [0, 1],
+        [RANK.USER]: [32, 4],
+        [RANK.MODERATOR]: [32, 2],
+        [RANK.ADMIN]: [32, 0]
+    }, 
     tools: {
         id: {}, /* Generated automatically */
         0: 'cursor',
@@ -94,7 +99,7 @@ class OldProtocolImpl extends Protocol {
 
         var params = OldProtocol.chatBucket;
         this.chatBucket = new Bucket(params[0], params[1]);
-        params = OldProtocol.placeBucket;
+        params = OldProtocol.placeBucket[player.rank];
         this.placeBucket = new Bucket(params[0], params[1]);
 
         this.interval = null;
@@ -103,13 +108,21 @@ class OldProtocolImpl extends Protocol {
             this.interval = setInterval(() => this.sendUpdates(), 1000 / OldProtocol.netUpdateSpeed);
         };
 
+        const rankChanged = rank => {
+            this.placeBucket = new Bucket(...OldProtocol.placeBucket[rank]);
+        };
+        this.leaveFunc = () => {
+            eventSys.removeListener(e.net.sec.rank, rankChanged);
+        };
         eventSys.once(e.net.world.join, this.joinFunc);
+        eventSys.on(e.net.sec.rank, rankChanged);
     }
 
     closeHandler() {
         super.closeHandler();
         clearInterval(this.interval);
         eventSys.removeListener(e.net.world.join, this.joinFunc);
+        this.leaveFunc();
     }
 
     messageHandler(message) {
@@ -234,8 +247,8 @@ class OldProtocolImpl extends Protocol {
                 break;
                 
 			case oc.teleport: // Teleport
-				let x = dv.getInt32(1, true) - (window.innerWidth / camera.zoom / 2.5);
-                let y = dv.getInt32(5, true) - (window.innerHeight / camera.zoom / 2.5);
+				let x = dv.getInt32(1, true);
+                let y = dv.getInt32(5, true);
                 eventSys.emit(e.net.world.teleported, x, y);
                 break;
                 
@@ -296,7 +309,8 @@ class OldProtocolImpl extends Protocol {
     updatePixel(x, y, rgb) {
         var distx = Math.trunc(x / OldProtocol.chunkSize) - Math.trunc(this.lastSentX / (OldProtocol.chunkSize * 16)); distx *= distx;
         var disty = Math.trunc(y / OldProtocol.chunkSize) - Math.trunc(this.lastSentY / (OldProtocol.chunkSize * 16)); disty *= disty;
-        if (this.isConnected() && Math.sqrt(distx + disty) <= 3 && this.placeBucket.canSpend(1)) {
+        var dist = Math.sqrt(distx + disty);
+        if (this.isConnected() && dist < 3 && this.placeBucket.canSpend(1)) {
             var array = new ArrayBuffer(11);
             var dv = new DataView(array);
             dv.setInt32(0,  x, true);

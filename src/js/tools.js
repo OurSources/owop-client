@@ -5,8 +5,8 @@ import { absMod, setTooltip } from './util/misc.js';
 import { cursors } from './tool_renderer.js';
 import { net } from './networking.js';
 import { player } from './local_player.js';
-import { camera, moveCameraTo, moveCameraBy } from './canvas_renderer.js';
-import { windowSys, GUIWindow } from './windowsys.js';
+import { camera, moveCameraTo, moveCameraBy, renderer, drawText } from './canvas_renderer.js';
+import { windowSys, GUIWindow, UtilInput } from './windowsys.js';
 import { misc, elements, mouse } from './main.js';
 import { PLAYERFX } from './Fx.js';
 
@@ -42,7 +42,7 @@ export function updateToolbar(win = toolsWindow) {
 	// Add tools to the tool-select menu
 	for (const name in tools) {
 		var tool = tools[name];
-		if (!tool.adminTool || player.rank === RANK.ADMIN) {
+		if (player.rank >= tool.rankRequired) {
 			var element = document.createElement("button");
 			var mask = document.createElement("div");
 			setTooltip(element, tool.name + " tool");
@@ -78,14 +78,14 @@ export function addTool(tool) {
 }
 
 class Tool {
-    constructor(name, cursor, fxRenderer, isAdminTool, onInit) {
+    constructor(name, cursor, fxRenderer, rankNeeded, onInit) {
 		this.name = name;
         this.fxRenderer = fxRenderer;
         this.cursorblob = cursor.img.shadowblob;
         this.cursor = cursor.img.shadowed;
         this.setposition = (-cursor.imgpos[0] * 36) + "px " + (-cursor.imgpos[1] * 36) + "px";
         this.offset = cursor.hotspot;
-        this.adminTool = isAdminTool;
+        this.rankRequired = rankNeeded;
         this.extra = {}; /* Extra storage for tools */
         this.events = {
 			mouseup: null,
@@ -108,6 +108,10 @@ class Tool {
 	/* Doesn't update if tool already selected */
 	setFxRenderer(func) {
 		this.fxRenderer = func;
+	}
+
+	isEventDefined(type) {
+		return type in this.events;
 	}
 
     setEvent(type, func) {
@@ -148,7 +152,7 @@ class Tool {
     }
 }
 
-PublicAPI.tool = {
+PublicAPI.emit = {
 	class: Tool,
 	addTool,
 	updateToolbar,
@@ -157,7 +161,7 @@ PublicAPI.tool = {
 
 eventSys.once(e.misc.toolsRendered, () => {
 	// Cursor tool
-	addTool(new Tool('Cursor', cursors.cursor, PLAYERFX.RECT_SELECT_ALIGNED(1), false,
+	addTool(new Tool('Cursor', cursors.cursor, PLAYERFX.RECT_SELECT_ALIGNED(1), RANK.USER,
 		tool => {
 			function draw(tileX, tileY, color) {
 				var pixel = misc.world.getPixel(tileX, tileY);
@@ -186,7 +190,7 @@ eventSys.once(e.misc.toolsRendered, () => {
 	));
 	
 	// Move tool
-	addTool(new Tool('Move', cursors.move, PLAYERFX.NONE, false,
+	addTool(new Tool('Move', cursors.move, PLAYERFX.NONE, RANK.NONE,
 		tool => {
 			function move(x, y, startX, startY) {
 				moveCameraBy((startX - x) / 16, (startY - y) / 16);
@@ -196,21 +200,20 @@ eventSys.once(e.misc.toolsRendered, () => {
 					move(mouse.worldX, mouse.worldY, mouse.mouseDownWorldX, mouse.mouseDownWorldY);
 				}
 			});
-			tool.setEvent('scroll', (mouse, event) => {
-				var dx = Math.max(-500, Math.min(event.deltaX, 500));
-				var dy = Math.max(-500, Math.min(event.deltaY, 500));
-				var pxAmount = Math.max(camera.zoom, 2);
-				moveCameraBy(event.deltaX / pxAmount, event.deltaY / pxAmount);
+			tool.setEvent('scroll', (mouse, event, rawEvent) => {
+				if (!rawEvent.ctrlKey) {
+					var dx = Math.max(-500, Math.min(event.spinX * 16, 500));
+					var dy = Math.max(-500, Math.min(event.spinY * 16, 500));
+					var pxAmount = camera.zoom//Math.max(camera.zoom, 2);
+					moveCameraBy(dx / pxAmount, dy / pxAmount);
+					return true;
+				}
 			});
-			/*tool.setEvent('touchmove', (mouse, event) => {
-				var touch = event.changedTouches[0];
-				move(touch.pageX, touch.pageY, );
-			});*/
 		}
 	));
 	
 	// Pipette tool
-	addTool(new Tool('Pipette', cursors.pipette, PLAYERFX.NONE, false,
+	addTool(new Tool('Pipette', cursors.pipette, PLAYERFX.NONE, RANK.NONE,
 		tool => {
 			tool.setEvent('mousedown mousemove', (mouse, event) => {
 				if (mouse.buttons !== 0) {
@@ -224,7 +227,7 @@ eventSys.once(e.misc.toolsRendered, () => {
 	));
 	
 	// Erase/Fill tool
-	addTool(new Tool('Eraser', cursors.erase, PLAYERFX.RECT_SELECT_ALIGNED(16), true,
+	addTool(new Tool('Eraser', cursors.erase, PLAYERFX.RECT_SELECT_ALIGNED(16), RANK.ADMIN,
 		tool => {
 			function clearChunk(chunkX, chunkY) {
 				const clearColor = 0xFFFFFF; /* White */
@@ -255,7 +258,7 @@ eventSys.once(e.misc.toolsRendered, () => {
 	));
 	
 	// Zoom tool
-	addTool(new Tool('Zoom', cursors.zoom, PLAYERFX.NONE, false,
+	addTool(new Tool('Zoom', cursors.zoom, PLAYERFX.NONE, RANK.NONE,
 		tool => {
 			function zoom(mouse, type) {
 				var lzoom = camera.zoom;
@@ -302,8 +305,175 @@ eventSys.once(e.misc.toolsRendered, () => {
 		}
 	));
 
+	// Area to PNG tool
+	addTool(new Tool('Export', cursors.select, PLAYERFX.NONE, RANK.NONE,
+		tool => {
+			tool.setFxRenderer((fx, ctx, time) => {
+				if (!fx.extra.isLocalPlayer) return 1;
+				var x = fx.extra.player.x;
+				var y = fx.extra.player.y;
+				var fxx = (Math.floor(x / 16) - camera.x) * camera.zoom;
+				var fxy = (Math.floor(y / 16) - camera.y) * camera.zoom;
+				var oldlinew = ctx.lineWidth;
+				ctx.lineWidth = 1;
+				if (tool.extra.end) {
+					var s = tool.extra.start;
+					var e = tool.extra.end;
+					var x = (s[0] - camera.x) * camera.zoom + 0.5;
+					var y = (s[1] - camera.y) * camera.zoom + 0.5;
+					var w = e[0] - s[0];
+					var h = e[1] - s[1];
+					ctx.beginPath();
+					ctx.rect(x, y, w * camera.zoom, h * camera.zoom);
+					ctx.globalAlpha = 1;
+					ctx.strokeStyle = "#FFFFFF";
+					ctx.stroke();
+					ctx.setLineDash([3, 4]);
+					ctx.strokeStyle = "#000000";
+					ctx.stroke();
+					ctx.globalAlpha = 0.25 + Math.sin(time / 500) / 4;
+					ctx.fillStyle = renderer.patterns.unloaded;
+					ctx.fill();
+					ctx.setLineDash([]);
+					var oldfont = ctx.font;
+					ctx.font = "16px sans-serif";
+					var txt = `Right click to save (${Math.abs(w)}x${Math.abs(h)})`;
+					var txtx = window.innerWidth >> 1;
+					var txty = window.innerHeight >> 1;
+					txtx = Math.max(x, Math.min(txtx, x + w * camera.zoom));
+					txty = Math.max(y, Math.min(txty, y + h * camera.zoom));
+
+					drawText(ctx, txt, txtx, txty, true);
+					ctx.font = oldfont;
+					ctx.lineWidth = oldlinew;
+					return 0;
+				} else {
+					ctx.beginPath();
+					ctx.moveTo(0, fxy + 0.5);
+					ctx.lineTo(window.innerWidth, fxy + 0.5);
+					ctx.moveTo(fxx + 0.5, 0);
+					ctx.lineTo(fxx + 0.5, window.innerHeight);
+
+					//ctx.lineWidth = 1;
+					ctx.globalAlpha = 1;
+					ctx.strokeStyle = "#FFFFFF";
+					ctx.stroke();
+					ctx.setLineDash([3]);
+					ctx.strokeStyle = "#000000";
+					ctx.stroke();
+		
+					ctx.setLineDash([]);
+					ctx.lineWidth = oldlinew;
+					return 1;
+				}
+			});
+
+			function dlarea(x, y, w, h, name){
+				var c = document.createElement('canvas');
+				c.width = w;
+				c.height = h;
+				var ctx = c.getContext('2d');
+				var d = ctx.createImageData(w, h);
+				for(var i = y; i < y + h; i++){
+				  for(var j = x; j < x + w; j++){
+					var pix = misc.world.getPixel(j, i);
+					d.data[4*((i - y)*w + (j - x))] = pix[0];
+					d.data[4*((i - y)*w + (j - x)) + 1] = pix[1];
+					d.data[4*((i - y)*w + (j - x)) + 2] = pix[2];
+					d.data[4*((i - y)*w + (j - x)) + 3] = 255;
+				  }
+				}
+				ctx.putImageData(d, 0, 0);
+				c.toBlob(b => {
+				  var a = document.createElement('a');
+				  a.href = URL.createObjectURL(b);
+				  a.download = name;
+				  a.click();
+				});
+			  }
+
+			tool.extra.start = null;
+			tool.extra.end = null;
+			tool.extra.clicking = false;
+
+			tool.setEvent('mousedown', (mouse, event) => {
+				var s = tool.extra.start;
+				var e = tool.extra.end;
+				const isInside = () => mouse.tileX >= s[0] && mouse.tileX < e[0] && mouse.tileY >= s[1] && mouse.tileY < e[1];
+				if (mouse.buttons === 1 && !tool.extra.end) {
+					tool.extra.start = [mouse.tileX, mouse.tileY];
+					tool.extra.clicking = true;
+					tool.setEvent('mousemove', (mouse, event) => {
+						if (tool.extra.start && mouse.buttons === 1) {
+							tool.extra.end = [mouse.tileX, mouse.tileY];
+							renderer.render(renderer.rendertype.FX);
+						}
+					});
+					const finish = () => {
+						tool.setEvent('mousemove mouseup deselect', null);
+						tool.extra.clicking = false;
+						var s = tool.extra.start;
+						var e = tool.extra.end;
+						if (e) {
+							if (s[0] === e[0] || s[1] === e[1]) {
+								tool.extra.start = null;
+								tool.extra.end = null;
+							}
+							if (s[0] > e[0]) {
+								var tmp = e[0];
+								e[0] = s[0];
+								s[0] = tmp;
+							}
+							if (s[1] > e[1]) {
+								var tmp = e[1];
+								e[1] = s[1];
+								s[1] = tmp;
+							}
+						}
+						renderer.render(renderer.rendertype.FX);
+					};
+					tool.setEvent('deselect', finish);
+					tool.setEvent('mouseup', (mouse, event) => {
+						if (!(mouse.buttons & 1)) {
+							finish();
+						}
+					});
+				} else if (mouse.buttons === 1 && tool.extra.end) {
+					if (isInside()) {
+						var offx = mouse.tileX;
+						var offy = mouse.tileY;
+						tool.setEvent('mousemove', (mouse, event) => {
+							var dx = mouse.tileX - offx;
+							var dy = mouse.tileY - offy;
+							tool.extra.start = [s[0] + dx, s[1] + dy];
+							tool.extra.end = [e[0] + dx, e[1] + dy];
+						});
+						const end = () => {
+							tool.setEvent('mouseup deselect mousemove', null);
+						};
+						tool.setEvent('deselect', end);
+						tool.setEvent('mouseup', (mouse, event) => {
+							if (!(mouse.buttons & 1)) {
+								end();
+							}
+						});
+					} else {
+						tool.extra.start = null;
+						tool.extra.end = null;
+					}
+				} else if (mouse.buttons === 2 && tool.extra.end) {
+					tool.extra.start = null;
+					tool.extra.end = null;
+					windowSys.addWindow(new UtilInput("File name?", "Enter the name of the saved file", 'text', name => {
+						dlarea(s[0], s[1], e[0] - s[0], e[1] - s[1], name);
+					}))
+				}
+			});
+		}
+	));
+
 	// Fill tool
-	addTool(new Tool('Fill', cursors.fill, PLAYERFX.NONE, true, tool => {
+	addTool(new Tool('Fill', cursors.fill, PLAYERFX.NONE, RANK.USER, tool => {
 		var queue = [];
 		var fillingColor = null;
 		var defaultFx = PLAYERFX.RECT_SELECT_ALIGNED(1);
@@ -330,23 +500,28 @@ eventSys.once(e.misc.toolsRendered, () => {
 				}
 				return false;
 			};
+
 			if (!queue.length || !fillingColor) {
 				return;
 			}
+
 			var selClr = player.selectedColor;
-			var current = queue.pop();
-			var x = current[0];
-			var y = current[1];
-			var thisClr = misc.world.getPixel(x, y);
-			if (eq(thisClr, fillingColor) && !eq(thisClr, selClr)) {
-				if (!misc.world.setPixel(x, y, selClr)) {
-					queue.push(current);
-					return;
+			var painted = 0;
+			while (++painted < 3 && queue.length > 0) {
+				var current = queue.pop();
+				var x = current[0];
+				var y = current[1];
+				var thisClr = misc.world.getPixel(x, y);
+				if (eq(thisClr, fillingColor) && !eq(thisClr, selClr)) {
+					if (!misc.world.setPixel(x, y, selClr)) {
+						queue.push(current);
+						break;
+					}
+					check(x - 1, y);
+					check(x, y - 1);
+					check(x + 1, y);
+					check(x, y + 1);
 				}
-				check(x - 1, y);
-				check(x, y - 1);
-				check(x + 1, y);
-				check(x, y + 1);
 			}
 		}
 		tool.setEvent('mousedown', mouse => {
@@ -363,7 +538,7 @@ eventSys.once(e.misc.toolsRendered, () => {
 		});
 	}));
 
-	addTool(new Tool('Paste', cursors.paste, PLAYERFX.NONE, true, tool => {
+	addTool(new Tool('Paste', cursors.paste, PLAYERFX.NONE, RANK.ADMIN, tool => {
 		tool.setFxRenderer((fx, ctx, time) => {
 			var z = camera.zoom;
 			var x = fx.extra.player.x;

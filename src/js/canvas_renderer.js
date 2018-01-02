@@ -58,6 +58,9 @@ export const renderer = {
 		FX:       0b01,
 		WORLD:    0b10
 	},
+	patterns: {
+		get unloaded() { return rendererValues.unloadedPattern; }
+	},
 	render: requestRender,
 	showGrid: setGridVisibility,
 	get gridShown() { return rendererValues.gridShown; },
@@ -214,7 +217,7 @@ class ChunkCluster {
 }
 
 /* Draws white text with a black border */
-function drawText(ctx, str, x, y, centered){
+export function drawText(ctx, str, x, y, centered){
 	ctx.strokeStyle = "#000000",
 	ctx.fillStyle = "#FFFFFF",
 	ctx.lineWidth = 2.5,
@@ -505,8 +508,8 @@ function onResize() {
 
 function alignCamera() {
 	var zoom = cameraValues.zoom;
-	var alignedX = Math.floor(cameraValues.x * zoom) / zoom;
-	var alignedY = Math.floor(cameraValues.y * zoom) / zoom;
+	var alignedX = Math.round(cameraValues.x * zoom) / zoom;
+	var alignedY = Math.round(cameraValues.y * zoom) / zoom;
 	cameraValues.x = alignedX;
 	cameraValues.y = alignedY;
 }

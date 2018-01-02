@@ -38,7 +38,7 @@ clientFx.setVisibleFunc(() => {
 	return mouse.insideViewport && mouse.validTile;
 });
 
-let rank = RANK.NONE;
+let rank = RANK.USER;
 let somethingChanged = false;
 
 let cachedHtmlRgb = [null, ""];
@@ -146,10 +146,19 @@ function addPaletteColor(color) {
 	updatePalette();
 }
 
+export function getDefaultTool() {
+	for (var toolName in tools) {
+		if (tools[toolName].rankRequired <= player.rank) {
+			return toolName;
+		}
+	}
+	return null;
+}
+
 function selectTool(name) {
 	let tool = tools[name];
-	if(!tool || tool === toolSelected) {
-		return;
+	if(!tool || tool === toolSelected || tool.rankRequired > player.rank) {
+		return false;
 	}
 	if (toolSelected) {
 		toolSelected.call('deselect');
@@ -162,6 +171,7 @@ function selectTool(name) {
 	clientFx.setRenderer(tool.fxRenderer);
 	somethingChanged = true;
 	updateClientFx();
+	return true;
 }
 
 function updateClientFx() {
@@ -169,25 +179,20 @@ function updateClientFx() {
 }
 
 eventSys.once(e.misc.toolsInitialized, () => {
-	player.tool = "cursor";
+	player.tool = getDefaultTool();
 });
 
 eventSys.on(e.net.sec.rank, newRank => {
 	rank = newRank;
 	switch (newRank) {
 		case RANK.USER:
+		case RANK.NONE:
 			showDevChat(false);
 			break;
-
+			
 		case RANK.MODERATOR:
-			showDevChat(false);
-			net.protocol.placeBucket = new Bucket(32, 2); /* TODO */
-			break;
-
 		case RANK.ADMIN:
 			showDevChat(true);
-			net.protocol.placeBucket.time = 0;
-			net.protocol.chatBucket.time = 0;
 			break;
 	}
 	updateToolbar();

@@ -9,13 +9,13 @@ import unloadedPat from '../img/unloaded.png';
 export let protocol = null;
 
 /* The raw event ID numbers should NOT be used, instead import the EVENTS object in your file. */
-let evtId = 777; /* It's your lucky day */
+let evtId = 999; /* You're making this difficult! Why are you looking here? */
 
 export const RANK = {
-	NONE: -1,
-	USER: 0,
-	MODERATOR: 1,
-	ADMIN: 2
+	NONE: 0,
+	USER: 1,
+	MODERATOR: 2,
+	ADMIN: 3
 };
 
 PublicAPI.RANK = RANK;
@@ -92,12 +92,13 @@ export const options = propertyDefaults(userOptions, {
 		default: true,
 		title: 'Official server',
 		proto: 'old',
-		url: 'ws://ourworldofpixels.com:443'
+		url: 'ws://ourworldofpixels.com:13375'
 	},{
 		default: false,
 		title: 'Localhost',
 		proto: 'old',
-		url: 'ws://localhost:25565'
+		url: 'ws://localhost:25565',
+		maxRetries: 1
 	}], // The server address that websockets connect to
 	fallbackFps: 30, // Fps used if requestAnimationFrame is not supported
 	maxChatBuffer: 256, // How many chat messages to retain in the chatbox
