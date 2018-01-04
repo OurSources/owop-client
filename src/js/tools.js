@@ -576,7 +576,7 @@ eventSys.once(e.misc.toolsRendered, () => {
 		});
 	}));
 
-	addTool(new Tool('Line', cursors.wand, PLAYERFX.NONE, RANK.NONE, tool => {
+	addTool(new Tool('Line', cursors.wand, PLAYERFX.NONE, RANK.USER, tool => {
 		var start = null;
 		var end = null;
 		var queue = [];

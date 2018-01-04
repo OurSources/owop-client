@@ -47,7 +47,8 @@ export const OldProtocol = {
         4: 'zoom',
         5: 'fill',
         6: 'paste',
-        7: 'export'
+        7: 'export',
+        8: 'line'
     },
     misc: {
         worldVerification: 1337,
