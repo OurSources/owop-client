@@ -8,7 +8,7 @@ import { loadAndRequestCaptcha } from './../captcha.js';
 import { colorUtils as color } from './../util/color.js';
 import { player, shouldUpdate } from './../local_player.js';
 import { camera } from './../canvas_renderer.js';
-import { mouse } from './../main.js';
+import { mouse, elements } from './../main.js';
 
 export const captchaState = {
 	CA_WAITING: 0,
@@ -31,16 +31,23 @@ export const OldProtocol = {
         [RANK.USER]: [32, 4],
         [RANK.MODERATOR]: [32, 2],
         [RANK.ADMIN]: [32, 0]
-    }, 
+    },
+    maxMessageLength: {
+        [RANK.NONE]: 128,
+        [RANK.USER]: 128,
+        [RANK.MODERATOR]: 512,
+        [RANK.ADMIN]: 16384
+    },
     tools: {
         id: {}, /* Generated automatically */
         0: 'cursor',
         1: 'move',
         2: 'pipette',
-        3: 'erase',
+        3: 'eraser',
         4: 'zoom',
         5: 'fill',
-        6: 'paste'
+        6: 'paste',
+        7: 'export'
     },
     misc: {
         worldVerification: 1337,
@@ -56,7 +63,7 @@ export const OldProtocol = {
             worldUpdate: 1,
             chunkLoad: 2,
             teleport: 3,
-            setAdmin: 4,
+            setRank: 4,
             captcha: 5
         }
     }
@@ -110,6 +117,7 @@ class OldProtocolImpl extends Protocol {
 
         const rankChanged = rank => {
             this.placeBucket = new Bucket(...OldProtocol.placeBucket[rank]);
+            elements.chatInput.maxLength = OldProtocol.maxMessageLength[rank];
         };
         this.leaveFunc = () => {
             eventSys.removeListener(e.net.sec.rank, rankChanged);
@@ -252,8 +260,8 @@ class OldProtocolImpl extends Protocol {
                 eventSys.emit(e.net.world.teleported, x, y);
                 break;
                 
-            case oc.setAdmin: // Got admin
-                eventSys.emit(e.net.sec.rank, RANK.ADMIN);
+            case oc.setRank: // new rank
+                eventSys.emit(e.net.sec.rank, dv.getUint8(1));
                 break;
                 
             case oc.captcha: // Captcha
@@ -342,7 +350,7 @@ class OldProtocolImpl extends Protocol {
             dv.setUint8(9, selrgb[1]);
             dv.setUint8(10, selrgb[2]);
             var tool = player.tool;
-            var toolId = tool !== null ? +OldProtocol.tools.id[tool.name] : 0;
+            var toolId = tool !== null ? +OldProtocol.tools.id[tool.id] : 0;
             dv.setUint8(11, toolId);
             this.ws.send(array);
         }

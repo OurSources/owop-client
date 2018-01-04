@@ -44,8 +44,10 @@ export class Player {
     update(x, y, rgb, tool) {
         this._x.val = x;
         this._y.val = y;
+        /* TODO: fix weird bug (caused by connecting before tools initialized?) */
+        //console.log(tool)
         this.tool = tools[tool] || tools['cursor'];
-        this.fx.setRenderer(this.tool.fxRenderer);
+        this.fx.setRenderer((this.tool || {}).fxRenderer ); // temp until fix: || {}
         this.fx.setVisible(misc.world.validMousePos(
             Math.floor(this.endX / 16), Math.floor(this.endY / 16)));
         this.rgb = rgb;

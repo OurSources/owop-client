@@ -38,7 +38,7 @@ clientFx.setVisibleFunc(() => {
 	return mouse.insideViewport && mouse.validTile;
 });
 
-let rank = RANK.USER;
+let rank = RANK.NONE;
 let somethingChanged = false;
 
 let cachedHtmlRgb = [null, ""];
@@ -70,7 +70,8 @@ export const player = {
 	set tool(name) {
 		selectTool(name);
 	},
-	get toolId() { return net.currentServer.proto.tools.id[toolSelected.name]; },
+	/* TODO: Clear confusion between netid and tool id */
+	get toolId() { return net.currentServer.proto.tools.id[toolSelected.id]; },
 	get tools() { return tools; }
 };
 
@@ -184,6 +185,7 @@ eventSys.once(e.misc.toolsInitialized, () => {
 
 eventSys.on(e.net.sec.rank, newRank => {
 	rank = newRank;
+	console.log('Got rank:', newRank);
 	switch (newRank) {
 		case RANK.USER:
 		case RANK.NONE:

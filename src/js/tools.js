@@ -73,13 +73,15 @@ export function showToolsWindow(bool) {
 }
 
 export function addTool(tool) {
-	tools[tool.name.toLowerCase()] = tool;
+	tool.id = tool.name.toLowerCase();
+	tools[tool.id] = tool;
 	updateToolbar();
 }
 
 class Tool {
     constructor(name, cursor, fxRenderer, rankNeeded, onInit) {
 		this.name = name;
+		this.id = null;
         this.fxRenderer = fxRenderer;
         this.cursorblob = cursor.img.shadowblob;
         this.cursor = cursor.img.shadowed;
