@@ -5,6 +5,7 @@
  */
 'use strict';
 import { normalizeWheel } from './util/normalizeWheel.js';
+import anchorme from './util/anchorme.js';
 
 import { CHUNK_SIZE, EVENTS as e } from './conf.js';
 import { Bucket } from './util/Bucket.js';
@@ -95,6 +96,8 @@ function receiveMessage(text) {
 	}
 
 	var message = document.createElement("li");
+	var realText = text;
+	var isAdmin = false;
 	if (text.startsWith("[D]")) {
 		message.className = "discord";
 		var nick = document.createElement("span");
@@ -106,6 +109,7 @@ function receiveMessage(text) {
 		message.className = "server";
 	} else if (isNaN(text.split(": ")[0]) && text.split(": ")[0].charAt(0) != "[") {
 		message.className = "admin";
+		isAdmin = true;
 	} else {
 		var nick = document.createElement("span");
 		nick.className = "nick";
@@ -114,7 +118,6 @@ function receiveMessage(text) {
 		text = text.split(": ")[1];
 	}
 	var idIndex = text.indexOf(': '); /* This shouldn't be like this, change on proto switch */
-	var realText = text;
 	if (idIndex !== -1) {
 		var ntext = text.substr(0, idIndex);
 		realText = ntext.replace(/\d+/g, '') + text.slice(idIndex + 2);
@@ -134,8 +137,17 @@ function receiveMessage(text) {
 				message.style.animation = null;
 			}
 		};
-		text = escapeHTML(text);
-		span.innerHTML = text;
+		if (!isAdmin) {
+			text = escapeHTML(text).replace(/\&\#x2F;/g, "/");
+		}
+		span.innerHTML = anchorme(text, {
+			attributes: [
+				{
+					name: "target",
+					value: "blank"
+				}
+			]
+		});
 		message.appendChild(span);
 		elements.chatMessages.appendChild(message);
 		var childs = elements.chatMessages.children;

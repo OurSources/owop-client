@@ -355,6 +355,9 @@ button:focus {
 	animation-fill-mode: forwards;
 	transition: background-color 0.2s;
 }
+#chat-messages > li a:link { color: #82c9ff; }
+#chat-messages > li a:visited { color: #ab80f9; }
+#chat-messages > li a:hover { color: #76b0dc; }
 #chat-messages > li > .nick {
 	color: #3ab2ff;
 }
