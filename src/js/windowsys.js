@@ -133,6 +133,7 @@ export function GUIWindow(title, options, initfunc) {
 	this.title = title;
 	this.frame = document.createElement("div");
 	this.container = document.createElement("div");
+	this.container.className = 'wincontainer';
 	
 	if (title) {
 		this.titlespan = document.createElement("span");
@@ -182,7 +183,7 @@ export function GUIWindow(title, options, initfunc) {
 	
 	if (options.centerOnce) {
 		/* Ugly solution to wait for offset(Height, Width) values to be available */
-		this.move(window.innerWidth, window.innerHeight);
+		this.move(window.innerWidth, window.innerHeight); /* Hide the window */
 		waitFrames(2, () => centerWindow(this));
 	}
 	
@@ -206,7 +207,8 @@ export function GUIWindow(title, options, initfunc) {
 		this.frame.appendChild(mkHTML("button", {
 			onclick: function() {
 				this.close();
-			}.bind(this)
+			}.bind(this),
+			className: 'windowCloseButton'
 		}));
 	}
 }

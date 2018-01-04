@@ -1,12 +1,12 @@
 'use strict';
 import { PublicAPI, eventSys } from './global.js';
 import { EVENTS as e, protocol, options, RANK } from './conf.js';
-import { absMod, setTooltip } from './util/misc.js';
+import { absMod, setTooltip, mkHTML } from './util/misc.js';
 import { cursors } from './tool_renderer.js';
 import { net } from './networking.js';
 import { player } from './local_player.js';
 import { camera, moveCameraTo, moveCameraBy, renderer, drawText } from './canvas_renderer.js';
-import { windowSys, GUIWindow, UtilInput } from './windowsys.js';
+import { windowSys, GUIWindow, UtilDialog } from './windowsys.js';
 import { misc, elements, mouse } from './main.js';
 import { PLAYERFX } from './Fx.js';
 
@@ -337,7 +337,7 @@ eventSys.once(e.misc.toolsRendered, () => {
 					ctx.setLineDash([]);
 					var oldfont = ctx.font;
 					ctx.font = "16px sans-serif";
-					var txt = `Right click to save (${Math.abs(w)}x${Math.abs(h)})`;
+					var txt = `${!tool.extra.clicking ? "Right click to screenshot " : ""}(${Math.abs(w)}x${Math.abs(h)})`;
 					var txtx = window.innerWidth >> 1;
 					var txty = window.innerHeight >> 1;
 					txtx = Math.max(x, Math.min(txtx, x + w * camera.zoom));
@@ -368,7 +368,7 @@ eventSys.once(e.misc.toolsRendered, () => {
 				}
 			});
 
-			function dlarea(x, y, w, h, name){
+			function dlarea(x, y, w, h, onblob){
 				var c = document.createElement('canvas');
 				c.width = w;
 				c.height = h;
@@ -377,6 +377,7 @@ eventSys.once(e.misc.toolsRendered, () => {
 				for(var i = y; i < y + h; i++){
 				  for(var j = x; j < x + w; j++){
 					var pix = misc.world.getPixel(j, i);
+					if (!pix) continue;
 					d.data[4*((i - y)*w + (j - x))] = pix[0];
 					d.data[4*((i - y)*w + (j - x)) + 1] = pix[1];
 					d.data[4*((i - y)*w + (j - x)) + 2] = pix[2];
@@ -384,12 +385,7 @@ eventSys.once(e.misc.toolsRendered, () => {
 				  }
 				}
 				ctx.putImageData(d, 0, 0);
-				c.toBlob(b => {
-				  var a = document.createElement('a');
-				  a.href = URL.createObjectURL(b);
-				  a.download = name;
-				  a.click();
-				});
+				c.toBlob(onblob);
 			  }
 
 			tool.extra.start = null;
@@ -461,12 +457,41 @@ eventSys.once(e.misc.toolsRendered, () => {
 						tool.extra.start = null;
 						tool.extra.end = null;
 					}
-				} else if (mouse.buttons === 2 && tool.extra.end) {
+				} else if (mouse.buttons === 2 && tool.extra.end && isInside()) {
 					tool.extra.start = null;
 					tool.extra.end = null;
-					windowSys.addWindow(new UtilInput("File name?", "Enter the name of the saved file", 'text', name => {
-						dlarea(s[0], s[1], e[0] - s[0], e[1] - s[1], name);
-					}))
+					var cvs = dlarea(s[0], s[1], e[0] - s[0], e[1] - s[1], b => {
+						var url = URL.createObjectURL(b);
+						var img = new Image();
+						img.onload = () => {
+							windowSys.addWindow(new GUIWindow("Resulting image", {
+								centerOnce: true,
+								closeable: true
+							}, function(win) {
+								var props = ['width', 'height'];
+								if (img.width > img.height) {
+									props.reverse();
+								}
+								var r = img[props[0]] / img[props[1]];
+								var shownSize = img[props[1]] >= 128 ? 256 : 128;
+								img[props[0]] = r * shownSize;
+								img[props[1]] = shownSize;
+								win.container.classList.add('centeredChilds')
+								var image = win.addObj(img);
+								setTooltip(img, "Right click to copy/save!");
+								/*var okButton = win.addObj(mkHTML("button", {
+									innerHTML: "OK",
+									style: "display: block; width: 80px; height: 30px; margin: auto;",
+									onclick: function() {
+										img.remove();
+										URL.revokeObjectURL(url);
+										win.getWindow().close();
+									}
+								}));*/
+							}));
+						};
+						img.src = url;
+					});
 				}
 			});
 		}

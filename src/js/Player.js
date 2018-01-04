@@ -2,7 +2,7 @@
 import { Lerp } from './util/Lerp.js';
 import { colorUtils as color } from './util/color.js';
 import { misc } from './main.js';
-import { Fx, FXTYPE } from './Fx.js';
+import { Fx, PLAYERFX } from './Fx.js';
 import { tools } from './tools.js';
 
 export class Player {
@@ -12,7 +12,7 @@ export class Player {
         this._y = new Lerp(y, y, 65);
 
         this.tool = tools[tool] || tools['cursor'];
-        this.fx = new Fx(tool ? tool.fxType : FXTYPE.NONE, { player: this });
+        this.fx = new Fx(tool ? tool.fxType : PLAYERFX.NONE, { player: this });
         this.fx.setVisible(misc.world.validMousePos(
             Math.floor(this.endX / 16), Math.floor(this.endY / 16)));
 

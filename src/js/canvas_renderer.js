@@ -3,7 +3,7 @@ import { protocol, EVENTS as e, options } from './conf.js';
 import { eventSys, PublicAPI } from './global.js';
 import { elements, misc } from './main.js';
 import { player } from './local_player.js';
-import { activeFx, FXTYPE } from './Fx.js';
+import { activeFx } from './Fx.js';
 import { getTime } from './util/misc.js';
 import { colorUtils as color } from './util/color.js';
 import { Lerp } from './util/Lerp.js';

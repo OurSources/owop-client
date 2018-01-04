@@ -36,6 +36,12 @@ html {
 	transform: translate(-50%, -50%);
 }
 
+.centeredChilds {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+}
+
 .tooltip {
 	pointer-events: none;
 	position: absolute;
@@ -143,7 +149,7 @@ img, #tool-select {
 	min-width: 100%;
 	text-align: center;
 }
-#windows > div > button { /* Close button */
+.windowCloseButton { /* Close button */
 	position: absolute;
 	right: 0;
 	top: -2px;
@@ -152,15 +158,17 @@ img, #tool-select {
 	padding: 0;
 	background-image: url(/img/gui.png);
 	background-position: -48px -32px;
+	background-color: #ff7979;
 	border: none;
 }
-#windows > div > button:active {
+button.windowCloseButton:active {
+	background-image: url(/img/gui.png);
 	background-position: -48px -41px;
 }
-#windows > div > div, .wincontainer { /* Container */
+.wincontainer { /* Item container of windows */
 	overflow: auto;
 	min-width: 100%;
-	width: 0; /* Older browsers fix */
+	/* width: 0;  Older browsers fix */
 	height: 100%;
 	margin: 0 -5px -5px -5px;
 	background-color: #7e635c;

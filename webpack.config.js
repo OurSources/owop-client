@@ -1,26 +1,27 @@
 const fs = require('fs-extra');
+const path = require('path');
 const webpack = require('webpack');
 const HtmlWebpackPlugin =  require('html-webpack-plugin');
 const ScriptExtHtmlWebpackPlugin = require('script-ext-html-webpack-plugin');
 /*const ExtractTextPlugin = require('extract-text-webpack-plugin');*/
 
-const srcDir = `${__dirname}/src`;
+const srcDir = path.resolve(__dirname, 'src');
 
 const config = {
 	entry: {
-		app: `${srcDir}/js/main.js`
+		app: path.resolve(srcDir, 'js', 'main.js')
 	},
 	output: {
 		filename: '[name].js',
-		path: `${__dirname}/dist`,
+		path: path.resolve(__dirname, 'dist'),
 		publicPath: '/'
 	},
 	devServer: {
-		contentBase: `${__dirname}/dist`
+		contentBase: path.resolve(__dirname, 'dist')
 	},
 	module: {
 		rules: [{
-			include: `${srcDir}/js`,
+			include: path.resolve(srcDir, 'js'),
 			use: [{
 				loader: 'babel-loader',
 				query: {
@@ -29,7 +30,7 @@ const config = {
 			}]
 		},{
 			/* Polyfills shouldn't be merged with app.js, resolve them with an url */
-			include: `${srcDir}/js/polyfill`,
+			include: path.resolve(srcDir, 'js', 'polyfill'),
 			use: [{
 				loader: 'file-loader',
 				options: {
@@ -38,7 +39,7 @@ const config = {
 				}
 			}]
 		},{
-			include: `${srcDir}/img`,
+			include: path.resolve(srcDir, 'img'),
 			use: [{
 				loader: 'file-loader',
 				options: {
@@ -47,7 +48,7 @@ const config = {
 				}
 			}]
 		},{
-			include: `${srcDir}/font`,
+			include: path.resolve(srcDir, 'font'),
 			use: [{
 				loader: 'file-loader',
 				options: {
@@ -56,7 +57,7 @@ const config = {
 				}
 			}]
 		},{
-			include: `${srcDir}/css`,
+			include: path.resolve(srcDir, 'css'),
 			use: [{
 				loader: 'css-loader',
 				options: {
@@ -81,8 +82,8 @@ const config = {
 		new HtmlWebpackPlugin({
 			title: 'World of Pixels',
 			inject: 'head',
-			template: `${srcDir}/index.ejs`,
-			favicon: `${srcDir}/favicon.ico`
+			template: path.resolve(srcDir, 'index.ejs'),
+			favicon: path.resolve(srcDir, 'favicon.ico')
 		}),
 		new ScriptExtHtmlWebpackPlugin({
 			defaultAttribute: 'async'
@@ -103,9 +104,6 @@ module.exports = async env => {
 		console.log(`Cleaning build dir: '${config.output.path}'`);
 		await fs.remove(config.output.path);
 	}
-
-	/* Copy files/directories from the src folder to the dist folder */
-	//await fs.copy(`${srcDir}/js/polyfill`, `${config.output.path}/polyfill`);
 
 	return config;
 };
