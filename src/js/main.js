@@ -1,6 +1,6 @@
 /*
  * TODO List: https://trello.com/b/v6F6isSv/worldofpixels
- * NOTE: Let's stick with the correct way of storing colors, 
+ * NOTE: Let's stick with the correct way of storing colors,
  * first byte should be red value: 0xAABBGGRR, or [r, g, b]
  */
 'use strict';
@@ -95,6 +95,24 @@ function receiveMessage(text) {
 	}
 
 	var message = document.createElement("li");
+	if (text.startsWith("[D]")) {
+		message.className = "discord";
+		var nick = document.createElement("span");
+		nick.className = "nick";
+		nick.innerHTML = escapeHTML(text.split(": ")[0] + ": ");
+		message.appendChild(nick);
+		text = text.split(": ")[1];
+	} else if (text.startsWith("[Server]") || text.startsWith("Server:") || text.startsWith("Nickname set to")) {
+		message.className = "server";
+	} else if (isNaN(text.split(": ")[0]) && text.split(": ")[0].charAt(0) != "[") {
+		message.className = "admin";
+	} else {
+		var nick = document.createElement("span");
+		nick.className = "nick";
+		nick.innerHTML = escapeHTML(text.split(": ")[0] + ": ");
+		message.appendChild(nick);
+		text = text.split(": ")[1];
+	}
 	var idIndex = text.indexOf(': '); /* This shouldn't be like this, change on proto switch */
 	var realText = text;
 	if (idIndex !== -1) {
@@ -376,7 +394,7 @@ function checkFunctionality(callback) {
 	Math.trunc = Math.trunc || (n => n | 0);
 
 	var toBlob = HTMLCanvasElement.prototype.toBlob = HTMLCanvasElement.prototype.toBlob || HTMLCanvasElement.prototype.msToBlob;
-	
+
 	if (!toBlob) { /* Load toBlob polyfill */
 		loadScript(require('./polyfill/canvas-toBlob.js'), callback);
 	} else {
@@ -389,7 +407,7 @@ function init() {
 	var chatinput = elements.chatInput;
 
 	misc.lastCleanup = 0;
-	
+
 	viewport.oncontextmenu = () => false;
 
 	viewport.addEventListener("mouseenter", () => {
@@ -407,6 +425,11 @@ function init() {
 			closeChat();
 		} else if (keyCode == 13) {
 			var text = chatinput.value;
+			if (text.startsWith("/adminlogin ")) {
+				localStorage.adminlogin = text.split("/adminlogin ")[1];
+			} else if (text.startsWith("/nick ")) {
+				localStorage.nick = text.split("/nick ")[1];
+			}
 			if (text[0] !== '/') {
 				text = misc.chatSendModifier(text);
 			}
@@ -593,7 +616,7 @@ function init() {
 		e.preventDefault();
 		return false;
 	}, { passive: false });
-	
+
 	// Touch support
 	const touchEventNoUpdate = evtName => event => {
 		var tool = player.tool;
@@ -619,7 +642,7 @@ function init() {
 	}, { passive: true });
 	viewport.addEventListener("touchend", touchEventNoUpdate('touchend'), { passive: true });
 	viewport.addEventListener("touchcancel", touchEventNoUpdate('touchcancel'), { passive: true });
-	
+
 	// Some cool custom css
 	console.log("%c" +
 		" _ _ _         _   _    _____ ___    _____ _         _     \n" +
@@ -629,10 +652,10 @@ function init() {
 		"font-size: 15px; font-weight: bold;"
 	);
 	console.log("%cWelcome to the developer console!", "font-size: 20px; font-weight: bold; color: #F0F;");
-	
+
 	//this.windowsys.addWindow(new OWOPDropDown());
 	resolveProtocols();
-	
+
 	/* Calls other initialization functions */
 	eventSys.emit(e.init);
 
@@ -670,7 +693,7 @@ function init() {
 			return availableServers[index % availableServers.length];
 		};
 	})(options.serverAddress);
-	
+
 	retryingConnect(serverGetter, misc.urlWorldName);
 
 	elements.reconnectBtn.onclick = () => retryingConnect(serverGetter, misc.urlWorldName);
@@ -691,7 +714,30 @@ eventSys.on(e.net.chat, receiveMessage);
 eventSys.on(e.net.devChat, receiveDevMessage);
 
 eventSys.on(e.net.world.setId, id => {
+	function autoNick() {
+		if (localStorage.nick) {
+			net.protocol.sendMessage("/nick " + localStorage.nick);
+		}
+	}
 
+	// Automatic adminlogin
+	if (localStorage.adminlogin) {
+		let onWrong = function() {
+			console.log("WRONG");
+			eventSys.removeListener(e.net.sec.rank, onCorrect);
+			delete localStorage.adminlogin;
+			net.connect(net.currentServer, net.protocol.worldName);
+		};
+		let onCorrect = function() {
+			eventSys.removeListener(e.net.disconnected, onWrong);
+			autoNick();
+		};
+		eventSys.once(e.net.disconnected, onWrong);
+		eventSys.once(e.net.sec.rank, onCorrect);
+		net.protocol.sendMessage("/adminlogin " + localStorage.adminlogin);
+	} else {
+		autoNick();
+	}
 });
 
 eventSys.on(e.misc.windowAdded, window => {
@@ -780,7 +826,7 @@ window.addEventListener("load", () => {
 	elements.paletteColors = document.getElementById("palette-colors");
 	elements.paletteCreate = document.getElementById("palette-create");
 	elements.paletteInput = document.getElementById("palette-input");
-	
+
 	elements.animCanvas = document.getElementById("animations");
 
 	elements.viewport = document.getElementById("viewport");
