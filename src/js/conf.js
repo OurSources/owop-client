@@ -9,7 +9,7 @@ import unloadedPat from '../img/unloaded.png';
 export let protocol = null;
 
 /* The raw event ID numbers should NOT be used, instead import the EVENTS object in your file. */
-let evtId = 999; /* You're making this difficult! Why are you looking here? */
+let evtId = 3248; /* STOP */ /* You're making this difficult! Why are you looking here? */
 
 export const RANK = {
 	NONE: 0,
@@ -92,7 +92,7 @@ export const options = propertyDefaults(userOptions, {
 		default: true,
 		title: 'Official server',
 		proto: 'old',
-		url: 'ws://ourworldofpixels.com:13375'
+		url: 'ws://ourworldofpixels.com:443'
 	},{
 		default: false,
 		title: 'Localhost',
