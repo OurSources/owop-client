@@ -325,7 +325,7 @@ button:focus {
 	display: flex;
 	font-family: pixel-op, monospace;
 	flex-direction: column;
-	background-color: none;
+	background-color: transparent;
 	pointer-events: none;
 	overflow: hidden;
 	transition: background-color 0.2s, box-shadow 0.2s, transform 0.75s;
@@ -336,7 +336,7 @@ button:focus {
 	left: initial;
 }
 #chat.active, #dev-chat.active {
-	background-color: rgba(0, 0, 0, 0.6);
+	background-color: rgba(0, 0, 0, 0.8);
 	box-shadow: 0px 0px 5px #000;
 	pointer-events: all;
 	overflow-y: auto;
@@ -348,12 +348,27 @@ button:focus {
 }
 
 #chat-messages > li {
-	background-color: rgba(0, 0, 0, 0.6);
+	background-color: rgba(0, 0, 0, 0.8);
 	animation-name: fade;
 	animation-duration: 3s;
 	animation-delay: 15s;
 	animation-fill-mode: forwards;
 	transition: background-color 0.2s;
+}
+#chat-messages > li a:link { color: #82c9ff; }
+#chat-messages > li a:visited { color: #ab80f9; }
+#chat-messages > li a:hover { color: #76b0dc; }
+#chat-messages > li > .nick {
+	color: #3ab2ff;
+}
+#chat-messages > li.admin {
+	color: #ff4f4f;
+}
+#chat-messages > li.discord > .nick {
+	color: #6cffe7;
+}
+#chat-messages > li.server {
+	color: #86ff41;
 }
 
 #chat-messages.active > li {
@@ -376,8 +391,14 @@ button:focus {
 	flex: 0;
 	color: #FFF;
 	pointer-events: all;
-	border: 1px solid #000;
-	background: rgba(0, 0, 0, 0.5);
+	border: 1px solid #666;
+	padding: 4px;
+	background: rgba(0, 0, 0, 0.8);
+	font-family: pixel-op, sans-serif;
+	font-size: 16px;
+}
+#chat-input:focus {
+	outline: none;
 }
 
 #chat-input::-webkit-input-placeholder {

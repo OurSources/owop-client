@@ -33,12 +33,12 @@ export function updateToolbar(win = toolsWindow) {
 	if (!win) {
 		return;
 	}
-	
+
 	const container = win.container;
 	const toolButtonClick = name => event => player.tool = name;
-	
+
 	container.innerHTML = "";
-	
+
 	// Add tools to the tool-select menu
 	for (const name in tools) {
 		var tool = tools[name];
@@ -106,7 +106,7 @@ class Tool {
         };
         onInit(this);
 	}
-	
+
 	/* Doesn't update if tool already selected */
 	setFxRenderer(func) {
 		this.fxRenderer = func;
@@ -171,7 +171,7 @@ eventSys.once(e.misc.toolsRendered, () => {
 					misc.world.setPixel(tileX, tileY, color);
 				}
 			}
-			
+
 			tool.setEvent('mousedown mousemove', (mouse, event) => {
 				/* White color if right clicking */
 				var color = mouse.buttons === 2 ? [255, 255, 255] : player.selectedColor;
@@ -190,7 +190,7 @@ eventSys.once(e.misc.toolsRendered, () => {
 			});
 		}
 	));
-	
+
 	// Move tool
 	addTool(new Tool('Move', cursors.move, PLAYERFX.NONE, RANK.NONE,
 		tool => {
@@ -213,7 +213,7 @@ eventSys.once(e.misc.toolsRendered, () => {
 			});
 		}
 	));
-	
+
 	// Pipette tool
 	addTool(new Tool('Pipette', cursors.pipette, PLAYERFX.NONE, RANK.NONE,
 		tool => {
@@ -227,7 +227,7 @@ eventSys.once(e.misc.toolsRendered, () => {
 			});
 		}
 	));
-	
+
 	// Erase/Fill tool
 	addTool(new Tool('Eraser', cursors.erase, PLAYERFX.RECT_SELECT_ALIGNED(16), RANK.ADMIN,
 		tool => {
@@ -250,7 +250,7 @@ eventSys.once(e.misc.toolsRendered, () => {
 					}
 				}
 			}
-			
+
 			tool.setEvent('mousedown mousemove', (mouse, event) => {
 				if (mouse.buttons === 1) {
 					clearChunk(Math.floor(mouse.tileX / protocol.chunkSize), Math.floor(mouse.tileY / protocol.chunkSize));
@@ -258,7 +258,7 @@ eventSys.once(e.misc.toolsRendered, () => {
 			});
 		}
 	));
-	
+
 	// Zoom tool
 	addTool(new Tool('Zoom', cursors.zoom, PLAYERFX.NONE, RANK.NONE,
 		tool => {
@@ -289,7 +289,7 @@ eventSys.once(e.misc.toolsRendered, () => {
 					moveCameraBy(offX, offY);
 				}
 			}
-			
+
 			tool.setEvent("mousedown", (mouse, event) => {
 				zoom(mouse, mouse.buttons);
 			});
@@ -363,7 +363,7 @@ eventSys.once(e.misc.toolsRendered, () => {
 					ctx.setLineDash([3]);
 					ctx.strokeStyle = "#000000";
 					ctx.stroke();
-		
+
 					ctx.setLineDash([]);
 					ctx.lineWidth = oldlinew;
 					return 1;
@@ -534,7 +534,8 @@ eventSys.once(e.misc.toolsRendered, () => {
 
 			var selClr = player.selectedColor;
 			var painted = 0;
-			while (++painted < 3 && queue.length > 0) {
+			var tickAmount = misc.isAdmin ? 9 : 3;
+			for (var painted = 0; painted < tickAmount && queue.length; painted++) {
 				var current = queue.pop();
 				var x = current[0];
 				var y = current[1];
@@ -544,10 +545,20 @@ eventSys.once(e.misc.toolsRendered, () => {
 						queue.push(current);
 						break;
 					}
-					check(x - 1, y);
-					check(x, y - 1);
-					check(x + 1, y);
-					check(x, y + 1);
+					// Square shape, goes through edges (fixable)
+					/*check(x - 1, y - 1);
+					check(x    , y - 1);
+					check(x + 1, y - 1);
+					check(x - 1, y    );
+					check(x + 1, y    );
+					check(x - 1, y + 1);
+					check(x    , y + 1);
+					check(x + 1, y + 1);*/
+					// Shape diamond, infra not like
+					check(x    , y - 1);
+					check(x - 1, y    );
+					check(x + 1, y    );
+					check(x    , y + 1);
 				}
 			}
 		}
@@ -561,6 +572,94 @@ eventSys.once(e.misc.toolsRendered, () => {
 		tool.setEvent('mouseup deselect', mouse => {
 			fillingColor = null;
 			queue = [];
+			tool.setEvent('tick', null);
+		});
+	}));
+
+	addTool(new Tool('Line', cursors.wand, PLAYERFX.NONE, RANK.NONE, tool => {
+		var start = null;
+		var end = null;
+		var queue = [];
+		function line(x1, y1, x2, y2, plot) {
+			var dx =  Math.abs(x2 - x1), sx = x1 < x2 ? 1 : -1;
+			var dy = -Math.abs(y2 - y1), sy = y1 < y2 ? 1 : -1;
+			var err = dx + dy,
+			    e2;
+
+			while(true) {
+				plot(x1, y1);
+				if (x1 == x2 && y1 == y2) break;
+				e2 = 2 * err;
+				if (e2 >= dy) { err += dy; x1 += sx; }
+				if (e2 <= dx) { err += dx; y1 += sy; }
+			}
+		}
+		var defaultFx = PLAYERFX.RECT_SELECT_ALIGNED(1);
+		tool.setFxRenderer((fx, ctx, time) => {
+			ctx.globalAlpha = 0.8;
+			ctx.strokeStyle = fx.extra.player.htmlRgb;
+			var z = camera.zoom;
+			if (!start || !end || !fx.extra.isLocalPlayer) {
+				defaultFx(fx, ctx, time);
+			} else {
+				ctx.beginPath();
+				line(start[0], start[1], end[0], end[1], (x, y) => {
+					ctx.rect((x - camera.x) * camera.zoom, (y - camera.y) * camera.zoom, camera.zoom, camera.zoom);
+				});
+				ctx.stroke();
+			}
+		});
+		function tick() {
+			for (var painted = 0; painted < 3 && queue.length; painted++) {
+				var current = queue.pop();
+				var c = misc.world.getPixel(current[0], current[1]);
+				var pc = player.selectedColor;
+				if ((c[0] != pc[0] || c[1] != pc[1] || c[2] != pc[2]) && !misc.world.setPixel(current[0], current[1], player.selectedColor)) {
+					queue.push(current);
+					break;
+				}
+			}
+			if (!queue.length) {
+				start = null;
+				end = null;
+				tool.setEvent('tick', null);
+				return;
+			}
+		}
+		tool.setEvent('mousedown', mouse => {
+			queue = [];
+			tool.setEvent('tick', null);
+			start = [mouse.tileX, mouse.tileY];
+			end = [mouse.tileX, mouse.tileY];
+		});
+		tool.setEvent('mousemove', mouse => {
+			if (!queue.length) {
+				end = [mouse.tileX, mouse.tileY];
+			}
+		});
+		tool.setEvent('mouseup', mouse => {
+			end = [mouse.tileX, mouse.tileY];
+			if (!start) {
+				end = null;
+				return;
+			}
+			if (player.rank == RANK.ADMIN) {
+				line(start[0], start[1], end[0], end[1], (x, y) => {
+					misc.world.setPixel(x, y, player.selectedColor);
+				});
+				start = null;
+				end = null;
+			} else {
+				line(start[0], start[1], end[0], end[1], (x, y) => {
+					queue.push([x, y]);
+				});
+				tool.setEvent('tick', tick);
+			}
+		});
+		tool.setEvent('deselect', mouse => {
+			queue = [];
+			start = null;
+			end = null;
 			tool.setEvent('tick', null);
 		});
 	}));
@@ -648,7 +747,7 @@ eventSys.once(e.misc.toolsRendered, () => {
 				paint(mouse.tileX, mouse.tileY);
 			}
 		});
-		
+
 		var input = document.createElement("input");
 		input.type = "file";
 		input.accept = "image/*";
