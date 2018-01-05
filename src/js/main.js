@@ -102,9 +102,10 @@ function receiveMessage(text) {
 		message.className = "discord";
 		var nick = document.createElement("span");
 		nick.className = "nick";
-		nick.innerHTML = escapeHTML(text.split(": ")[0] + ": ");
+		var nickname = text.split(": ")[0] + ": ";
+		nick.innerHTML = escapeHTML(nickname);
 		message.appendChild(nick);
-		text = text.split(": ")[1];
+		text = text.slice(nickname.length);
 	} else if (text.startsWith("[Server]") || text.startsWith("Server:") || text.startsWith("Nickname set to") || text.startsWith("User: ")) {
 		message.className = "server";
 	} else if (text.startsWith("(M)")) {
