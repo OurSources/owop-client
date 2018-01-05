@@ -354,6 +354,7 @@ button:focus {
 	animation-delay: 15s;
 	animation-fill-mode: forwards;
 	transition: background-color 0.2s;
+	white-space: pre-wrap;
 }
 #chat-messages > li a:link { color: #82c9ff; }
 #chat-messages > li a:visited { color: #ab80f9; }
@@ -389,6 +390,7 @@ button:focus {
 }
 #chat-input {
 	flex: 0;
+	height: 16px;
 	color: #FFF;
 	pointer-events: all;
 	border: 1px solid #666;
@@ -396,6 +398,8 @@ button:focus {
 	background: rgba(0, 0, 0, 0.8);
 	font-family: pixel-op, sans-serif;
 	font-size: 16px;
+	resize: none;
+	overflow-y: scroll;
 }
 #chat-input:focus {
 	outline: none;

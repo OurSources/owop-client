@@ -431,25 +431,66 @@ function init() {
 		updateClientFx();
 	});
 
-	chatinput.addEventListener("keyup", event => {
-		var keyCode = event.which || event.keyCode;
-		if (keyCode === 27) {
-			closeChat();
-		} else if (keyCode == 13) {
-			var text = chatinput.value;
-			if (text.startsWith("/adminlogin ")) {
-				localStorage.adminlogin = text.split("/adminlogin ")[1];
-			} else if (text.startsWith("/nick ")) {
-				localStorage.nick = text.split("/nick ")[1];
-			}
-			if (text[0] !== '/') {
-				text = misc.chatSendModifier(text);
-			}
-			net.protocol.sendMessage(text);
-			chatinput.value = '';
-			closeChat();
-			event.stopPropagation();
+	var chatHistory = [];
+	var historyIndex = 0;
+	chatinput.addEventListener("keydown", event => {
+		event.stopPropagation();
+		if (historyIndex === 0) {
+			chatHistory[0] = chatinput.value;
 		}
+		var keyCode = event.which || event.keyCode;
+		switch(keyCode) {
+			case 27:
+				closeChat();
+				break;
+			case 13:
+				if (!event.shiftKey) {
+					event.preventDefault();
+					var text = chatinput.value;
+					historyIndex = 0;
+					chatHistory.unshift(text);
+					if (text.startsWith("/adminlogin ")) {
+						localStorage.adminlogin = text.split("/adminlogin ")[1];
+					} else if (text.startsWith("/nick ")) {
+						localStorage.nick = text.split("/nick ")[1];
+					}
+					if (text[0] !== '/') {
+						text = misc.chatSendModifier(text);
+					}
+					net.protocol.sendMessage(text);
+					chatinput.value = '';
+					chatinput.style.height = "16px";
+					event.stopPropagation();
+				}
+				break;
+			case 38: // Arrow up
+				if (event.shiftKey && historyIndex < chatHistory.length - 1) {
+					historyIndex++;
+					chatinput.value = chatHistory[historyIndex];
+					chatinput.style.height = 0;
+					chatinput.style.height = Math.min(chatinput.scrollHeight - 8, 16 * 4) + "px";
+				}
+				break;
+			case 40: // Arrow Down
+				if (event.shiftKey && historyIndex > 0) {
+					historyIndex--;
+					chatinput.value = chatHistory[historyIndex];
+					chatinput.style.height = 0;
+					chatinput.style.height = Math.min(chatinput.scrollHeight - 8, 16 * 4) + "px";
+				}
+				break;
+		}
+	});
+	chatinput.addEventListener("keyup", event => {
+		event.stopPropagation();
+		var keyCode = event.which || event.keyCode;
+		if (keyCode == 13 && !event.shiftKey) {
+			closeChat();
+		}
+	})
+	chatinput.addEventListener("input", event => {
+		chatinput.style.height = 0;
+		chatinput.style.height = Math.min(chatinput.scrollHeight - 8, 16 * 4) + "px";
 	});
 	chatinput.addEventListener("focus", event => {
 		if (!mouse.buttons) {
