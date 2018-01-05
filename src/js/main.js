@@ -726,30 +726,32 @@ eventSys.on(e.net.chat, receiveMessage);
 eventSys.on(e.net.devChat, receiveDevMessage);
 
 eventSys.on(e.net.world.setId, id => {
-	function autoNick() {
-		if (localStorage.nick) {
-			net.protocol.sendMessage("/nick " + localStorage.nick);
+	eventSys.once(e.net.sec.rank, () => {
+		function autoNick() {
+			if (localStorage.nick) {
+				net.protocol.sendMessage("/nick " + localStorage.nick);
+			}
 		}
-	}
 
-	// Automatic adminlogin
-	if (localStorage.adminlogin) {
-		let onWrong = function() {
-			console.log("WRONG");
-			eventSys.removeListener(e.net.sec.rank, onCorrect);
-			delete localStorage.adminlogin;
-			net.connect(net.currentServer, net.protocol.worldName);
-		};
-		let onCorrect = function() {
-			eventSys.removeListener(e.net.disconnected, onWrong);
+		// Automatic adminlogin
+		if (localStorage.adminlogin) {
+			let onWrong = function() {
+				console.log("WRONG");
+				eventSys.removeListener(e.net.sec.rank, onCorrect);
+				delete localStorage.adminlogin;
+				net.connect(net.currentServer, net.protocol.worldName);
+			};
+			let onCorrect = function() {
+				eventSys.removeListener(e.net.disconnected, onWrong);
+				autoNick();
+			};
+			eventSys.once(e.net.disconnected, onWrong);
+			eventSys.once(e.net.sec.rank, onCorrect);
+			net.protocol.sendMessage("/adminlogin " + localStorage.adminlogin);
+		} else {
 			autoNick();
-		};
-		eventSys.once(e.net.disconnected, onWrong);
-		eventSys.once(e.net.sec.rank, onCorrect);
-		net.protocol.sendMessage("/adminlogin " + localStorage.adminlogin);
-	} else {
-		autoNick();
-	}
+		}
+	});
 });
 
 eventSys.on(e.misc.windowAdded, window => {
