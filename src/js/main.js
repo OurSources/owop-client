@@ -113,9 +113,10 @@ function receiveMessage(text) {
 	} else {
 		var nick = document.createElement("span");
 		nick.className = "nick";
-		nick.innerHTML = escapeHTML(text.split(": ")[0] + ": ");
+		var nickname = text.split(": ")[0] + ": ";
+		nick.innerHTML = escapeHTML(nickname);
 		message.appendChild(nick);
-		text = text.split(": ")[1];
+		text = text.slice(nickname.length);
 	}
 	var idIndex = text.indexOf(': '); /* This shouldn't be like this, change on proto switch */
 	if (idIndex !== -1) {
