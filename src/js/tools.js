@@ -1,7 +1,7 @@
 'use strict';
 import { PublicAPI, eventSys } from './global.js';
 import { EVENTS as e, protocol, options, RANK } from './conf.js';
-import { absMod, setTooltip, mkHTML } from './util/misc.js';
+import { absMod, setTooltip, mkHTML, line } from './util/misc.js';
 import { cursors } from './tool_renderer.js';
 import { net } from './networking.js';
 import { player } from './local_player.js';
@@ -165,28 +165,36 @@ eventSys.once(e.misc.toolsRendered, () => {
 	// Cursor tool
 	addTool(new Tool('Cursor', cursors.cursor, PLAYERFX.RECT_SELECT_ALIGNED(1), RANK.USER,
 		tool => {
-			function draw(tileX, tileY, color) {
-				var pixel = misc.world.getPixel(tileX, tileY);
-				if (pixel !== null && !(color[0] === pixel[0] && color[1] === pixel[1] && color[2] === pixel[2])) {
-					misc.world.setPixel(tileX, tileY, color);
-				}
-			}
-
+			var lastX,
+			    lastY;
 			tool.setEvent('mousedown mousemove', (mouse, event) => {
-				/* White color if right clicking */
-				var color = mouse.buttons === 2 ? [255, 255, 255] : player.selectedColor;
-				switch (mouse.buttons) {
-				case 1:
-				case 2:
-					draw(mouse.tileX, mouse.tileY, color);
-					break;
-				case 4:
-					var pixel = misc.world.getPixel(mouse.tileX, mouse.tileY);
-					if (pixel) {
-						player.selectedColor = pixel;
+				if (mouse.buttons & 0b100) {
+					moveCameraBy((mouse.mouseDownWorldX - mouse.worldX) / 16, (mouse.mouseDownWorldY - mouse.worldY) / 16);
+				} else {
+					/* White color if right clicking */
+					var color = mouse.buttons === 2 ? [255, 255, 255] : player.selectedColor;
+					switch (mouse.buttons) {
+						case 1:
+						case 2:
+							if (!lastX || !lastY) {
+								lastX = mouse.tileX;
+								lastY = mouse.tileY;
+							}
+							line(lastX, lastY, mouse.tileX, mouse.tileY, 1, (x, y) => {
+								var pixel = misc.world.getPixel(x, y);
+								if (pixel !== null && !(color[0] === pixel[0] && color[1] === pixel[1] && color[2] === pixel[2])) {
+									misc.world.setPixel(x, y, color);
+								}
+							});
+							lastX = mouse.tileX;
+							lastY = mouse.tileY;
+							break;
 					}
-					break;
 				}
+			});
+			tool.setEvent('mouseup', mouse => {
+				lastX = null;
+				lastY = null;
 			});
 		}
 	));
@@ -218,7 +226,9 @@ eventSys.once(e.misc.toolsRendered, () => {
 	addTool(new Tool('Pipette', cursors.pipette, PLAYERFX.NONE, RANK.NONE,
 		tool => {
 			tool.setEvent('mousedown mousemove', (mouse, event) => {
-				if (mouse.buttons !== 0) {
+				if (mouse.buttons & 0b100) {
+					moveCameraBy((mouse.mouseDownWorldX - mouse.worldX) / 16, (mouse.mouseDownWorldY - mouse.worldY) / 16);
+				} else if (mouse.buttons !== 0) {
 					var color = misc.world.getPixel(mouse.tileX, mouse.tileY);
 					if (color) {
 						player.selectedColor = color;
@@ -252,7 +262,9 @@ eventSys.once(e.misc.toolsRendered, () => {
 			}
 
 			tool.setEvent('mousedown mousemove', (mouse, event) => {
-				if (mouse.buttons === 1) {
+				if (mouse.buttons & 0b100) {
+					moveCameraBy((mouse.mouseDownWorldX - mouse.worldX) / 16, (mouse.mouseDownWorldY - mouse.worldY) / 16);
+				} else if (mouse.buttons === 1) {
 					clearChunk(Math.floor(mouse.tileX / protocol.chunkSize), Math.floor(mouse.tileY / protocol.chunkSize));
 				}
 			});
@@ -302,6 +314,11 @@ eventSys.once(e.misc.toolsRendered, () => {
 						zoom(mouse, tool.extra.maxTouches);
 					}
 					tool.extra.maxTouches = 0;
+				}
+			});
+			tool.setEvent('mousemove', mouse => {
+				if (mouse.buttons & 0b100) {
+					moveCameraBy((mouse.mouseDownWorldX - mouse.worldX) / 16, (mouse.mouseDownWorldY - mouse.worldY) / 16);
 				}
 			});
 		}
@@ -496,6 +513,11 @@ eventSys.once(e.misc.toolsRendered, () => {
 					});
 				}
 			});
+			tool.setEvent('mousemove', mouse => {
+				if (mouse.buttons & 0b100) {
+					moveCameraBy((mouse.mouseDownWorldX - mouse.worldX) / 16, (mouse.mouseDownWorldY - mouse.worldY) / 16);
+				}
+			});
 		}
 	));
 
@@ -563,16 +585,25 @@ eventSys.once(e.misc.toolsRendered, () => {
 			}
 		}
 		tool.setEvent('mousedown', mouse => {
-			fillingColor = misc.world.getPixel(mouse.tileX, mouse.tileY);
-			if (fillingColor) {
-				queue.push([mouse.tileX, mouse.tileY]);
-				tool.setEvent('tick', tick);
+			if (!(mouse.buttons & 0b100)) {
+				fillingColor = misc.world.getPixel(mouse.tileX, mouse.tileY);
+				if (fillingColor) {
+					queue.push([mouse.tileX, mouse.tileY]);
+					tool.setEvent('tick', tick);
+				}
+			}
+		});
+		tool.setEvent('mousemove', mouse => {
+			if (mouse.buttons & 0b100) {
+				moveCameraBy((mouse.mouseDownWorldX - mouse.worldX) / 16, (mouse.mouseDownWorldY - mouse.worldY) / 16);
 			}
 		});
 		tool.setEvent('mouseup deselect', mouse => {
-			fillingColor = null;
-			queue = [];
-			tool.setEvent('tick', null);
+			if (!(mouse.buttons & 0b1)) {
+				fillingColor = null;
+				queue = [];
+				tool.setEvent('tick', null);
+			}
 		});
 	}));
 
@@ -627,33 +658,39 @@ eventSys.once(e.misc.toolsRendered, () => {
 			}
 		}
 		tool.setEvent('mousedown', mouse => {
-			queue = [];
-			tool.setEvent('tick', null);
-			start = [mouse.tileX, mouse.tileY];
-			end = [mouse.tileX, mouse.tileY];
+			if (!(mouse.buttons & 0b100)) {
+				queue = [];
+				tool.setEvent('tick', null);
+				start = [mouse.tileX, mouse.tileY];
+				end = [mouse.tileX, mouse.tileY];
+			}
 		});
 		tool.setEvent('mousemove', mouse => {
-			if (!queue.length) {
+			if (mouse.buttons & 0b100) {
+				moveCameraBy((mouse.mouseDownWorldX - mouse.worldX) / 16, (mouse.mouseDownWorldY - mouse.worldY) / 16);
+			} else if (!queue.length) {
 				end = [mouse.tileX, mouse.tileY];
 			}
 		});
 		tool.setEvent('mouseup', mouse => {
-			end = [mouse.tileX, mouse.tileY];
-			if (!start) {
-				end = null;
-				return;
-			}
-			if (player.rank == RANK.ADMIN) {
-				line(start[0], start[1], end[0], end[1], (x, y) => {
-					misc.world.setPixel(x, y, player.selectedColor);
-				});
-				start = null;
-				end = null;
-			} else {
-				line(start[0], start[1], end[0], end[1], (x, y) => {
-					queue.push([x, y]);
-				});
-				tool.setEvent('tick', tick);
+			if (!(mouse.buttons & 0b11)) {
+				end = [mouse.tileX, mouse.tileY];
+				if (!start) {
+					end = null;
+					return;
+				}
+				if (player.rank == RANK.ADMIN) {
+					line(start[0], start[1], end[0], end[1], (x, y) => {
+						misc.world.setPixel(x, y, player.selectedColor);
+					});
+					start = null;
+					end = null;
+				} else {
+					line(start[0], start[1], end[0], end[1], (x, y) => {
+						queue.push([x, y]);
+					});
+					tool.setEvent('tick', tick);
+				}
 			}
 		});
 		tool.setEvent('deselect', mouse => {
@@ -743,8 +780,15 @@ eventSys.once(e.misc.toolsRendered, () => {
 		}
 
 		tool.setEvent('mousedown', mouse => {
-			if (tool.extra.canvas) {
-				paint(mouse.tileX, mouse.tileY);
+			if (!(mouse.buttons & 0b100)) {
+				if (tool.extra.canvas) {
+					paint(mouse.tileX, mouse.tileY);
+				}
+			}
+		});
+		tool.setEvent('mousemove', mouse => {
+			if (mouse.buttons & 0b100) {
+				moveCameraBy((mouse.mouseDownWorldX - mouse.worldX) / 16, (mouse.mouseDownWorldY - mouse.worldY) / 16);
 			}
 		});
 
