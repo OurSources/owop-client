@@ -599,7 +599,7 @@ eventSys.once(e.misc.toolsRendered, () => {
 			}
 		});
 		tool.setEvent('mouseup deselect', mouse => {
-			if (!(mouse.buttons & 0b1)) {
+			if (!mouse || !(mouse.buttons & 0b1)) {
 				fillingColor = null;
 				queue = [];
 				tool.setEvent('tick', null);
