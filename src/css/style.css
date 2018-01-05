@@ -372,7 +372,7 @@ button:focus {
 	color: #6cffe7;
 }
 #chat-messages > li.server {
-	color: #ffeb41;
+	color: #ff41e4;
 }
 
 #chat-messages.active > li {

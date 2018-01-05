@@ -105,7 +105,7 @@ function receiveMessage(text) {
 		nick.innerHTML = escapeHTML(text.split(": ")[0] + ": ");
 		message.appendChild(nick);
 		text = text.split(": ")[1];
-	} else if (text.startsWith("[Server]") || text.startsWith("Server:") || text.startsWith("Nickname set to")) {
+	} else if (text.startsWith("[Server]") || text.startsWith("Server:") || text.startsWith("Nickname set to") || text.startsWith("User: ")) {
 		message.className = "server";
 	} else if (text.startsWith("(M)")) {
 		message.className = "moderator";
