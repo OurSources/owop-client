@@ -362,6 +362,9 @@ button:focus {
 #chat-messages > li > .nick {
 	color: #3ab2ff;
 }
+#chat-messages > li.moderator {
+	color: #86ff41;
+}
 #chat-messages > li.admin {
 	color: #ff4f4f;
 }
@@ -369,7 +372,7 @@ button:focus {
 	color: #6cffe7;
 }
 #chat-messages > li.server {
-	color: #86ff41;
+	color: #ffeb41;
 }
 
 #chat-messages.active > li {

@@ -107,6 +107,8 @@ function receiveMessage(text) {
 		text = text.split(": ")[1];
 	} else if (text.startsWith("[Server]") || text.startsWith("Server:") || text.startsWith("Nickname set to")) {
 		message.className = "server";
+	} else if (text.startsWith("(M)")) {
+		message.className = "moderator";
 	} else if (isNaN(text.split(": ")[0]) && text.split(": ")[0].charAt(0) != "[") {
 		message.className = "admin";
 		isAdmin = true;
