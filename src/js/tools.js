@@ -168,29 +168,36 @@ eventSys.once(e.misc.toolsRendered, () => {
 			var lastX,
 			    lastY;
 			tool.setEvent('mousedown mousemove', (mouse, event) => {
-				if (mouse.buttons & 0b100) {
-					moveCameraBy((mouse.mouseDownWorldX - mouse.worldX) / 16, (mouse.mouseDownWorldY - mouse.worldY) / 16);
-				} else {
-					/* White color if right clicking */
-					var color = mouse.buttons === 2 ? [255, 255, 255] : player.selectedColor;
-					switch (mouse.buttons) {
-						case 1:
-						case 2:
-							if (!lastX || !lastY) {
-								lastX = mouse.tileX;
-								lastY = mouse.tileY;
-							}
-							line(lastX, lastY, mouse.tileX, mouse.tileY, 1, (x, y) => {
-								var pixel = misc.world.getPixel(x, y);
-								if (pixel !== null && !(color[0] === pixel[0] && color[1] === pixel[1] && color[2] === pixel[2])) {
-									misc.world.setPixel(x, y, color);
-								}
-							});
+				var usedButtons = 0b11; /* Left and right mouse buttons are always used... */
+				/* White color if right clicking */
+				var color = mouse.buttons === 2 ? [255, 255, 255] : player.selectedColor;
+				switch (mouse.buttons) {
+					case 1:
+					case 2:
+						if (!lastX || !lastY) {
 							lastX = mouse.tileX;
 							lastY = mouse.tileY;
-							break;
-					}
+						}
+						line(lastX, lastY, mouse.tileX, mouse.tileY, 1, (x, y) => {
+							var pixel = misc.world.getPixel(x, y);
+							if (pixel !== null && !(color[0] === pixel[0] && color[1] === pixel[1] && color[2] === pixel[2])) {
+								misc.world.setPixel(x, y, color);
+							}
+						});
+						lastX = mouse.tileX;
+						lastY = mouse.tileY;
+						break;
+					case 4:
+						if (event.ctrlKey) {
+							usedButtons |= 0b100;
+							var color = misc.world.getPixel(mouse.tileX, mouse.tileY);
+							if (color) {
+								player.selectedColor = color;
+							}
+						}
+						break;
 				}
+				return usedButtons;
 			});
 			tool.setEvent('mouseup', mouse => {
 				lastX = null;
@@ -208,6 +215,7 @@ eventSys.once(e.misc.toolsRendered, () => {
 			tool.setEvent('mousemove', (mouse, event) => {
 				if (mouse.buttons !== 0) {
 					move(mouse.worldX, mouse.worldY, mouse.mouseDownWorldX, mouse.mouseDownWorldY);
+					return mouse.buttons;
 				}
 			});
 			tool.setEvent('scroll', (mouse, event, rawEvent) => {
@@ -226,13 +234,12 @@ eventSys.once(e.misc.toolsRendered, () => {
 	addTool(new Tool('Pipette', cursors.pipette, PLAYERFX.NONE, RANK.NONE,
 		tool => {
 			tool.setEvent('mousedown mousemove', (mouse, event) => {
-				if (mouse.buttons & 0b100) {
-					moveCameraBy((mouse.mouseDownWorldX - mouse.worldX) / 16, (mouse.mouseDownWorldY - mouse.worldY) / 16);
-				} else if (mouse.buttons !== 0) {
+				if (mouse.buttons !== 0 && !(mouse.buttons & 0b100)) {
 					var color = misc.world.getPixel(mouse.tileX, mouse.tileY);
 					if (color) {
 						player.selectedColor = color;
 					}
+					return mouse.buttons;
 				}
 			});
 		}
@@ -262,10 +269,9 @@ eventSys.once(e.misc.toolsRendered, () => {
 			}
 
 			tool.setEvent('mousedown mousemove', (mouse, event) => {
-				if (mouse.buttons & 0b100) {
-					moveCameraBy((mouse.mouseDownWorldX - mouse.worldX) / 16, (mouse.mouseDownWorldY - mouse.worldY) / 16);
-				} else if (mouse.buttons === 1) {
+				if (mouse.buttons === 1) {
 					clearChunk(Math.floor(mouse.tileX / protocol.chunkSize), Math.floor(mouse.tileY / protocol.chunkSize));
+					return 1;
 				}
 			});
 		}
@@ -314,11 +320,6 @@ eventSys.once(e.misc.toolsRendered, () => {
 						zoom(mouse, tool.extra.maxTouches);
 					}
 					tool.extra.maxTouches = 0;
-				}
-			});
-			tool.setEvent('mousemove', mouse => {
-				if (mouse.buttons & 0b100) {
-					moveCameraBy((mouse.mouseDownWorldX - mouse.worldX) / 16, (mouse.mouseDownWorldY - mouse.worldY) / 16);
 				}
 			});
 		}
@@ -419,11 +420,9 @@ eventSys.once(e.misc.toolsRendered, () => {
 					tool.extra.start = [mouse.tileX, mouse.tileY];
 					tool.extra.clicking = true;
 					tool.setEvent('mousemove', (mouse, event) => {
-						if (mouse.buttons & 0b100) {
-							moveCameraBy((mouse.mouseDownWorldX - mouse.worldX) / 16, (mouse.mouseDownWorldY - mouse.worldY) / 16);
-						} if (tool.extra.start && mouse.buttons === 1) {
+						if (tool.extra.start && mouse.buttons === 1) {
 							tool.extra.end = [mouse.tileX, mouse.tileY];
-							renderer.render(renderer.rendertype.FX);
+							return 1;
 						}
 					});
 					const finish = () => {
@@ -460,9 +459,6 @@ eventSys.once(e.misc.toolsRendered, () => {
 						var offx = mouse.tileX;
 						var offy = mouse.tileY;
 						tool.setEvent('mousemove', (mouse, event) => {
-							if (mouse.buttons & 0b100) {
-								moveCameraBy((mouse.mouseDownWorldX - mouse.worldX) / 16, (mouse.mouseDownWorldY - mouse.worldY) / 16);
-							}
 							var dx = mouse.tileX - offx;
 							var dy = mouse.tileY - offy;
 							tool.extra.start = [s[0] + dx, s[1] + dy];
@@ -516,11 +512,6 @@ eventSys.once(e.misc.toolsRendered, () => {
 						};
 						img.src = url;
 					});
-				}
-			});
-			tool.setEvent('mousemove', mouse => {
-				if (mouse.buttons & 0b100) {
-					moveCameraBy((mouse.mouseDownWorldX - mouse.worldX) / 16, (mouse.mouseDownWorldY - mouse.worldY) / 16);
 				}
 			});
 		}
@@ -598,11 +589,6 @@ eventSys.once(e.misc.toolsRendered, () => {
 				}
 			}
 		});
-		tool.setEvent('mousemove', mouse => {
-			if (mouse.buttons & 0b100) {
-				moveCameraBy((mouse.mouseDownWorldX - mouse.worldX) / 16, (mouse.mouseDownWorldY - mouse.worldY) / 16);
-			}
-		});
 		tool.setEvent('mouseup deselect', mouse => {
 			if (!mouse || !(mouse.buttons & 0b1)) {
 				fillingColor = null;
@@ -671,14 +657,12 @@ eventSys.once(e.misc.toolsRendered, () => {
 			}
 		});
 		tool.setEvent('mousemove', mouse => {
-			if (mouse.buttons & 0b100) {
-				moveCameraBy((mouse.mouseDownWorldX - mouse.worldX) / 16, (mouse.mouseDownWorldY - mouse.worldY) / 16);
-			} else if (!queue.length) {
+			if (!queue.length) {
 				end = [mouse.tileX, mouse.tileY];
 			}
 		});
 		tool.setEvent('mouseup', mouse => {
-			if (!(mouse.buttons & 0b11)) {
+			if (!(mouse.buttons & 0b11) && !queue.length) {
 				end = [mouse.tileX, mouse.tileY];
 				if (!start) {
 					end = null;
@@ -789,11 +773,6 @@ eventSys.once(e.misc.toolsRendered, () => {
 				if (tool.extra.canvas) {
 					paint(mouse.tileX, mouse.tileY);
 				}
-			}
-		});
-		tool.setEvent('mousemove', mouse => {
-			if (mouse.buttons & 0b100) {
-				moveCameraBy((mouse.mouseDownWorldX - mouse.worldX) / 16, (mouse.mouseDownWorldY - mouse.worldY) / 16);
 			}
 		});
 

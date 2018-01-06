@@ -1,5 +1,18 @@
 'use strict';
 import { colorUtils as color } from './color.js';
+import { PublicAPI } from './../global.js';
+
+PublicAPI.util = {
+	getTime,
+	cookiesEnabled,
+	storageEnabled,
+	absMod,
+	escapeHTML,
+	mkHTML,
+	setTooltip,
+	waitFrames,
+	line
+};
 
 let time = Date.now();
 export function getTime(update) {

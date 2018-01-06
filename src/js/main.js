@@ -221,15 +221,17 @@ function tick() {
 function updateMouse(event, eventName, mouseX, mouseY) {
 	mouse.x = mouseX;
 	mouse.y = mouseY;
+	var cancelled = 0;
 	if (misc.world !== null) {
 		mouse.validTile = misc.world.validMousePos(mouse.tileX, mouse.tileY);
 		if (player.tool !== null) {
-			player.tool.call(eventName, [mouse, event]);
+			cancelled = player.tool.call(eventName, [mouse, event]);
 		}
 		if (updateXYDisplay(mouse.tileX, mouse.tileY)) {
 			updateClientFx();
 		}
 	}
+	return cancelled;
 }
 
 function openChat() {
@@ -528,36 +530,36 @@ function init() {
 					break;
 
 				case 70: /* F */
-					var nrgb = [];
-					var valid = true;
-					var first = true;
-					var prmpt = true;
-					for(var i = 0; i < 3; i++){
-						if (prmpt) {
-							nrgb[i] = prompt("Custom color\n" + ["Red", "Green", "Blue"][i] + " value: (0-255)" + (first ? "\n(Or just type three values separated by a comma: r,g,b)\n(...or the hex string: #RRGGBB)" : ""));
-						}
-						if (first && nrgb[i]) {
-							var tmp = nrgb[i].split(',');
-							if (tmp.length == 3) {
-								nrgb = tmp;
-								prmpt = false;
-							} else if (nrgb[i][0] == '#' && nrgb[i].length == 7) {
-								var colr = parseInt(nrgb[i].replace('#', '0x'));
-								/* The parsed HTML color doesn't have red as the first byte, so invert it. */
-								nrgb = [colr >> 16 & 0xFF, colr >> 8 & 0xFF, colr & 0xFF];
-								prmpt = false;
+					var parseClr = clr => {
+						var tmp = clr.split(',');
+						var nrgb = null;
+						if (tmp.length == 3) {
+							nrgb = tmp;
+							for (var i = 0; i < tmp.length; i++) {
+								tmp[i] = +tmp[i];
+								if (!(tmp[i] >= 0 && tmp[i] < 256)) {
+									return null;
+								}
 							}
+						} else if (clr[0] == '#' && clr.length == 7) {
+							var colr = parseInt(clr.replace('#', '0x'));
+							/* The parsed HTML color doesn't have red as the first byte, so invert it. */
+							nrgb = [colr >> 16 & 0xFF, colr >> 8 & 0xFF, colr & 0xFF];
 						}
-						first = false;
-						nrgb[i] = parseInt(nrgb[i]);
-						if(!(Number.isInteger(nrgb[i]) && nrgb[i] >= 0 && nrgb[i] < 256)){
-							valid = false;
-							break; /* Invalid color */
+						return nrgb;
+					}
+					var input = prompt("Custom color\nType three values separated by a comma: r,g,b\n(...or the hex string: #RRGGBB)\nYou can add multiple colors at a time separating them with a space.");
+					if (!input) {
+						break;
+					}
+					input = input.split(' ');
+					for (var j = 0; j < input.length; j++) {
+						var rgb = parseClr(input[j]);
+						if (rgb) {
+							player.selectedColor = rgb;
 						}
 					}
-					if (valid) {
-						player.selectedColor = nrgb;
-					}
+					
 					break;
 
 				case 71: /* G */
@@ -641,7 +643,11 @@ function init() {
 	});
 
 	window.addEventListener("mousemove", event => {
-		updateMouse(event, 'mousemove', event.pageX, event.pageY);
+		var cancelledButtons = updateMouse(event, 'mousemove', event.pageX, event.pageY);
+		var remainingButtons = mouse.buttons & ~cancelledButtons;
+		if (remainingButtons & 0b100) { /* If middle click was not used for anything */
+			moveCameraBy((mouse.mouseDownWorldX - mouse.worldX) / 16, (mouse.mouseDownWorldY - mouse.worldY) / 16);
+		}
 	});
 
 	const mousewheel = event => {
@@ -906,6 +912,7 @@ PublicAPI.mouse = mouse;
 PublicAPI.world = getNewWorldApi();
 PublicAPI.chat = {
 	send: (msg) => net.protocol && net.protocol.sendMessage(msg),
+	clear: clearChat,
 	get recvModifier() { return misc.chatRecvModifier; },
 	set recvModifier(fn) { misc.chatRecvModifier = fn; },
 	get sendModifier() { return misc.chatSendModifier; },
