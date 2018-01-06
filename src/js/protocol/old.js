@@ -338,7 +338,7 @@ class OldProtocolImpl extends Protocol {
         var worldy = mouse.worldY;
         var lastx = this.lastSentX;
         var lasty = this.lastSentY;
-        if (shouldUpdate() || (worldx != lastx || worldy != lasty)) {
+        if (this.isConnected() && shouldUpdate() || (worldx != lastx || worldy != lasty)) {
             var selrgb = player.selectedColor;
             this.lastSentX = worldx;
             this.lastSentY = worldy;

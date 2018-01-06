@@ -419,7 +419,9 @@ eventSys.once(e.misc.toolsRendered, () => {
 					tool.extra.start = [mouse.tileX, mouse.tileY];
 					tool.extra.clicking = true;
 					tool.setEvent('mousemove', (mouse, event) => {
-						if (tool.extra.start && mouse.buttons === 1) {
+						if (mouse.buttons & 0b100) {
+							moveCameraBy((mouse.mouseDownWorldX - mouse.worldX) / 16, (mouse.mouseDownWorldY - mouse.worldY) / 16);
+						} if (tool.extra.start && mouse.buttons === 1) {
 							tool.extra.end = [mouse.tileX, mouse.tileY];
 							renderer.render(renderer.rendertype.FX);
 						}
@@ -458,6 +460,9 @@ eventSys.once(e.misc.toolsRendered, () => {
 						var offx = mouse.tileX;
 						var offy = mouse.tileY;
 						tool.setEvent('mousemove', (mouse, event) => {
+							if (mouse.buttons & 0b100) {
+								moveCameraBy((mouse.mouseDownWorldX - mouse.worldX) / 16, (mouse.mouseDownWorldY - mouse.worldY) / 16);
+							}
 							var dx = mouse.tileX - offx;
 							var dy = mouse.tileY - offy;
 							tool.extra.start = [s[0] + dx, s[1] + dy];
