@@ -456,9 +456,16 @@ function init() {
 					historyIndex = 0;
 					chatHistory.unshift(text);
 					if (text.startsWith("/adminlogin ")) {
-						localStorage.adminlogin = text.split("/adminlogin ")[1];
-					} else if (text.startsWith("/nick ")) {
-						localStorage.nick = text.split("/nick ")[1];
+						localStorage.adminlogin = text.slice(12);
+					} else if (text.startsWith("/modlogin ")) {
+						localStorage.modlogin = text.slice(10);
+					} else if (text.startsWith("/nick")) {
+						var nick = text.slice(6);
+						if (nick.length) {
+							localStorage.nick = nick;
+						} else {
+							delete localStorage.nick;
+						}
 					}
 					if (text[0] !== '/') {
 						text = misc.chatSendModifier(text);
@@ -784,12 +791,16 @@ eventSys.on(e.net.world.setId, id => {
 			}
 		}
 
-		// Automatic adminlogin
-		if (localStorage.adminlogin) {
+		// Automatic login
+		if (localStorage.adminlogin || localStorage.modlogin) {
 			let onWrong = function() {
 				console.log("WRONG");
 				eventSys.removeListener(e.net.sec.rank, onCorrect);
-				delete localStorage.adminlogin;
+				if (localStorage.adminlogin) {
+					delete localStorage.adminlogin;
+				} else {
+					delete localStorage.modlogin;
+				}
 				net.connect(net.currentServer, net.protocol.worldName);
 			};
 			let onCorrect = function() {
@@ -798,7 +809,7 @@ eventSys.on(e.net.world.setId, id => {
 			};
 			eventSys.once(e.net.disconnected, onWrong);
 			eventSys.once(e.net.sec.rank, onCorrect);
-			net.protocol.sendMessage("/adminlogin " + localStorage.adminlogin);
+			net.protocol.sendMessage(localStorage.adminlogin ? ("/adminlogin " + localStorage.adminlogin) : ("/modlogin " + localStorage.modlogin));
 		} else {
 			autoNick();
 		}
