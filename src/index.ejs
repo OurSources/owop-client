@@ -36,6 +36,7 @@
 		</div>
 		<span id="xy-display"></span>
 		<span id="playercount-display"></span>
+		<button id="help-button"><img src="<%=require('./img/help.png')%>" /></button>
 		<div id="windows" class="pixelated"></div>
 		<div id="palette">
 			<div id="palette-create">
@@ -49,6 +50,19 @@
 		<div id="chat">
 			<ul id="chat-messages"></ul>
 			<textarea id="chat-input" draggable="false" type="text" maxlength="80" placeholder="Chat here" disabled></textarea>
+		</div>
+		<div id="help" class="hidden">
+			<span class="title">Help</span>
+			<button id="help-close" class="windowCloseButton"></button>
+			<div class="content">
+				<div class="links">
+					<a href="https://discord.gg/WppfUMw"><img src="<%=require('./img/discord.png')%>" /></a>
+					<a href="https://reddit.com/r/OurWorldOfPixels"><img src="<%=require('./img/reddit.png')%>" /></a>
+					<a href="https://www.paypal.me/InfraRaven"><img src="<%=require('./img/donate.png')%>" /></a>
+				</div>
+				<hr />
+				Type /help for a list of all commands
+			</div>
 		</div>
 	</body>
 </html>

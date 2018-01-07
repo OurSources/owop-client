@@ -928,6 +928,13 @@ window.addEventListener("load", () => {
 
 	elements.chatInput = document.getElementById("chat-input");
 
+	document.getElementById("help-button").addEventListener("click", function() {
+		document.getElementById("help").className = "";
+	});
+	document.getElementById("help-close").addEventListener("click", function() {
+		document.getElementById("help").className = "hidden";
+	});
+
 	checkFunctionality(() => eventSys.emit(e.loaded));
 });
 
@@ -947,7 +954,3 @@ PublicAPI.chat = {
 	get sendModifier() { return misc.chatSendModifier; },
 	set sendModifier(fn) { misc.chatSendModifier = fn; }
 };
-
-eventSys.on(e.net.playerCount, (player) => {
-	console.log(player);
-});

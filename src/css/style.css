@@ -20,6 +20,10 @@ html {
 	user-select: none;
 }
 
+hr {
+	border-color: rgba(0, 0, 0, 0.2);
+}
+
 .hide {
 	display: none!important;
 }
@@ -340,6 +344,65 @@ button:focus {
 }
 #player-list > table > tr > td:nth-child(2) {
 	border-right: 1px solid rgba(0, 0, 0, 0.3);
+}
+
+#help-button {
+	position: absolute;
+	bottom: 0;
+	right: 0;
+	padding: 0;
+	margin: 16px;
+}
+#help-button > img {
+	width: 64px;
+	display: block;
+}
+
+#help {
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	width: 80%;
+	max-width: 800px;
+
+	background-color: #aba389;
+	border: 11px #aba389 solid;
+	border-width: 11px;
+	border-image: url(/img/window_out.png) 11 repeat;
+	border-image-outset: 1px;
+	box-shadow: 0px 0px 5px #000;
+}
+#help > .title {
+	display: block;
+	pointer-events: none;
+	margin-top: -7px;
+	text-shadow: 1px 1px #4d313b;
+	color: #7e635c;
+	margin-bottom: 3px;
+	min-width: 100%;
+	text-align: center;
+}
+#help > .content {
+	overflow: auto;
+	min-width: 100%;
+	/* width: 0;  Older browsers fix */
+	height: 100%;
+	margin: 0 -5px -5px -5px;
+	background-color: #7e635c;
+	border: 5px #7e635c solid;
+	border-width: 5px;
+	border-image: url(/img/window_in.png) 5 repeat;
+}
+#help > .content > .links {
+	text-align: center;
+}
+#help > .content > .links > a {
+	display: inline-block;
+	vertical-align: middle;
+}
+#help.hidden {
+	display: none;
 }
 
 #chat {
