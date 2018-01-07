@@ -400,6 +400,10 @@ button:focus {
 #help > .content > .links > a {
 	display: inline-block;
 	vertical-align: middle;
+	width: 76px;
+}
+#help > .content > .links > a > img {
+	width: 100%;
 }
 #help.hidden {
 	display: none;
