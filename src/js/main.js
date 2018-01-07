@@ -18,9 +18,9 @@ import { camera, renderer, moveCameraBy } from './canvas_renderer.js';
 import { net } from './networking.js';
 import { updateClientFx, player } from './local_player.js';
 import { resolveProtocols, definedProtos } from './protocol/all.js';
-import { windowSys } from './windowsys.js';
+import { windowSys, GUIWindow } from './windowsys.js';
 
-export { showDevChat, statusMsg };
+export { showDevChat, showPlayerList, statusMsg };
 
 export const keysDown = {};
 
@@ -73,6 +73,16 @@ export const misc = {
 	showEUCookieNag: cookiesEnabled() && getCookie("nagAccepted") !== "true",
 	usingFirefox: navigator.userAgent.indexOf("Firefox") !== -1
 };
+
+export var playerList = {};
+export var playerListTable = document.createElement("table");
+export var playerListWindow = new GUIWindow('Players', {}, wdow => {
+	var tableHeader = document.createElement("tr");
+	tableHeader.innerHTML = "<th>Id</th><th>X</th><th>Y</th>";
+	playerListTable.appendChild(tableHeader);
+	wdow.container.appendChild(playerListTable);
+	wdow.container.id = "player-list";
+}).move(window.innerWidth - 240, 32);
 
 function getNewWorldApi() {
 	var obj = {};
@@ -251,6 +261,14 @@ function closeChat() {
 
 function showDevChat(bool) {
 	elements.devChat.style.display = bool ? "" : "none";
+}
+
+function showPlayerList(bool) {
+	if (bool) {
+		windowSys.addWindow(playerListWindow);
+	} else {
+		windowSys.delWindow(playerListWindow);
+	}
 }
 
 function updateXYDisplay(x, y) {
@@ -566,7 +584,7 @@ function init() {
 							player.selectedColor = rgb;
 						}
 					}
-					
+
 					break;
 
 				case 71: /* G */
@@ -929,3 +947,7 @@ PublicAPI.chat = {
 	get sendModifier() { return misc.chatSendModifier; },
 	set sendModifier(fn) { misc.chatSendModifier = fn; }
 };
+
+eventSys.on(e.net.playerCount, (player) => {
+	console.log(player);
+});

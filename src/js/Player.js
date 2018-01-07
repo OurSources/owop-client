@@ -1,7 +1,7 @@
 'use strict';
 import { Lerp } from './util/Lerp.js';
 import { colorUtils as color } from './util/color.js';
-import { misc } from './main.js';
+import { misc, playerList, playerListTable } from './main.js';
 import { Fx, PLAYERFX } from './Fx.js';
 import { tools } from './tools.js';
 
@@ -23,6 +23,11 @@ export class Player {
                  | (((id + 9283)  * 4673  + 7483)  % 256) << 8
                  | (  id * 3000                    % 256);
         this.clr = color.toHTML(this.clr);
+
+		var playerListEntry = document.createElement("tr");
+		playerListEntry.innerHTML = "<td>" + this.id + "</td><td>" + x + "</td><td>" + y + "</td>";
+		playerList[this.id] = playerListEntry;
+		playerListTable.appendChild(playerListEntry);
     }
 
     get endX() {
@@ -52,9 +57,15 @@ export class Player {
             Math.floor(this.endX / 16), Math.floor(this.endY / 16)));
         this.rgb = rgb;
         this.htmlRgb = color.toHTML(color.u24_888(rgb[0], rgb[1], rgb[2]));
+
+		playerList[this.id].childNodes[1].innerHTML = x;
+		playerList[this.id].childNodes[2].innerHTML = y;
     }
 
     disconnect() {
         this.fx.delete();
+
+		playerListTable.removeChild(playerList[this.id]);
+		delete playerList[this.id];
     }
 }

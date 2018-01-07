@@ -2,7 +2,7 @@
 import { eventSys, PublicAPI } from './global.js';
 import { EVENTS as e, RANK } from './conf.js';
 import { absMod, setTooltip } from './util/misc.js';
-import { elements, mouse, misc, showDevChat } from './main.js';
+import { elements, mouse, misc, showDevChat, showPlayerList } from './main.js';
 import { colorUtils as color } from './util/color.js';
 import { renderer } from './canvas_renderer.js';
 import { cursors } from './tool_renderer.js';
@@ -104,7 +104,7 @@ function updatePalette() {
 			changedColor();
 		}
 	};
-	
+
 	for (var i = 0; i < palette.length; i++) {
 		var element = document.createElement("div");
 		var clr = palette[i];
@@ -190,11 +190,13 @@ eventSys.on(e.net.sec.rank, newRank => {
 		case RANK.USER:
 		case RANK.NONE:
 			showDevChat(false);
+			showPlayerList(false);
 			break;
-			
+
 		case RANK.MODERATOR:
 		case RANK.ADMIN:
 			showDevChat(true);
+			showPlayerList(true);
 			break;
 	}
 	updateToolbar();

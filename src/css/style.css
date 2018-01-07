@@ -311,6 +311,37 @@ button:focus {
 	cursor: pointer;
 }
 
+#player-list {
+	max-height: 300px;
+	overflow-y: scroll;
+}
+#player-list > table {
+	border-collapse: collapse;
+	border: 1px solid #000;
+	color: #fff;
+	text-shadow: -1px 0 #000, 0 1px #000, 1px 0 #000, 0 -1px #000;
+	padding: 2px;
+}
+#player-list > table > tr:nth-child(odd) {
+	background-color: rgba(0, 0, 0, 0.1);
+}
+#player-list > table > tr:nth-child(even) {
+	background-color: rgba(0, 0, 0, 0.3);
+}
+#player-list > table > tr:first-child {
+	text-align: left;
+	background-color: rgba(0, 0, 0, 0.5);
+}
+#player-list td, #player-list th {
+	padding: 2px 6px;
+}
+#player-list > table > tr > td:nth-child(1) {
+	border-right: 1px solid rgba(0, 0, 0, 0.5);
+}
+#player-list > table > tr > td:nth-child(2) {
+	border-right: 1px solid rgba(0, 0, 0, 0.3);
+}
+
 #chat {
 	transform: translateY(100%);
 }
