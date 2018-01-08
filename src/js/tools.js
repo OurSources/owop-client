@@ -553,7 +553,7 @@ eventSys.once(e.misc.toolsRendered, () => {
 
 			var selClr = player.selectedColor;
 			var painted = 0;
-			var tickAmount = player.rank === RANK.ADMIN ? tool.extra.tickAmount : 3;
+			var tickAmount = tool.extra.tickAmount;
 			for (var painted = 0; painted < tickAmount && queue.length; painted++) {
 				var current = queue.pop();
 				var x = current[0];
