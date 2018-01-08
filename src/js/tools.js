@@ -519,6 +519,7 @@ eventSys.once(e.misc.toolsRendered, () => {
 
 	// Fill tool
 	addTool(new Tool('Fill', cursors.fill, PLAYERFX.NONE, RANK.USER, tool => {
+		tool.extra.tickAmount = 6;
 		var queue = [];
 		var fillingColor = null;
 		var defaultFx = PLAYERFX.RECT_SELECT_ALIGNED(1);
@@ -552,7 +553,7 @@ eventSys.once(e.misc.toolsRendered, () => {
 
 			var selClr = player.selectedColor;
 			var painted = 0;
-			var tickAmount = misc.isAdmin ? 9 : 3;
+			var tickAmount = player.rank === RANK.ADMIN ? tool.extra.tickAmount : 3;
 			for (var painted = 0; painted < tickAmount && queue.length; painted++) {
 				var current = queue.pop();
 				var x = current[0];

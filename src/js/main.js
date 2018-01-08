@@ -7,7 +7,7 @@
 import { normalizeWheel } from './util/normalizeWheel.js';
 import anchorme from './util/anchorme.js';
 
-import { CHUNK_SIZE, EVENTS as e } from './conf.js';
+import { CHUNK_SIZE, EVENTS as e, RANK } from './conf.js';
 import { Bucket } from './util/Bucket.js';
 import { escapeHTML, getTime, getCookie, cookiesEnabled, loadScript } from './util/misc.js';
 
@@ -883,7 +883,7 @@ window.addEventListener("error", e => {
 		/* Should be some kind of dissapearing notification instead */
 		receiveDevMessage(errmsg[i]);
 	}
-	if (!misc.isAdmin) { /* TODO */
+	if (player.rank !== RANK.ADMIN) { /* TODO */
 		if (misc.exceptionTimeout) {
 			clearTimeout(misc.exceptionTimeout);
 		}
