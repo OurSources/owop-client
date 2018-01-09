@@ -564,20 +564,32 @@ eventSys.once(e.misc.toolsRendered, () => {
 						queue.push(current);
 						break;
 					}
-					// Square shape, goes through edges (fixable)
-					/*check(x - 1, y - 1);
-					check(x    , y - 1);
-					check(x + 1, y - 1);
-					check(x - 1, y    );
-					check(x + 1, y    );
-					check(x - 1, y + 1);
-					check(x    , y + 1);
-					check(x + 1, y + 1);*/
+
+					// diamond check first
+					var top = check(x, y - 1);
+					var bottom = check(x, y + 1);
+					var left = check(x - 1, y);
+					var right = check(x + 1, y);
+
+					// if corners are not closed by parts of the diamond, then they can be accessed
+					if (top && left) {
+						check(x - 1, y - 1);
+					}
+					if (top && right) {
+						check(x + 1, y - 1);
+					}
+					if (bottom && left) {
+						check(x - 1, y + 1);
+					}
+					if (bottom && right) {
+						check(x + 1, y + 1);
+					}
+
 					// Shape diamond, infra not like
-					check(x    , y - 1);
+					/*check(x    , y - 1);
 					check(x - 1, y    );
 					check(x + 1, y    );
-					check(x    , y + 1);
+					check(x    , y + 1);*/
 				}
 			}
 		}
