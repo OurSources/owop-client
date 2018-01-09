@@ -8,6 +8,20 @@
 		<meta name="keywords" content="pixel, game, draw, online, cursors, canvas, world">
 
 		<style><%=require('./css/style.css')%></style>
+		
+		<script src="https://www.gstatic.com/firebasejs/4.8.1/firebase.js"></script>
+		<script>
+			// Initialize Firebase
+			var config = {
+				apiKey: "AIzaSyCVXnuGuhuypA28pJi7XPBjx4lvlmE5e2M",
+				authDomain: "owop-28f42.firebaseapp.com",
+				databaseURL: "https://owop-28f42.firebaseio.com",
+				projectId: "owop-28f42",
+				storageBucket: "owop-28f42.appspot.com",
+				messagingSenderId: "238206387487"
+			};
+			firebase.initializeApp(config);
+		</script>
 	</head>
 	<body>
 		<div id="viewport">
