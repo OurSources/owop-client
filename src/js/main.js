@@ -118,6 +118,8 @@ function receiveMessage(text) {
 		text = text.slice(nickname.length);
 	} else if (text.startsWith("[Server]") || text.startsWith("Server:") || text.startsWith("Nickname set to") || text.startsWith("User: ")) {
 		message.className = "server";
+	} else if (text.startsWith("->")) {
+		message.className = "tell";
 	} else if (text.startsWith("(M)")) {
 		message.className = "moderator";
 	} else if (isNaN(text.split(": ")[0]) && text.split(": ")[0].charAt(0) != "[") {

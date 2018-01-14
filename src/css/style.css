@@ -480,6 +480,9 @@ button:focus {
 #chat-messages > li.server {
 	color: #ff41e4;
 }
+#chat-messages > li.tell {
+	color: #ffb735;
+}
 
 #chat-messages.active > li {
 	background-color: initial;
