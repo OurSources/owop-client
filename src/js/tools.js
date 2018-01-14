@@ -248,8 +248,8 @@ eventSys.once(e.misc.toolsRendered, () => {
 	// Erase/Fill tool
 	addTool(new Tool('Eraser', cursors.erase, PLAYERFX.RECT_SELECT_ALIGNED(16), RANK.ADMIN,
 		tool => {
-			function fillChunk(chunkX, chunkY) {
-				const color = player.selectedColor[2] << 16 | player.selectedColor[1] << 8 | player.selectedColor[0];
+			function fillChunk(chunkX, chunkY, c) {
+				const color = c[2] << 16 | c[1] << 8 | c[0];
 				var chunk = misc.world.getChunkAt(chunkX, chunkY);
 				if (chunk) {
 					var empty = true;
@@ -269,8 +269,11 @@ eventSys.once(e.misc.toolsRendered, () => {
 			}
 
 			tool.setEvent('mousedown mousemove', (mouse, event) => {
-				if (mouse.buttons === 1) {
-					fillChunk(Math.floor(mouse.tileX / protocol.chunkSize), Math.floor(mouse.tileY / protocol.chunkSize));
+				if (mouse.buttons & 0b1) {
+					fillChunk(Math.floor(mouse.tileX / protocol.chunkSize), Math.floor(mouse.tileY / protocol.chunkSize), player.selectedColor);
+					return 1;
+				} else if (mouse.buttons & 0b10) {
+					fillChunk(Math.floor(mouse.tileX / protocol.chunkSize), Math.floor(mouse.tileY / protocol.chunkSize), [255, 255, 255]);
 					return 1;
 				}
 			});
