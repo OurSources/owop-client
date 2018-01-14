@@ -248,29 +248,29 @@ eventSys.once(e.misc.toolsRendered, () => {
 	// Erase/Fill tool
 	addTool(new Tool('Eraser', cursors.erase, PLAYERFX.RECT_SELECT_ALIGNED(16), RANK.ADMIN,
 		tool => {
-			function clearChunk(chunkX, chunkY) {
-				const clearColor = 0xFFFFFF; /* White */
+			function fillChunk(chunkX, chunkY) {
+				const color = player.selectedColor[2] << 16 | player.selectedColor[1] << 8 | player.selectedColor[0];
 				var chunk = misc.world.getChunkAt(chunkX, chunkY);
 				if (chunk) {
 					var empty = true;
 					firstLoop: for (var y = 0; y < protocol.chunkSize; y++) {
 						for (var x = 0; x < protocol.chunkSize; x++) {
-							if ((chunk.get(x, y) & 0xFFFFFF) != clearColor) {
+							if ((chunk.get(x, y) & 0xFFFFFF) != color) {
 								empty = false;
 								break firstLoop;
 							}
 						}
 					}
 					if (!empty) {
-						chunk.set(clearColor);
-						net.protocol.clearChunk(chunkX, chunkY);
+						chunk.set(color);
+						net.protocol.setChunk(chunkX, chunkY, new Array(256).fill(color));
 					}
 				}
 			}
 
 			tool.setEvent('mousedown mousemove', (mouse, event) => {
 				if (mouse.buttons === 1) {
-					clearChunk(Math.floor(mouse.tileX / protocol.chunkSize), Math.floor(mouse.tileY / protocol.chunkSize));
+					fillChunk(Math.floor(mouse.tileX / protocol.chunkSize), Math.floor(mouse.tileY / protocol.chunkSize));
 					return 1;
 				}
 			});
