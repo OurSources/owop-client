@@ -279,6 +279,14 @@ button:focus {
 	height: 40px;
 	box-sizing: border-box;
 }
+#palette-bg {
+	position: absolute;
+	height: 100%;
+	width: 44px;
+	top: 0;
+	right: 0;
+	background-color: rgba(0, 0, 0, 0.3);
+}
 #palette-create {
 	position: absolute;
 	right: 50px;
