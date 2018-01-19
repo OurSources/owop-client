@@ -7,7 +7,7 @@ import { net } from './networking.js';
 import { player } from './local_player.js';
 import { camera, moveCameraTo, moveCameraBy, renderer, drawText } from './canvas_renderer.js';
 import { windowSys, GUIWindow, UtilDialog } from './windowsys.js';
-import { misc, elements, mouse } from './main.js';
+import { misc, elements, mouse, sounds } from './main.js';
 import { PLAYERFX } from './Fx.js';
 
 export const tools = {};
@@ -35,7 +35,10 @@ export function updateToolbar(win = toolsWindow) {
 	}
 
 	const container = win.container;
-	const toolButtonClick = name => event => player.tool = name;
+	const toolButtonClick = name => event => {
+		player.tool = name;
+		sounds.play(sounds.click);
+	};
 
 	container.innerHTML = "";
 

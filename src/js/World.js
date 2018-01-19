@@ -4,8 +4,10 @@ import { eventSys } from './global.js';
 import { colorUtils } from './util/color.js';
 import { net } from './networking.js';
 import { camera, isVisible, renderer } from './canvas_renderer.js';
-import { mouse } from './main.js';
+import { mouse, sounds } from './main.js';
 import { Player } from './Player.js';
+
+let lastPlace = 0;
 
 export class Chunk {
 	constructor(x, y, netdata) { /* netdata = Uint32Array */
@@ -50,7 +52,7 @@ export class World {
 		this.chunks = {};
 		this.players = {};
 		this.undoHistory = [];
-		
+
 		const loadCFunc = chunk => this.chunkLoaded(chunk);
 		const unloadCFunc = chunk => this.chunkUnloaded(chunk);
 		const setCFunc = (x, y, data) => this.chunkPasted(x, y, data);
@@ -78,7 +80,7 @@ export class World {
 		eventSys.once(e.net.world.leave, leaveWFunc);
 		eventSys.once(e.net.disconnected, disconnectedFunc);
 	}
-	
+
 	loadChunk(x, y) {
 		var key = `${x},${y}`;
 		if (!this.chunks[key] && net.isConnected()) {
@@ -156,6 +158,10 @@ export class World {
 			}
 			chunk.update(x, y, colorUtils.u24_888(color[0], color[1], color[2]));
 			eventSys.emit(e.renderer.updateChunk, chunk);
+			if (Date.now() - lastPlace > 30) {
+				sounds.play(sounds.place);
+				lastPlace = Date.now();
+			}
 			return true;
 		}
 		return false;
@@ -187,7 +193,7 @@ export class World {
 			var chunkSize = protocol.chunkSize;
 			chunk = this.chunks[`${Math.floor(x / chunkSize)},${Math.floor(y / chunkSize)}`];
 		}
-		
+
 		if (chunk) {
 			var clr = chunk.get(x, y);
 			return [clr & 0xFF, clr >> 8 & 0xFF, clr >> 16 & 0xFF];
@@ -198,12 +204,12 @@ export class World {
 	validMousePos(tileX, tileY) {
 		return this.getPixel(tileX, tileY) !== null;
 	}
-	
+
 	chunkLoaded(chunk) {
 		this.chunks[`${chunk.x},${chunk.y}`] = chunk;
 		eventSys.emit(e.renderer.addChunk, chunk);
 	}
-	
+
 	chunkUnloaded(chunk) {
 		delete this.chunks[`${chunk.x},${chunk.y}`];
 		eventSys.emit(e.renderer.rmChunk, chunk);
@@ -216,7 +222,7 @@ export class World {
 			eventSys.emit(e.renderer.updateChunk, chunk);
 		}
 	}
-	
+
 	unloadAllChunks() {
 		for (const c in this.chunks) {
 			this.chunks[c].remove();

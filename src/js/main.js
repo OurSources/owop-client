@@ -20,6 +20,10 @@ import { updateClientFx, player } from './local_player.js';
 import { resolveProtocols, definedProtos } from './protocol/all.js';
 import { windowSys, GUIWindow } from './windowsys.js';
 
+import launchSoundUrl from '../audio/launch.mp3';
+import placeSoundUrl from '../audio/place.mp3';
+import clickSoundUrl from '../audio/click.mp3';
+
 export { showDevChat, showPlayerList, statusMsg };
 
 export const keysDown = {};
@@ -73,6 +77,19 @@ export const misc = {
 	showEUCookieNag: cookiesEnabled() && getCookie("nagAccepted") !== "true",
 	usingFirefox: navigator.userAgent.indexOf("Firefox") !== -1
 };
+
+export const sounds = {
+	play: function(sound) {
+		sound.currentTime = 0;
+		sound.play();
+	}
+};
+sounds.launch = new Audio();
+sounds.launch.src = launchSoundUrl;
+sounds.place = new Audio();
+sounds.place.src = placeSoundUrl;
+sounds.click = new Audio();
+sounds.click.src = clickSoundUrl;
 
 export var playerList = {};
 export var playerListTable = document.createElement("table");
@@ -851,6 +868,7 @@ eventSys.on(e.net.world.joining, name => {
 eventSys.on(e.net.world.join, world => {
 	showLoadScr(false, false);
 	showWorldUI(true);
+	sounds.play(sounds.launch);
 	misc.world = new World(world);
 	eventSys.emit(e.misc.worldInitialized);
 });
