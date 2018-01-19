@@ -91,6 +91,8 @@ sounds.place.src = placeSoundUrl;
 sounds.click = new Audio();
 sounds.click.src = clickSoundUrl;
 
+PublicAPI.sounds = sounds;
+
 export var playerList = {};
 export var playerListTable = document.createElement("table");
 export var playerListWindow = new GUIWindow('Players', {}, wdow => {
