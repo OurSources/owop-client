@@ -91,8 +91,6 @@ sounds.place.src = placeSoundUrl;
 sounds.click = new Audio();
 sounds.click.src = clickSoundUrl;
 
-PublicAPI.sounds = sounds;
-
 export var playerList = {};
 export var playerListTable = document.createElement("table");
 export var playerListWindow = new GUIWindow('Players', {}, wdow => {
@@ -971,8 +969,10 @@ PublicAPI.world = getNewWorldApi();
 PublicAPI.chat = {
 	send: (msg) => net.protocol && net.protocol.sendMessage(msg),
 	clear: clearChat,
+	local: receiveMessage,
 	get recvModifier() { return misc.chatRecvModifier; },
 	set recvModifier(fn) { misc.chatRecvModifier = fn; },
 	get sendModifier() { return misc.chatSendModifier; },
 	set sendModifier(fn) { misc.chatSendModifier = fn; }
 };
+PublicAPI.sounds = sounds;
