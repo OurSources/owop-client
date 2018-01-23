@@ -43,7 +43,7 @@ export const mouse = {
 	validTile: false,
 	insideViewport: false,
 	touches: [],
-	cancelMouseDown: function() { this.buttons = 0; }
+	cancelMouseDown: function () { this.buttons = 0; }
 };
 
 export const elements = {
@@ -79,7 +79,7 @@ export const misc = {
 };
 
 export const sounds = {
-	play: function(sound) {
+	play: function (sound) {
 		sound.currentTime = 0;
 		sound.play();
 	}
@@ -103,9 +103,9 @@ export var playerListWindow = new GUIWindow('Players', {}, wdow => {
 
 function getNewWorldApi() {
 	var obj = {};
-	var defProp = function(prop) {
+	var defProp = function (prop) {
 		Object.defineProperty(obj, prop, {
-			get: function() { return misc.world && this['_' + prop] || (this['_' + prop] = misc.world[prop].bind(misc.world)); }
+			get: function () { return misc.world && this['_' + prop] || (this['_' + prop] = misc.world[prop].bind(misc.world)); }
 		});
 	};
 	defProp('getPixel');
@@ -155,10 +155,11 @@ function receiveMessage(text) {
 		var ntext = text.substr(0, idIndex);
 		realText = ntext.replace(/\d+/g, '') + text.slice(idIndex + 2);
 	}
-	var span = document.createElement("span");
+
 	if (misc.lastMessage && misc.lastMessage.text === realText) {
 		misc.lastMessage.incCount();
 	} else {
+		var span = document.createElement("span");
 		misc.lastMessage = {
 			get text() { return realText; },
 			incCount: () => {
@@ -182,13 +183,14 @@ function receiveMessage(text) {
 			]
 		});
 		message.appendChild(span);
-		elements.chatMessages.appendChild(message);
-		var childs = elements.chatMessages.children;
-		if (childs.length > options.maxChatBuffer) {
-			childs[0].remove();
-		}
+		scrollChatToBottom(() => {
+			elements.chatMessages.appendChild(message);
+			var childs = elements.chatMessages.children;
+			if (childs.length > options.maxChatBuffer) {
+				childs[0].remove();
+			}
+		}, true);
 	}
-	scrollChatToBottom();
 }
 
 function receiveDevMessage(text) {
@@ -200,8 +202,12 @@ function receiveDevMessage(text) {
 	elements.devChatMessages.scrollTop = elements.devChatMessages.scrollHeight;
 }
 
-function scrollChatToBottom() {
-	elements.chatMessages.scrollTop = elements.chatMessages.scrollHeight;
+function scrollChatToBottom(callback, dontScrollIfNotTop = false) {
+	var shouldScroll = !dontScrollIfNotTop || elements.chatMessages.scrollHeight - elements.chatMessages.scrollTop === elements.chatMessages.clientHeight;
+	if (callback)
+		callback(); // add all elements here
+	if (shouldScroll)
+		elements.chatMessages.scrollTop = elements.chatMessages.scrollHeight;
 }
 
 function clearChat() {
@@ -441,7 +447,7 @@ function checkFunctionality(callback) {
 		window.mozRequestAnimationFrame ||
 		window.webkitRequestAnimationFrame ||
 		window.msRequestAnimationFrame ||
-		function(f) {
+		function (f) {
 			setTimeout(f, 1000 / options.fallbackFps);
 		};
 
@@ -482,7 +488,7 @@ function init() {
 			chatHistory[0] = chatinput.value;
 		}
 		var keyCode = event.which || event.keyCode;
-		switch(keyCode) {
+		switch (keyCode) {
 			case 27:
 				closeChat();
 				break;
@@ -716,7 +722,7 @@ function init() {
 		}
 	};
 
-	var wheelEventName = ('onwheel' in document) ? 'wheel' : ('onmousewheel' in document) ? 'mousewheel': 'DOMMouseScroll';
+	var wheelEventName = ('onwheel' in document) ? 'wheel' : ('onmousewheel' in document) ? 'mousewheel' : 'DOMMouseScroll';
 
 	viewport.addEventListener(wheelEventName, mousewheel, { passive: true });
 	viewport.addEventListener(wheelEventName, e => {
@@ -830,7 +836,7 @@ eventSys.on(e.net.world.setId, id => {
 
 		// Automatic login
 		if (localStorage.adminlogin || localStorage.modlogin) {
-			let onWrong = function() {
+			let onWrong = function () {
 				console.log("WRONG");
 				eventSys.removeListener(e.net.sec.rank, onCorrect);
 				if (localStorage.adminlogin) {
@@ -840,7 +846,7 @@ eventSys.on(e.net.world.setId, id => {
 				}
 				net.connect(net.currentServer, net.protocol.worldName);
 			};
-			let onCorrect = function() {
+			let onCorrect = function () {
 				eventSys.removeListener(e.net.disconnected, onWrong);
 				autoNick();
 			};
@@ -948,10 +954,10 @@ window.addEventListener("load", () => {
 
 	elements.chatInput = document.getElementById("chat-input");
 
-	document.getElementById("help-button").addEventListener("click", function() {
+	document.getElementById("help-button").addEventListener("click", function () {
 		document.getElementById("help").className = "";
 	});
-	document.getElementById("help-close").addEventListener("click", function() {
+	document.getElementById("help-close").addEventListener("click", function () {
 		document.getElementById("help").className = "hidden";
 	});
 
