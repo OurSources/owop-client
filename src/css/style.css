@@ -286,6 +286,7 @@ button:focus {
 	top: 0;
 	right: 0;
 	background-color: rgba(0, 0, 0, 0.3);
+	pointer-events: none;
 }
 #palette-create {
 	position: absolute;

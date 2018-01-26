@@ -9,7 +9,7 @@ import anchorme from './util/anchorme.js';
 
 import { CHUNK_SIZE, EVENTS as e, RANK } from './conf.js';
 import { Bucket } from './util/Bucket.js';
-import { escapeHTML, getTime, getCookie, cookiesEnabled, loadScript } from './util/misc.js';
+import { escapeHTML, getTime, getCookie, cookiesEnabled, storageEnabled, loadScript } from './util/misc.js';
 
 import { eventSys, PublicAPI } from './global.js';
 import { options } from './conf.js';
@@ -74,6 +74,7 @@ export const misc = {
 	get world() { return this._world; },
 	guiShown: false,
 	cookiesEnabled: cookiesEnabled(),
+	storageEnabled: storageEnabled(),
 	showEUCookieNag: cookiesEnabled() && getCookie("nagAccepted") !== "true",
 	usingFirefox: navigator.userAgent.indexOf("Firefox") !== -1
 };
@@ -827,6 +828,9 @@ eventSys.on(e.net.chat, receiveMessage);
 eventSys.on(e.net.devChat, receiveDevMessage);
 
 eventSys.on(e.net.world.setId, id => {
+	if (!misc.storageEnabled) {
+		return;
+	}
 	eventSys.once(e.net.sec.rank, () => {
 		function autoNick() {
 			if (localStorage.nick) {
@@ -918,13 +922,6 @@ window.addEventListener("error", e => {
 });
 
 window.addEventListener("load", () => {
-	if (window.location.hostname.indexOf("cursors.me") != -1 ||
-		window.location.hostname.indexOf("yourworldofpixels.com") != -1) {
-		// Redirects to the main url if played on an alternative url.
-		window.location.href = "http://www.ourworldofpixels.com/";
-		return;
-	}
-
 	elements.loadScr = document.getElementById("load-scr");
 	elements.loadUl = document.getElementById("load-ul");
 	elements.loadOptions = document.getElementById("load-options");
@@ -939,7 +936,6 @@ window.addEventListener("load", () => {
 	elements.chat = document.getElementById("chat");
 	elements.devChatMessages = document.getElementById("dev-chat-messages");
 	elements.chatMessages = document.getElementById("chat-messages");
-	elements.chatStatus = document.getElementById("chat-status");
 	elements.playerCountDisplay = document.getElementById("playercount-display");
 
 	elements.palette = document.getElementById("palette");
