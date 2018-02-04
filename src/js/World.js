@@ -144,6 +144,7 @@ export class World {
 	}
 
 	setPixel(x, y, color, noUndo) {
+		var time = Date.now();
 		var chunkSize = protocol.chunkSize;
 		var chunk = this.chunks[`${Math.floor(x / chunkSize)},${Math.floor(y / chunkSize)}`];
 		if (chunk) {
@@ -153,33 +154,44 @@ export class World {
 				return false;
 			}
 			if (!noUndo) {
-				oldPixel.push(x, y);
+				oldPixel.push(x, y, time);
 				this.undoHistory.push(oldPixel);
 			}
 			chunk.update(x, y, colorUtils.u24_888(color[0], color[1], color[2]));
 			eventSys.emit(e.renderer.updateChunk, chunk);
-			if (Date.now() - lastPlace > 30) {
+			if (time - lastPlace > 30) {
 				sounds.play(sounds.place);
-				lastPlace = Date.now();
+				lastPlace = time;
 			}
 			return true;
 		}
 		return false;
 	}
 
-	undo() {
+	undo(bulkUndo) {
+		const eq = (a, b) => a[0] == b[0] && a[1] == b[1] && a[2] == b[2];
 		if (this.undoHistory.length === 0) {
 			return false;
 		}
-		var remainingTries = this.undoHistory.length;
-		while (--remainingTries >= 0) {
-			var undo = this.undoHistory[remainingTries];
+		var changeTime = null;
+		for (var i = this.undoHistory.length; --i >= 0;) {
+			var undo = this.undoHistory[i];
+			if (!changeTime) {
+				changeTime = undo[5];
+			}
 			var px = this.getPixel(undo[3], undo[4]);
-			if (px[0] === undo[0] && px[1] === undo[1] && px[2] === undo[2]) {
-				this.undoHistory.splice(remainingTries, 1);
-			} else if (this.setPixel(undo[3], undo[4], undo, true)) {
-				this.undoHistory.splice(remainingTries, 1);
-				break;
+			if (px) {
+				var shouldContinue = !bulkUndo || changeTime - undo[5] < 500;
+				var unchanged = eq(px, undo);
+				if (!shouldContinue) {
+					break;
+				}
+				if (unchanged || this.setPixel(undo[3], undo[4], undo, true)) {
+					this.undoHistory.splice(i, 1);
+					if (!bulkUndo) {
+						break;
+					}
+				}
 			}
 		}
 	}

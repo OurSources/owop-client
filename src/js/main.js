@@ -18,7 +18,7 @@ import { camera, renderer, moveCameraBy } from './canvas_renderer.js';
 import { net } from './networking.js';
 import { updateClientFx, player } from './local_player.js';
 import { resolveProtocols, definedProtos } from './protocol/all.js';
-import { windowSys, GUIWindow } from './windowsys.js';
+import { windowSys, GUIWindow, OWOPDropDown } from './windowsys.js';
 
 import launchSoundUrl from '../audio/launch.mp3';
 import placeSoundUrl from '../audio/place.mp3';
@@ -221,15 +221,6 @@ function tick() {
 	var speed = Math.max(Math.min(options.movementSpeed, 64), 0);
 	var offX = 0;
 	var offY = 0;
-	var offZoom = 0;
-	if (keysDown[107] || keysDown[187]) { /* numpad + || equal sign + */
-		offZoom += 1;
-		keysDown[107] = keysDown[187] = false;
-	}
-	if (keysDown[109] || keysDown[189]) {
-		offZoom -= 1;
-		keysDown[109] = keysDown[189] = false; /* Only register keydown */
-	}
 	if (keysDown[38]) { // Up
 		offY -= speed;
 	}
@@ -242,9 +233,8 @@ function tick() {
 	if (keysDown[39]) { // Right
 		offX += speed;
 	}
-	if (offX !== 0 || offY !== 0 || offZoom !== 0) {
+	if (offX !== 0 || offY !== 0) {
 		moveCameraBy(offX, offY);
-		camera.zoom = camera.zoom + offZoom;
 		updateMouse(null, 'mousemove', mouse.x, mouse.y);
 	}
 
@@ -568,6 +558,15 @@ function init() {
 				}
 			}
 			switch (keyCode) {
+				case 80: /* P */
+					player.tool = "pipette";
+					break;
+
+				case 79: /* O */
+					player.tool = "cursor";
+					break;
+
+				case 77: /* M */
 				case 16: /* Shift */
 					player.tool = "move";
 					break;
@@ -576,7 +575,7 @@ function init() {
 					if (!event.ctrlKey || !misc.world) {
 						break;
 					}
-					misc.world.undo();
+					misc.world.undo(event.shiftKey);
 					event.preventDefault();
 					break;
 
@@ -620,6 +619,16 @@ function init() {
 				case 112: /* F1 */
 					showWorldUI(!misc.guiShown);
 					event.preventDefault();
+					break;
+
+				case 107:
+				case 187:
+					++camera.zoom;
+					break;
+
+				case 109:
+				case 189:
+					--camera.zoom;
 					break;
 
 				default:
@@ -767,7 +776,7 @@ function init() {
 	);
 	console.log("%cWelcome to the developer console!", "font-size: 20px; font-weight: bold; color: #F0F;");
 
-	//this.windowsys.addWindow(new OWOPDropDown());
+	//windowSys.addWindow(new OWOPDropDown());
 	resolveProtocols();
 
 	/* Calls other initialization functions */
@@ -831,36 +840,39 @@ eventSys.on(e.net.world.setId, id => {
 	if (!misc.storageEnabled) {
 		return;
 	}
-	eventSys.once(e.net.sec.rank, () => {
-		function autoNick() {
-			if (localStorage.nick) {
-				net.protocol.sendMessage("/nick " + localStorage.nick);
-			}
-		}
 
-		// Automatic login
-		if (localStorage.adminlogin || localStorage.modlogin) {
-			let onWrong = function () {
-				console.log("WRONG");
-				eventSys.removeListener(e.net.sec.rank, onCorrect);
-				if (localStorage.adminlogin) {
-					delete localStorage.adminlogin;
-				} else {
-					delete localStorage.modlogin;
-				}
-				net.connect(net.currentServer, net.protocol.worldName);
-			};
-			let onCorrect = function () {
-				eventSys.removeListener(e.net.disconnected, onWrong);
-				autoNick();
-			};
-			eventSys.once(e.net.disconnected, onWrong);
-			eventSys.once(e.net.sec.rank, onCorrect);
-			net.protocol.sendMessage(localStorage.adminlogin ? ("/adminlogin " + localStorage.adminlogin) : ("/modlogin " + localStorage.modlogin));
-		} else {
-			autoNick();
+	function autoNick() {
+		if (localStorage.nick) {
+			net.protocol.sendMessage("/nick " + localStorage.nick);
 		}
-	});
+	}
+
+	// Automatic login
+	let desiredRank = localStorage.adminlogin ? RANK.ADMIN : localStorage.modlogin ? RANK.MODERATOR : RANK.NONE;
+	if (desiredRank > RANK.NONE) {
+		let onWrong = function () {
+			console.log("WRONG");
+			eventSys.removeListener(e.net.sec.rank, onCorrect);
+			if (desiredRank == RANK.ADMIN) {
+				delete localStorage.adminlogin;
+			} else if (desiredRank == RANK.MODERATOR) {
+				delete localStorage.modlogin;
+			}
+			net.connect(net.currentServer, net.protocol.worldName);
+		};
+		let onCorrect = function (newrank) {
+			if (newrank == desiredRank) {
+				eventSys.removeListener(e.net.disconnected, onWrong);
+				eventSys.removeListener(e.net.sec.rank, onCorrect);
+				autoNick();
+			}
+		};
+		eventSys.once(e.net.disconnected, onWrong);
+		eventSys.on(e.net.sec.rank, onCorrect);
+		net.protocol.sendMessage(desiredRank == RANK.ADMIN ? ("/adminlogin " + localStorage.adminlogin) : ("/modlogin " + localStorage.modlogin));
+	} else {
+		autoNick();
+	}
 });
 
 eventSys.on(e.misc.windowAdded, window => {

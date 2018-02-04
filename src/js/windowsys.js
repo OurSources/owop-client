@@ -90,21 +90,23 @@ export function OWOPDropDown() {
 			style: "padding: 0;\
 				width: 68px; height: 64px;"
 		}));
-		var dntebtn = win.addObj(mkHTML("button", {
-			className: "winframe",
+		var hidebtn = win.addObj(mkHTML("button", {
+			innerHTML: 'hi'
+			/*className: "winframe",
 			style: "padding: 0;\
 			background-color: #ffd162;\
 			left: -6px; top: 70px;\
-			width: 38px; height: 36px;"
+			width: 38px; height: 36px;"*/
 		}));
-		var rddtbtn = win.addObj(mkHTML("button", {
+		/*var rddtbtn = win.addObj(mkHTML("button", {
 			className: "winframe",
 			style: "padding: 0;\
 			right: -6px; top: 70px;\
 			width: 38px; height: 36px;"
-		}));
+		}));*/
 		var hlpcontainer = mkHTML("div", {
 			className: "wincontainer",
+			style: "margin-top: -5px;"
 		});
 		hlpdiv.appendChild(hlpcontainer);
 		hlpcontainer.appendChild(mkHTML("button", {
@@ -115,7 +117,7 @@ export function OWOPDropDown() {
 				width: 100%; height: 100%;",
 			onclick: function() {console.log("help")}.bind(this)
 		}));
-	}).resize(68, 122);
+	}).resize(68, 64);
 }
 
 OWOPDropDown.prototype.getWindow = function() {
