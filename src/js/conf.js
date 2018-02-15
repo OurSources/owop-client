@@ -106,6 +106,7 @@ export const options = propertyDefaults(userOptions, {
 	minGridZoom: 1, /* Minimum zoom level where the grid shows up */
 	movementSpeed: 1, /* Pixels per tick */
 	defaultWorld: 'main',
+	enableSounds: true,
 	defaultZoom: 16,
 	zoomStrength: 1,
 	zoomLimitMin: 1,

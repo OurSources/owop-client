@@ -60,6 +60,7 @@ export const misc = {
 	chatRecvModifier: msg => msg,
 	chatSendModifier: msg => msg,
 	exceptionTimeout: null,
+	worldPasswords: {},
 	tick: 0,
 	urlWorldName: null,
 	connecting: false,
@@ -82,7 +83,9 @@ export const misc = {
 export const sounds = {
 	play: function (sound) {
 		sound.currentTime = 0;
-		sound.play();
+		if (options.enableSounds) {
+			sound.play();
+		}
 	}
 };
 sounds.launch = new Audio();
@@ -431,6 +434,12 @@ function retryingConnect(serverGetter, worldName) {
 	tryConnect(0);
 }
 
+function saveWorldPasswords() {
+	if (misc.storageEnabled) {
+		localStorage.worldPasswords = JSON.stringify(misc.worldPasswords);
+	}
+}
+
 function checkFunctionality(callback) {
 	/* Multi Browser Support */
 	window.requestAnimationFrame =
@@ -458,6 +467,12 @@ function init() {
 	var viewport = elements.viewport;
 	var chatinput = elements.chatInput;
 
+	if (misc.storageEnabled && localStorage.worldPasswords) {
+		try {
+			misc.worldPasswords = JSON.parse(localStorage.worldPasswords);
+		} catch (e) { }
+	}
+	
 	misc.lastCleanup = 0;
 
 	viewport.oncontextmenu = () => false;
@@ -489,16 +504,22 @@ function init() {
 					var text = chatinput.value;
 					historyIndex = 0;
 					chatHistory.unshift(text);
-					if (text.startsWith("/adminlogin ")) {
-						localStorage.adminlogin = text.slice(12);
-					} else if (text.startsWith("/modlogin ")) {
-						localStorage.modlogin = text.slice(10);
-					} else if (text.startsWith("/nick")) {
-						var nick = text.slice(6);
-						if (nick.length) {
-							localStorage.nick = nick;
-						} else {
-							delete localStorage.nick;
+					if (misc.storageEnabled) {
+						if (text.startsWith("/adminlogin ")) {
+							localStorage.adminlogin = text.slice(12);
+						} else if (text.startsWith("/modlogin ")) {
+							localStorage.modlogin = text.slice(10);
+						} else if (text.startsWith("/nick")) {
+							var nick = text.slice(6);
+							if (nick.length) {
+								localStorage.nick = nick;
+							} else {
+								delete localStorage.nick;
+							}
+						} else if (text.startsWith("/pass ") && misc.world) {
+							var pass = text.slice(6);
+							misc.worldPasswords[net.protocol.worldName] = pass;
+							saveWorldPasswords();
 						}
 					}
 					if (text[0] !== '/') {
@@ -848,7 +869,7 @@ eventSys.on(e.net.world.setId, id => {
 	}
 
 	// Automatic login
-	let desiredRank = localStorage.adminlogin ? RANK.ADMIN : localStorage.modlogin ? RANK.MODERATOR : RANK.NONE;
+	let desiredRank = localStorage.adminlogin ? RANK.ADMIN : localStorage.modlogin ? RANK.MODERATOR : net.protocol.worldName in misc.worldPasswords ? RANK.USER : RANK.NONE;
 	if (desiredRank > RANK.NONE) {
 		let onWrong = function () {
 			console.log("WRONG");
@@ -857,6 +878,9 @@ eventSys.on(e.net.world.setId, id => {
 				delete localStorage.adminlogin;
 			} else if (desiredRank == RANK.MODERATOR) {
 				delete localStorage.modlogin;
+			} else if (desiredRank == RANK.USER) {
+				delete misc.worldPasswords[net.protocol.worldName];
+				saveWorldPasswords();
 			}
 			net.connect(net.currentServer, net.protocol.worldName);
 		};
@@ -869,7 +893,15 @@ eventSys.on(e.net.world.setId, id => {
 		};
 		eventSys.once(e.net.disconnected, onWrong);
 		eventSys.on(e.net.sec.rank, onCorrect);
-		net.protocol.sendMessage(desiredRank == RANK.ADMIN ? ("/adminlogin " + localStorage.adminlogin) : ("/modlogin " + localStorage.modlogin));
+		var msg;
+		if (desiredRank == RANK.ADMIN) {
+			msg = "/adminlogin " + localStorage.adminlogin;
+		} else if (desiredRank == RANK.MODERATOR) {
+			msg = "/modlogin " + localStorage.modlogin;
+		} else if (desiredRank == RANK.USER) {
+			msg = "/pass " + misc.worldPasswords[net.protocol.worldName];
+		}
+		net.protocol.sendMessage(msg);
 	} else {
 		autoNick();
 	}
