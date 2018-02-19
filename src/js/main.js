@@ -886,7 +886,10 @@ eventSys.on(e.net.world.setId, id => {
 		};
 		let onCorrect = function (newrank) {
 			if (newrank == desiredRank) {
-				eventSys.removeListener(e.net.disconnected, onWrong);
+				setTimeout(() => {
+					/* Ugly fix for wrong password on worlds without one */
+					eventSys.removeListener(e.net.disconnected, onWrong);
+				}, 1000);
 				eventSys.removeListener(e.net.sec.rank, onCorrect);
 				autoNick();
 			}
