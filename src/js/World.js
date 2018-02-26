@@ -1,21 +1,23 @@
 "use strict";
-import { protocol, EVENTS as e, options } from './conf.js';
+import { protocol, EVENTS as e, options, RANK } from './conf.js';
 import { eventSys } from './global.js';
 import { colorUtils } from './util/color.js';
 import { net } from './networking.js';
 import { camera, isVisible, renderer } from './canvas_renderer.js';
 import { mouse, sounds } from './main.js';
+import { player } from './local_player.js';
 import { Player } from './Player.js';
 
 let lastPlace = 0;
 
 export class Chunk {
-	constructor(x, y, netdata) { /* netdata = Uint32Array */
+	constructor(x, y, netdata, locked) { /* netdata = Uint32Array */
 		this.needsRedraw = false;
 		this.x = x;
 		this.y = y;
 		this.tmpChunkBuf = netdata;
 		this.view = null;
+		this.locked = locked;
 	}
 
 	update(x, y, color) {
@@ -56,6 +58,7 @@ export class World {
 		const loadCFunc = chunk => this.chunkLoaded(chunk);
 		const unloadCFunc = chunk => this.chunkUnloaded(chunk);
 		const setCFunc = (x, y, data) => this.chunkPasted(x, y, data);
+		const lockCFunc = (x, y, newState) => this.chunkLocked(x, y, newState);
 		const disconnectedFunc = () => eventSys.emit(e.net.world.leave);
 		const updateTileFunc = t => this.tilesUpdated(t);
 		const updatePlayerFunc = p => this.playersMoved(p);
@@ -66,6 +69,7 @@ export class World {
 			eventSys.removeListener(e.net.chunk.load, loadCFunc);
 			eventSys.removeListener(e.net.chunk.unload, unloadCFunc);
 			eventSys.removeListener(e.net.chunk.set, setCFunc);
+			eventSys.removeListener(e.net.chunk.lock, lockCFunc);
 			eventSys.removeListener(e.net.disconnected, disconnectedFunc);
 			eventSys.removeListener(e.net.world.tilesUpdated, updateTileFunc);
 			eventSys.removeListener(e.net.world.playersMoved, updatePlayerFunc);
@@ -74,6 +78,7 @@ export class World {
 		eventSys.on(e.net.chunk.load, loadCFunc);
 		eventSys.on(e.net.chunk.unload, unloadCFunc);
 		eventSys.on(e.net.chunk.set, setCFunc);
+		eventSys.on(e.net.chunk.lock, lockCFunc);
 		eventSys.on(e.net.world.tilesUpdated, updateTileFunc);
 		eventSys.on(e.net.world.playersMoved, updatePlayerFunc);
 		eventSys.on(e.net.world.playersLeft, destroyPlayerFunc);
@@ -147,7 +152,7 @@ export class World {
 		var time = Date.now();
 		var chunkSize = protocol.chunkSize;
 		var chunk = this.chunks[`${Math.floor(x / chunkSize)},${Math.floor(y / chunkSize)}`];
-		if (chunk) {
+		if (chunk && (!chunk.locked || player.rank >= RANK.MODERATOR)) {
 			var oldPixel = this.getPixel(x, y, chunk);
 			if (!oldPixel || (oldPixel[0] === color[0] && oldPixel[1] === color[1] && oldPixel[2] === color[2])
 			|| !net.protocol.updatePixel(x, y, color)) {
@@ -215,6 +220,13 @@ export class World {
 
 	validMousePos(tileX, tileY) {
 		return this.getPixel(tileX, tileY) !== null;
+	}
+
+	chunkLocked(x, y, newState) {
+		var chunk = this.getChunkAt(x, y);
+		if (chunk) {
+			chunk.locked = !!newState;
+		}
 	}
 
 	chunkLoaded(chunk) {

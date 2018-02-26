@@ -7,13 +7,13 @@ import { camera, renderer } from './canvas_renderer.js';
 
 export const PLAYERFX = {
 	NONE: null,
-	RECT_SELECT_ALIGNED: (pixelSize) => (fx, ctx, time) => {
+	RECT_SELECT_ALIGNED: (pixelSize, htmlColor) => (fx, ctx, time) => {
 		var x = fx.extra.player.x;
 		var y = fx.extra.player.y;
 		var fxx = (Math.floor(x / (16 * pixelSize)) * pixelSize - camera.x) * camera.zoom;
 		var fxy = (Math.floor(y / (16 * pixelSize)) * pixelSize - camera.y) * camera.zoom;
 		ctx.globalAlpha = 0.8;
-		ctx.strokeStyle = fx.extra.player.htmlRgb;
+		ctx.strokeStyle = htmlColor || fx.extra.player.htmlRgb;
 		ctx.strokeRect(fxx, fxy, camera.zoom * pixelSize, camera.zoom * pixelSize);
 		return 1; /* Rendering finished (won't change on next frame) */
 	}
@@ -107,6 +107,17 @@ eventSys.on(e.net.chunk.set, (chunkX, chunkY, data) => {
 	var wY = chunkY * protocol.chunkSize;
 	if (camera.isVisible(wX, wY, protocol.chunkSize, protocol.chunkSize)) {
 		new Fx(WORLDFX.RECT_FADE_ALIGNED(16, chunkX, chunkY));
+		renderer.render(renderer.rendertype.FX);
+	}
+});
+
+eventSys.on(e.net.chunk.lock, (chunkX, chunkY, state) => {
+	var wX = chunkX * protocol.chunkSize;
+	var wY = chunkY * protocol.chunkSize;
+	if (camera.isVisible(wX, wY, protocol.chunkSize, protocol.chunkSize)) {
+		new Fx(WORLDFX.RECT_FADE_ALIGNED(16, chunkX, chunkY), {
+			htmlRgb: state ? "#00FF00" : "#FF0000"
+		});
 		renderer.render(renderer.rendertype.FX);
 	}
 });

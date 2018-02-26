@@ -48,7 +48,8 @@ export const OldProtocol = {
         5: 'fill',
         6: 'paste',
         7: 'export',
-        8: 'line'
+		8: 'line',
+		9: 'protect'
     },
     misc: {
         worldVerification: 1337,
@@ -65,7 +66,9 @@ export const OldProtocol = {
             chunkLoad: 2,
             teleport: 3,
             setRank: 4,
-            captcha: 5
+            captcha: 5,
+			setPQuota: 6,
+			chunkProtected: 7
         }
     }
 };
@@ -236,7 +239,8 @@ class OldProtocolImpl extends Protocol {
 			case oc.chunkLoad: // Get chunk
 				var chunkX = dv.getInt32(1, true);
 				var chunkY = dv.getInt32(5, true);
-                var u8data = new Uint8Array(message, 9, message.byteLength - 9);
+                var u8data = new Uint8Array(message, 9, 768);
+				var locked = dv.getUint8(message.byteLength - 1);
                 var key = `${chunkX},${chunkY}`;
                 var u32data = new Uint32Array(OldProtocol.chunkSize * OldProtocol.chunkSize);
                 for (var i = 0, u = 0; i < u8data.length; i += 3) { /* Need to make a copy ;-; */
@@ -250,7 +254,7 @@ class OldProtocolImpl extends Protocol {
 				} else {
                     delete this.chunksLoading[key];
                     this.waitingForChunks--;
-					var chunk = new Chunk(chunkX, chunkY, u32data);
+					var chunk = new Chunk(chunkX, chunkY, u32data, locked);
 					eventSys.emit(e.net.chunk.load, chunk);
 				}
                 break;
@@ -280,6 +284,19 @@ class OldProtocolImpl extends Protocol {
                        break;
                 }
 				break;
+				
+			case oc.setPQuota:
+				let rate = dv.getUint16(1, true);
+				let per = dv.getUint16(3, true);
+				this.placeBucket = new Bucket(rate, per);
+				break;
+				
+			case oc.chunkProtected:
+				let cx = dv.getInt32(1, true);
+                let cy = dv.getInt32(5, true);
+				let newState = dv.getUint8(9);
+				eventSys.emit(e.net.chunk.lock, cx, cy, newState);
+				break;
 		}
     }
 
@@ -295,7 +312,7 @@ class OldProtocolImpl extends Protocol {
         this.ws.send(array);
         return nstr[1];
     }
-        
+    
     requestChunk(x, y) {
         let wb = OldProtocol.worldBorder;
         var key = `${x},${y}`;
@@ -367,7 +384,16 @@ class OldProtocolImpl extends Protocol {
                 return false;
             }
         }
-    }
+	}
+	
+	protectChunk(x, y, newState) {
+		var array = new ArrayBuffer(10);
+        var dv = new DataView(array);
+        dv.setInt32(0, x, true);
+		dv.setInt32(4, y, true);
+		dv.setUint8(8, newState);
+		this.ws.send(array);
+	}
 
     setChunk(x, y, data) {
         var buf = new Uint8Array(8 + OldProtocol.chunkSize * OldProtocol.chunkSize * 3);

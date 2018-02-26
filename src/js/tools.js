@@ -709,6 +709,44 @@ eventSys.once(e.misc.toolsRendered, () => {
 		});
 	}));
 
+	addTool(new Tool('Protect', cursors.wand, PLAYERFX.RECT_SELECT_ALIGNED(16, "#000000"), RANK.MODERATOR, tool => {
+		tool.setFxRenderer((fx, ctx, time) => {
+			var x = fx.extra.player.x;
+			var y = fx.extra.player.y;
+			var fxx = (Math.floor(x / 256) * 16 - camera.x) * camera.zoom;
+			var fxy = (Math.floor(y / 256) * 16 - camera.y) * camera.zoom;
+			ctx.globalAlpha = 0.5;
+			var chunkX = Math.floor(fx.extra.player.tileX / protocol.chunkSize);
+			var chunkY = Math.floor(fx.extra.player.tileY / protocol.chunkSize);
+			var chunk = misc.world.getChunkAt(chunkX, chunkY);
+			if (chunk) {
+				ctx.fillStyle = chunk.locked ? "#00FF00" : "#FF0000";
+				ctx.fillRect(fxx, fxy, camera.zoom * 16, camera.zoom * 16);
+			}
+			return 1; /* Rendering finished (won't change on next frame) */
+		});
+		tool.setEvent('mousedown mousemove', mouse => {
+			var chunkX = Math.floor(mouse.tileX / protocol.chunkSize);
+			var chunkY = Math.floor(mouse.tileY / protocol.chunkSize);
+			var chunk = misc.world.getChunkAt(chunkX, chunkY);
+			switch (mouse.buttons) {
+				case 0b1:
+					if (!chunk.locked) {
+						net.protocol.protectChunk(chunkX, chunkY, 1);
+						chunk.locked = true;
+					}
+					break;
+
+				case 0b10:
+					if (chunk.locked) {
+						net.protocol.protectChunk(chunkX, chunkY, 0);
+						chunk.locked = false;
+					}
+					break;
+			}
+		});
+	}));
+
 	addTool(new Tool('Paste', cursors.paste, PLAYERFX.NONE, RANK.ADMIN, tool => {
 		tool.setFxRenderer((fx, ctx, time) => {
 			var z = camera.zoom;

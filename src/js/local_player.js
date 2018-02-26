@@ -36,6 +36,8 @@ export const undoHistory = [];
 const clientFx = new Fx(PLAYERFX.NONE, {
 	isLocalPlayer: true,
 	player: {
+		get tileX() { return mouse.tileX; },
+		get tileY() { return mouse.tileY; },
 		get x() { return mouse.worldX; },
 		get y() { return mouse.worldY; },
 		get htmlRgb() {
@@ -199,6 +201,8 @@ eventSys.once(e.misc.toolsInitialized, () => {
 eventSys.on(e.net.sec.rank, newRank => {
 	rank = newRank;
 	console.log('Got rank:', newRank);
+	/* This is why we can't have nice things */
+	net.protocol.ws.send((new Uint8Array([newRank])).buffer);
 	switch (newRank) {
 		case RANK.USER:
 		case RANK.NONE:

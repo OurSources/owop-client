@@ -28,7 +28,15 @@ export class Player {
 		playerListEntry.innerHTML = "<td>" + this.id + "</td><td>" + Math.floor(x / 16) + "</td><td>" + Math.floor(y / 16) + "</td>";
 		playerList[this.id] = playerListEntry;
 		playerListTable.appendChild(playerListEntry);
-    }
+	}
+	
+	get tileX() {
+		return Math.floor(this.x / 16);
+	}
+
+	get tileY() {
+		return Math.floor(this.y / 16);
+	}
 
     get endX() {
         return this._x.end;

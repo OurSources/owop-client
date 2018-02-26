@@ -97,7 +97,7 @@ sounds.click.src = clickSoundUrl;
 
 export var playerList = {};
 export var playerListTable = document.createElement("table");
-export var playerListWindow = new GUIWindow('Players', {}, wdow => {
+export var playerListWindow = new GUIWindow('Players', {closeable: true}, wdow => {
 	var tableHeader = document.createElement("tr");
 	tableHeader.innerHTML = "<th>Id</th><th>X</th><th>Y</th>";
 	playerListTable.appendChild(tableHeader);
@@ -522,7 +522,7 @@ function init() {
 							saveWorldPasswords();
 						}
 					}
-					if (text[0] !== '/') {
+					if (!event.ctrlKey) {
 						text = misc.chatSendModifier(text);
 					}
 					net.protocol.sendMessage(text);
