@@ -733,14 +733,12 @@ eventSys.once(e.misc.toolsRendered, () => {
 				case 0b1:
 					if (!chunk.locked) {
 						net.protocol.protectChunk(chunkX, chunkY, 1);
-						chunk.locked = true;
 					}
 					break;
 
 				case 0b10:
 					if (chunk.locked) {
 						net.protocol.protectChunk(chunkX, chunkY, 0);
-						chunk.locked = false;
 					}
 					break;
 			}

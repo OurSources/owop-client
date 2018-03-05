@@ -53,6 +53,8 @@ clientFx.setVisibleFunc(() => {
 	return mouse.insideViewport && mouse.validTile;
 });
 
+// exported variables are always const it seems
+export const networkRankVerification = [RANK.NONE];
 let rank = RANK.NONE;
 let somethingChanged = false;
 
@@ -199,10 +201,16 @@ eventSys.once(e.misc.toolsInitialized, () => {
 });
 
 eventSys.on(e.net.sec.rank, newRank => {
+	if (networkRankVerification[0] !== newRank) {
+		console.error("nope");
+		return;
+	}
 	rank = newRank;
 	console.log('Got rank:', newRank);
 	/* This is why we can't have nice things */
-	net.protocol.ws.send((new Uint8Array([newRank])).buffer);
+	if (net.isConnected()) {
+		net.protocol.ws.send((new Uint8Array([newRank])).buffer);
+	}
 	switch (newRank) {
 		case RANK.USER:
 		case RANK.NONE:

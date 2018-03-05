@@ -111,10 +111,10 @@ eventSys.on(e.net.chunk.set, (chunkX, chunkY, data) => {
 	}
 });
 
-eventSys.on(e.net.chunk.lock, (chunkX, chunkY, state) => {
+eventSys.on(e.net.chunk.lock, (chunkX, chunkY, state, local) => {
 	var wX = chunkX * protocol.chunkSize;
 	var wY = chunkY * protocol.chunkSize;
-	if (camera.isVisible(wX, wY, protocol.chunkSize, protocol.chunkSize)) {
+	if (!local && camera.isVisible(wX, wY, protocol.chunkSize, protocol.chunkSize)) {
 		new Fx(WORLDFX.RECT_FADE_ALIGNED(16, chunkX, chunkY), {
 			htmlRgb: state ? "#00FF00" : "#FF0000"
 		});
