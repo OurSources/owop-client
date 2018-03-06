@@ -513,6 +513,7 @@ button:focus {
 	font-size: 16px;
 	resize: none;
 	overflow-y: scroll;
+	display: none;
 }
 #chat-input:focus {
 	outline: none;

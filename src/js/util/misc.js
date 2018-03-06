@@ -95,6 +95,20 @@ export function loadScript(name, callback) {
 	}));
 }
 
+export function eventOnce(element, events, func) {
+	var ev = events.split(' ');
+	var f = e => {
+		for (var i = 0; i < ev.length; i++) {
+			element.removeEventListener(ev[i], f);
+		}
+		return func();
+	};
+
+	for (var i = 0; i < ev.length; i++) {
+		element.addEventListener(ev[i], f);
+	}
+}
+
 export function setTooltip(element, message) {
 	const elementSpacing = 10;
 	var intr = 0;

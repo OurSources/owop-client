@@ -9,7 +9,7 @@ import anchorme from './util/anchorme.js';
 
 import { CHUNK_SIZE, EVENTS as e, RANK } from './conf.js';
 import { Bucket } from './util/Bucket.js';
-import { escapeHTML, getTime, getCookie, cookiesEnabled, storageEnabled, loadScript } from './util/misc.js';
+import { escapeHTML, getTime, getCookie, cookiesEnabled, storageEnabled, loadScript, eventOnce } from './util/misc.js';
 
 import { eventSys, PublicAPI } from './global.js';
 import { options } from './conf.js';
@@ -366,13 +366,19 @@ function showWorldUI(bool) {
 	elements.palette.style.transform = bool ? "translateY(-50%)" : "";
 	elements.chat.style.transform = bool ? "initial" : "";
 	elements.chatInput.disabled = !bool;
+	elements.chatInput.style.display = "initial";
 }
 
 function showLoadScr(bool, showOptions) {
 	elements.loadOptions.className = showOptions ? "framed" : "hide";
 	if (!bool) {
 		elements.loadScr.style.transform = "translateY(-110%)"; /* +10% for shadow */
-		setTimeout(() => elements.loadScr.className = "hide", 2000);
+		eventOnce(elements.loadScr, "transitionend webkitTransitionEnd oTransitionEnd msTransitionEnd",
+		() => {
+			if (net.isConnected()) {
+				elements.loadScr.className = "hide";
+			}
+		});
 	} else {
 		elements.loadScr.className = "";
 		elements.loadScr.style.transform = "";
@@ -396,6 +402,8 @@ function inGameDisconnected() {
 	showLoadScr(true, true);
 	statusMsg(false, "Lost connection with the server.");
 	misc.world = null;
+	elements.chat.style.transform = "initial";
+	elements.chatInput.style.display = "";
 }
 
 function retryingConnect(serverGetter, worldName) {
@@ -882,7 +890,7 @@ eventSys.on(e.net.world.setId, id => {
 				delete misc.worldPasswords[net.protocol.worldName];
 				saveWorldPasswords();
 			}
-			net.connect(net.currentServer, net.protocol.worldName);
+			retryingConnect(() => net.currentServer, net.protocol.worldName)
 		};
 		let onCorrect = function (newrank) {
 			if (newrank == desiredRank) {

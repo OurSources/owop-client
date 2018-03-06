@@ -201,8 +201,7 @@ eventSys.once(e.misc.toolsInitialized, () => {
 });
 
 eventSys.on(e.net.sec.rank, newRank => {
-	if (networkRankVerification[0] !== newRank) {
-		console.error("nope");
+	if (networkRankVerification[0] < newRank) {
 		return;
 	}
 	rank = newRank;

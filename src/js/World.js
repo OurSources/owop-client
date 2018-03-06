@@ -63,6 +63,7 @@ export class World {
 		this.protectedChunks = {};
 		this.players = {};
 		this.undoHistory = [];
+		this.pathUpdaterTimeout = -1;
 		this.pathFx = new Fx((fx, ctx, time) => {
 			var retval = 1;
 			if (fx.extra.path) {
@@ -214,7 +215,11 @@ export class World {
 		checkSide(-1, 0, d.LEFT, d.RIGHT);
 		checkSide(0, 1, d.DOWN, d.UP);
 		
-		this.pathFx.update({path: this.makeLockedChunksPath()});
+		clearTimeout(this.pathUpdaterTimeout);
+		this.pathUpdaterTimeout = setTimeout(() => {
+			this.pathFx.update({path: this.makeLockedChunksPath()});
+			renderer.render(renderer.rendertype.FX);
+		}, 100);
 	}
 
 	loadChunk(x, y) {
