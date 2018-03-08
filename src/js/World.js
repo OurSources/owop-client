@@ -389,7 +389,11 @@ export class World {
 	chunkUnloaded(chunk) {
 		const key = `${chunk.x},${chunk.y}`;
 		delete this.chunks[key];
-		delete this.protectedChunks[key];
+		if (chunk.locked) {
+			delete this.protectedChunks[key];
+			chunk.locked = false;
+			this.findNeighborLockedChunks(chunk, chunk.locked);
+		}
 		eventSys.emit(e.renderer.rmChunk, chunk);
 	}
 
