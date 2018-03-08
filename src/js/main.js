@@ -1016,7 +1016,7 @@ window.addEventListener("load", () => {
 });
 
 /* Public API definitions */
-PublicAPI.tool = eventSys.emit.bind(eventSys);
+PublicAPI.emit = eventSys.emit.bind(eventSys);
 PublicAPI.on = eventSys.on.bind(eventSys);
 PublicAPI.once = eventSys.once.bind(eventSys);
 PublicAPI.removeListener = eventSys.removeListener.bind(eventSys);

@@ -166,7 +166,37 @@ export function waitFrames(n, cb) {
 	})
 }
 
-export function decompress(input) {
+export function decompress(u8arr) {
+	var originalLength = u8arr[1] << 8 | u8arr[0];
+	var u8decompressedarr = new Uint8Array(originalLength);
+	var numOfRepeats = u8arr[3] << 8 | u8arr[2];
+	var offset = numOfRepeats * 2 + 4;
+	var uptr = 0;
+	var cptr = offset;
+	for (var i = 0; i < numOfRepeats; i++) {
+		var currentRepeatLoc = (u8arr[4 + i * 2 + 1] << 8 | u8arr[4 + i * 2]) + offset;
+		while (cptr < currentRepeatLoc) {
+			u8decompressedarr[uptr++] = u8arr[cptr++];
+		}
+		var repeatedNum = u8arr[cptr + 1] << 8 | u8arr[cptr];
+		var repeatedColorR = u8arr[cptr + 2];
+		var repeatedColorG = u8arr[cptr + 3];
+		var repeatedColorB = u8arr[cptr + 4];
+		cptr += 5;
+		while (repeatedNum--) {
+			u8decompressedarr[uptr] = repeatedColorR;
+			u8decompressedarr[uptr + 1] = repeatedColorG;
+			u8decompressedarr[uptr + 2] = repeatedColorB;
+			uptr += 3;
+		}
+	}
+	while (cptr < u8arr.length) {
+		u8decompressedarr[uptr++] = u8arr[cptr++];
+	}
+	return u8decompressedarr;
+}
+
+/*function decompressu16(input) {
 	var originalLength = (((input[1] & 0xFF) << 8 | (input[0] & 0xFF)) + 1) * 2;
 	var output = new Uint8Array(originalLength);
 	var numOfRepeats = (input[3] & 0xFF) << 8 | (input[2] & 0xFF);
@@ -192,7 +222,7 @@ export function decompress(input) {
 		output[uptr++] = input[cptr++];
 	}
 	return output;
-}
+}*/
 
 export function line(x1, y1, x2, y2, size, plot) {
 	var dx =  Math.abs(x2 - x1), sx = x1 < x2 ? 1 : -1;

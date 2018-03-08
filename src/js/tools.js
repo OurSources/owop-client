@@ -157,9 +157,9 @@ class Tool {
     }
 }
 
-PublicAPI.emit = {
+PublicAPI.tool = {
 	class: Tool,
-	addTool,
+	addToolObject: addTool,
 	updateToolbar,
 	allTools: tools
 };
@@ -709,7 +709,7 @@ eventSys.once(e.misc.toolsRendered, () => {
 		});
 	}));
 
-	addTool(new Tool('Protect', cursors.wand, PLAYERFX.RECT_SELECT_ALIGNED(16, "#000000"), RANK.MODERATOR, tool => {
+	addTool(new Tool('Protect', cursors.shield, PLAYERFX.RECT_SELECT_ALIGNED(16, "#000000"), RANK.MODERATOR, tool => {
 		tool.setFxRenderer((fx, ctx, time) => {
 			var x = fx.extra.player.x;
 			var y = fx.extra.player.y;

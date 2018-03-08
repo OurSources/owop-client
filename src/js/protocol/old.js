@@ -4,6 +4,7 @@ import { EVENTS as e, RANK, options } from './../conf.js';
 import { eventSys } from './../global.js';
 import { Chunk } from './../World.js';
 import { Bucket } from './../util/Bucket.js';
+import { decompress } from './../util/misc.js';
 import { loadAndRequestCaptcha } from './../captcha.js';
 import { colorUtils as color } from './../util/color.js';
 import { player, shouldUpdate, networkRankVerification } from './../local_player.js';
@@ -52,7 +53,7 @@ export const OldProtocol = {
 		9: 'protect'
 	},
 	misc: {
-		worldVerification: 1337,
+		worldVerification: 1234,
 		chatVerification: String.fromCharCode(10),
 		tokenVerification: 'CaptchA'
 	},
@@ -240,8 +241,10 @@ class OldProtocolImpl extends Protocol {
 			case oc.chunkLoad: // Get chunk
 				var chunkX = dv.getInt32(1, true);
 				var chunkY = dv.getInt32(5, true);
-				var u8data = new Uint8Array(message, 9, 768);
-				var locked = dv.getUint8(message.byteLength - 1);
+				var locked = dv.getUint8(9);
+				var u8data = new Uint8Array(message, 10, message.byteLength - 10);
+				//console.log(u8data);
+				u8data = decompress(u8data);
 				var key = `${chunkX},${chunkY}`;
 				var u32data = new Uint32Array(OldProtocol.chunkSize * OldProtocol.chunkSize);
 				for (var i = 0, u = 0; i < u8data.length; i += 3) { /* Need to make a copy ;-; */
