@@ -7,7 +7,7 @@ import { net } from './networking.js';
 import { player } from './local_player.js';
 import { camera, moveCameraTo, moveCameraBy, renderer, drawText } from './canvas_renderer.js';
 import { windowSys, GUIWindow, UtilDialog } from './windowsys.js';
-import { misc, elements, mouse } from './main.js';
+import { misc, elements, mouse, sounds } from './main.js';
 import { PLAYERFX } from './Fx.js';
 
 export const tools = {};
@@ -35,7 +35,10 @@ export function updateToolbar(win = toolsWindow) {
 	}
 
 	const container = win.container;
-	const toolButtonClick = name => event => player.tool = name;
+	const toolButtonClick = name => event => {
+		player.tool = name;
+		sounds.play(sounds.click);
+	};
 
 	container.innerHTML = "";
 
@@ -154,9 +157,9 @@ class Tool {
     }
 }
 
-PublicAPI.emit = {
+PublicAPI.tool = {
 	class: Tool,
-	addTool,
+	addToolObject: addTool,
 	updateToolbar,
 	allTools: tools
 };
@@ -248,29 +251,32 @@ eventSys.once(e.misc.toolsRendered, () => {
 	// Erase/Fill tool
 	addTool(new Tool('Eraser', cursors.erase, PLAYERFX.RECT_SELECT_ALIGNED(16), RANK.ADMIN,
 		tool => {
-			function clearChunk(chunkX, chunkY) {
-				const clearColor = 0xFFFFFF; /* White */
+			function fillChunk(chunkX, chunkY, c) {
+				const color = c[2] << 16 | c[1] << 8 | c[0];
 				var chunk = misc.world.getChunkAt(chunkX, chunkY);
 				if (chunk) {
 					var empty = true;
 					firstLoop: for (var y = 0; y < protocol.chunkSize; y++) {
 						for (var x = 0; x < protocol.chunkSize; x++) {
-							if ((chunk.get(x, y) & 0xFFFFFF) != clearColor) {
+							if ((chunk.get(x, y) & 0xFFFFFF) != color) {
 								empty = false;
 								break firstLoop;
 							}
 						}
 					}
 					if (!empty) {
-						chunk.set(clearColor);
-						net.protocol.clearChunk(chunkX, chunkY);
+						chunk.set(color);
+						net.protocol.setChunk(chunkX, chunkY, new Array(256).fill(color));
 					}
 				}
 			}
 
 			tool.setEvent('mousedown mousemove', (mouse, event) => {
-				if (mouse.buttons === 1) {
-					clearChunk(Math.floor(mouse.tileX / protocol.chunkSize), Math.floor(mouse.tileY / protocol.chunkSize));
+				if (mouse.buttons & 0b1) {
+					fillChunk(Math.floor(mouse.tileX / protocol.chunkSize), Math.floor(mouse.tileY / protocol.chunkSize), player.selectedColor);
+					return 1;
+				} else if (mouse.buttons & 0b10) {
+					fillChunk(Math.floor(mouse.tileX / protocol.chunkSize), Math.floor(mouse.tileY / protocol.chunkSize), [255, 255, 255]);
 					return 1;
 				}
 			});
@@ -564,20 +570,32 @@ eventSys.once(e.misc.toolsRendered, () => {
 						queue.push(current);
 						break;
 					}
-					// Square shape, goes through edges (fixable)
-					/*check(x - 1, y - 1);
-					check(x    , y - 1);
-					check(x + 1, y - 1);
-					check(x - 1, y    );
-					check(x + 1, y    );
-					check(x - 1, y + 1);
-					check(x    , y + 1);
-					check(x + 1, y + 1);*/
+
+					// diamond check first
+					var top = check(x, y - 1);
+					var bottom = check(x, y + 1);
+					var left = check(x - 1, y);
+					var right = check(x + 1, y);
+
+					// if corners are not closed by parts of the diamond, then they can be accessed
+					if (top && left) {
+						check(x - 1, y - 1);
+					}
+					if (top && right) {
+						check(x + 1, y - 1);
+					}
+					if (bottom && left) {
+						check(x - 1, y + 1);
+					}
+					if (bottom && right) {
+						check(x + 1, y + 1);
+					}
+
 					// Shape diamond, infra not like
-					check(x    , y - 1);
+					/*check(x    , y - 1);
 					check(x - 1, y    );
 					check(x + 1, y    );
-					check(x    , y + 1);
+					check(x    , y + 1);*/
 				}
 			}
 		}
@@ -688,6 +706,42 @@ eventSys.once(e.misc.toolsRendered, () => {
 			start = null;
 			end = null;
 			tool.setEvent('tick', null);
+		});
+	}));
+
+	addTool(new Tool('Protect', cursors.shield, PLAYERFX.RECT_SELECT_ALIGNED(16, "#000000"), RANK.MODERATOR, tool => {
+		tool.setFxRenderer((fx, ctx, time) => {
+			var x = fx.extra.player.x;
+			var y = fx.extra.player.y;
+			var fxx = (Math.floor(x / 256) * 16 - camera.x) * camera.zoom;
+			var fxy = (Math.floor(y / 256) * 16 - camera.y) * camera.zoom;
+			ctx.globalAlpha = 0.5;
+			var chunkX = Math.floor(fx.extra.player.tileX / protocol.chunkSize);
+			var chunkY = Math.floor(fx.extra.player.tileY / protocol.chunkSize);
+			var chunk = misc.world.getChunkAt(chunkX, chunkY);
+			if (chunk) {
+				ctx.fillStyle = chunk.locked ? "#00FF00" : "#FF0000";
+				ctx.fillRect(fxx, fxy, camera.zoom * 16, camera.zoom * 16);
+			}
+			return 1; /* Rendering finished (won't change on next frame) */
+		});
+		tool.setEvent('mousedown mousemove', mouse => {
+			var chunkX = Math.floor(mouse.tileX / protocol.chunkSize);
+			var chunkY = Math.floor(mouse.tileY / protocol.chunkSize);
+			var chunk = misc.world.getChunkAt(chunkX, chunkY);
+			switch (mouse.buttons) {
+				case 0b1:
+					if (!chunk.locked) {
+						net.protocol.protectChunk(chunkX, chunkY, 1);
+					}
+					break;
+
+				case 0b10:
+					if (chunk.locked) {
+						net.protocol.protectChunk(chunkX, chunkY, 0);
+					}
+					break;
+			}
 		});
 	}));
 

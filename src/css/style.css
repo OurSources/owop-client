@@ -279,6 +279,15 @@ button:focus {
 	height: 40px;
 	box-sizing: border-box;
 }
+#palette-bg {
+	position: absolute;
+	height: 100%;
+	width: 44px;
+	top: 0;
+	right: 0;
+	background-color: rgba(0, 0, 0, 0.3);
+	pointer-events: none;
+}
 #palette-create {
 	position: absolute;
 	right: 50px;
@@ -472,6 +481,9 @@ button:focus {
 #chat-messages > li.server {
 	color: #ff41e4;
 }
+#chat-messages > li.tell {
+	color: #ffb735;
+}
 
 #chat-messages.active > li {
 	background-color: initial;
@@ -501,6 +513,7 @@ button:focus {
 	font-size: 16px;
 	resize: none;
 	overflow-y: scroll;
+	display: none;
 }
 #chat-input:focus {
 	outline: none;

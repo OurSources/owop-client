@@ -48,6 +48,15 @@ const config = {
 				}
 			}]
 		},{
+			include: path.resolve(srcDir, 'audio'),
+			use: [{
+				loader: 'file-loader',
+				options: {
+					outputPath: 'audio/',
+					name: '[name].[ext]'
+				}
+			}]
+		},{
 			include: path.resolve(srcDir, 'font'),
 			use: [{
 				loader: 'file-loader',

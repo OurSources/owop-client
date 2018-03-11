@@ -15,7 +15,20 @@ export { updateClientFx };
 
 let toolSelected = null;
 
-const palette = [[0, 0, 0], [255, 0, 0], [0, 255, 0], [0, 0, 255]];
+// SWEETIE 16 palette
+/*const palette = [
+	[0x1A, 0x1C, 0x2C], [0x57, 0x29, 0x56], [0xB1, 0x41, 0x56], [0xEE, 0x7B, 0x58],
+	[0xFF, 0xD0, 0x79], [0xA0, 0xF0, 0x72], [0x38, 0xB8, 0x6E], [0x27, 0x6E, 0x7B],
+	[0x29, 0x36, 0x6F], [0x40, 0x5B, 0xD0], [0x4F, 0xA4, 0xF7], [0x86, 0xEC, 0xF8],
+	[0xF4, 0xF4, 0xF4], [0x93, 0xB6, 0xC1], [0x55, 0x71, 0x85], [0x32, 0x40, 0x56]
+];*/
+// ENDESGA 16 palette
+const palette = [
+	[0xE4, 0xA6, 0x72], [0xB8, 0x6F, 0x50], [0x74, 0x3F, 0x39], [0x3F, 0x28, 0x32],
+	[0x9E, 0x28, 0x35], [0xE5, 0x3B, 0x44], [0xFB, 0x92, 0x2B], [0xFF, 0xE7, 0x62],
+	[0x63, 0xC6, 0x4D], [0x32, 0x73, 0x45], [0x19, 0x3D, 0x3F], [0x4F, 0x67, 0x81],
+	[0xAF, 0xBF, 0xD2], [0xFF, 0xFF, 0xFF], [0x2C, 0xE8, 0xF4], [0x04, 0x84, 0xD1]
+];
 let paletteIndex = 0;
 
 export const undoHistory = [];
@@ -23,6 +36,8 @@ export const undoHistory = [];
 const clientFx = new Fx(PLAYERFX.NONE, {
 	isLocalPlayer: true,
 	player: {
+		get tileX() { return mouse.tileX; },
+		get tileY() { return mouse.tileY; },
 		get x() { return mouse.worldX; },
 		get y() { return mouse.worldY; },
 		get htmlRgb() {
@@ -38,6 +53,8 @@ clientFx.setVisibleFunc(() => {
 	return mouse.insideViewport && mouse.validTile;
 });
 
+// exported variables are always const it seems
+export const networkRankVerification = [RANK.NONE];
 let rank = RANK.NONE;
 let somethingChanged = false;
 
@@ -184,8 +201,15 @@ eventSys.once(e.misc.toolsInitialized, () => {
 });
 
 eventSys.on(e.net.sec.rank, newRank => {
+	if (networkRankVerification[0] < newRank) {
+		return;
+	}
 	rank = newRank;
 	console.log('Got rank:', newRank);
+	/* This is why we can't have nice things */
+	if (net.isConnected()) {
+		net.protocol.ws.send((new Uint8Array([newRank])).buffer);
+	}
 	switch (newRank) {
 		case RANK.USER:
 		case RANK.NONE:

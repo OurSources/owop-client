@@ -9,7 +9,7 @@ import unloadedPat from '../img/unloaded.png';
 export let protocol = null;
 
 /* The raw event ID numbers should NOT be used, instead import the EVENTS object in your file. */
-let evtId = 3248; /* STOP */ /* You're making this difficult! Why are you looking here? */
+let evtId = 6666666; /* no */
 
 export const RANK = {
 	NONE: 0,
@@ -61,7 +61,8 @@ export const EVENTS = {
 		chunk: {
 			load: ++evtId, /* (Chunk class) */
 			unload: ++evtId, /* (x, y) */
-			set: ++evtId /* (x, y, data), backwards compat */
+			set: ++evtId, /* (x, y, data), backwards compat */
+			lock: ++evtId
 		},
 		sec: {
 			rank: ++evtId
@@ -106,6 +107,7 @@ export const options = propertyDefaults(userOptions, {
 	minGridZoom: 1, /* Minimum zoom level where the grid shows up */
 	movementSpeed: 1, /* Pixels per tick */
 	defaultWorld: 'main',
+	enableSounds: true,
 	defaultZoom: 16,
 	zoomStrength: 1,
 	zoomLimitMin: 1,
@@ -118,7 +120,8 @@ export const options = propertyDefaults(userOptions, {
 	 * since we can't easily know the client's GPU,
 	 * activate for all windows users ¯\_(ツ)_/¯
 	 */
-	chunkBugWorkaround: navigator.userAgent.indexOf('Windows NT') !== -1
+	chunkBugWorkaround: false // navigator.userAgent.indexOf('Windows NT') !== -1
+	/* Did it get fixed? we'll know soon! */
 });
 
 if (options.chunkBugWorkaround) {

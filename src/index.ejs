@@ -48,9 +48,9 @@
 				<script>document.getElementById('status').className='whitetext';</script>
 			</ul>
 		</div>
+		<div id="palette-bg"></div>
 		<span id="xy-display"></span>
 		<span id="playercount-display"></span>
-		<button id="help-button"><img src="<%=require('./img/help.png')%>" /></button>
 		<div id="windows" class="pixelated"></div>
 		<div id="palette">
 			<div id="palette-create">
@@ -58,6 +58,7 @@
 			</div>
 			<div id="palette-colors"></div>
 		</div>
+		<button id="help-button"><img src="<%=require('./img/help.png')%>" /></button>
 		<div id="dev-chat" class="hide">
 			<ul id="dev-chat-messages"></ul>
 		</div>
@@ -68,15 +69,24 @@
 		<div id="help" class="hidden">
 			<span class="title">Help</span>
 			<button id="help-close" class="windowCloseButton"></button>
-			<div class="content">
+			<div class="content whitetext">
 				<div class="links">
-					<a href="https://discord.gg/WppfUMw"><img src="<%=require('./img/discord.png')%>" /></a>
-					<a href="https://reddit.com/r/OurWorldOfPixels"><img src="<%=require('./img/reddit.png')%>" /></a>
-					<a href="https://www.facebook.com/OurWorldOfPixels/"><img src="<%=require('./img/facebook.png')%>" /></a>
-					<a href="https://www.paypal.me/InfraRaven"><img src="<%=require('./img/donate.png')%>" /></a>
+					<a target="_blank" href="https://discord.gg/WppfUMw"><img src="<%=require('./img/discord.png')%>" /></a>
+					<a target="_blank" href="https://reddit.com/r/OurWorldOfPixels"><img src="<%=require('./img/reddit.png')%>" /></a>
+					<a target="_blank" href="https://www.facebook.com/OurWorldOfPixels/"><img src="<%=require('./img/facebook.png')%>" /></a>
+					<a target="_blank" href="https://www.paypal.me/InfraRaven"><img src="<%=require('./img/donate.png')%>" /></a>
 				</div>
 				<hr />
 				Type /help for a list of all commands
+				<ul>
+					<li><b>F1</b> - Hide part of the GUI</li>
+					<li><b>G</b> - Toggle grid</li>
+					<li><b>F</b> - Manually add color</li>
+					<li><b>Shift + click</b> / <b>Middle click</b> - Move camera</li>
+					<li><b>Ctrl + Z</b> - Undo pixel (+ Shift = bulk undo)</li>
+					<li><b>Ctrl + Scroll</b> - Change zoom level</li>
+					<li><b>P / M / O</b> - Select Pipette / Move / Cursor tool</li>
+				</ul>
 			</div>
 		</div>
 	</body>
