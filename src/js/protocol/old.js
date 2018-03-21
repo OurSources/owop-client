@@ -121,7 +121,7 @@ class OldProtocolImpl extends Protocol {
 		};
 
 		const rankChanged = rank => {
-			this.placeBucket = new Bucket(...OldProtocol.placeBucket[rank]);
+			/*this.placeBucket = new Bucket(...OldProtocol.placeBucket[rank]);*/
 			elements.chatInput.maxLength = OldProtocol.maxMessageLength[rank];
 		};
 		this.leaveFunc = () => {
