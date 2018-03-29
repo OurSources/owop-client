@@ -7,10 +7,10 @@ export class Protocol {
         this.ws = ws;
     }
 
-    hookEvents(subClass) {
-        this.ws.addEventListener('message', subClass.messageHandler.bind(subClass));
-        this.ws.addEventListener('open', subClass.openHandler.bind(subClass));
-        this.ws.addEventListener('close', subClass.closeHandler.bind(subClass));
+    hookEvents() {
+        this.ws.addEventListener('message', this.messageHandler.bind(this));
+        this.ws.addEventListener('open', this.openHandler.bind(this));
+        this.ws.addEventListener('close', this.closeHandler.bind(this));
     }
 
     isConnected() {

@@ -19,6 +19,14 @@ const config = {
 	devServer: {
 		contentBase: path.resolve(__dirname, 'dist')
 	},
+	resolve: {
+		modules: [
+			path.resolve('./workarounds/'),
+			path.resolve('./node_modules/'),
+			path.resolve('./src/'),
+			path.resolve('./owop-protocol/')
+		]
+	},
 	module: {
 		rules: [{
 			include: path.resolve(srcDir, 'js'),

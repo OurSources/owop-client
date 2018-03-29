@@ -406,23 +406,18 @@ function inGameDisconnected() {
 	elements.chatInput.style.display = "";
 }
 
-function retryingConnect(serverGetter, worldName) {
+function retryingConnect(server, worldName) {
 	if (misc.connecting && !net.isConnected()) { /* We're already connected/trying to connect */
 		return;
 	}
 	misc.connecting = true;
-	var currentServer = serverGetter(false);
 	const tryConnect = (tryN) => {
-		if (tryN >= (currentServer.maxRetries || 3)) {
-			currentServer = serverGetter(true);
-			tryN = 0;
-		}
 		eventSys.once(e.net.connecting, () => {
-			console.debug(`Trying '${currentServer.title}' (${currentServer.url})...`)
-			statusMsg(true, `Connecting to '${currentServer.title}'...`);
+			console.debug(`Trying '${server.url}...`)
+			statusMsg(true, `Connecting...`);
 			showLoadScr(true, false);
 		});
-		net.connect(currentServer, worldName);
+		net.connect(server, worldName);
 		const disconnected = () => {
 			++tryN;
 			statusMsg(true, `Couldn't connect to server, retrying... (${tryN})`);
@@ -820,35 +815,9 @@ function init() {
 
 	misc.urlWorldName = worldName;
 
+	retryingConnect(options.serverAddress, misc.urlWorldName);
 
-	const serverGetter = (serverList => {
-		var defaults = [];
-		var availableServers = [];
-		for (var i = 0; i < serverList.length; i++) {
-			if (serverList[i].default) {
-				defaults.push(serverList[i]);
-			} else {
-				availableServers.push(serverList[i]);
-			}
-		}
-		var index = 0;
-		return (next) => {
-			if (next) {
-				defaults.pop();
-				++index;
-			}
-			if (defaults.length) {
-				var sv = defaults[0];
-				availableServers.push(sv);
-				return sv;
-			}
-			return availableServers[index % availableServers.length];
-		};
-	})(options.serverAddress);
-
-	retryingConnect(serverGetter, misc.urlWorldName);
-
-	elements.reconnectBtn.onclick = () => retryingConnect(serverGetter, misc.urlWorldName);
+	elements.reconnectBtn.onclick = () => retryingConnect(options.serverAddress, misc.urlWorldName);
 
 	misc.tickInterval = setInterval(tick, 1000 / options.tickSpeed);
 }
@@ -890,7 +859,7 @@ eventSys.on(e.net.world.setId, id => {
 				delete misc.worldPasswords[net.protocol.worldName];
 				saveWorldPasswords();
 			}
-			retryingConnect(() => net.currentServer, net.protocol.worldName)
+			retryingConnect(options.serverAddress, net.protocol.worldName)
 		};
 		let onCorrect = function (newrank) {
 			if (newrank == desiredRank) {
