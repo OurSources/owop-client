@@ -475,7 +475,7 @@ function init() {
 			misc.worldPasswords = JSON.parse(localStorage.worldPasswords);
 		} catch (e) { }
 	}
-	
+
 	misc.lastCleanup = 0;
 
 	viewport.oncontextmenu = () => false;
