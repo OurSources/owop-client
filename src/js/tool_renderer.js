@@ -12,6 +12,7 @@ export const cursors = {
 	fill: {imgpos: [1, 1], hotspot: [3, 29]},
 	brush: {imgpos: [0, 3], hotspot: [0, 26]},
 	select: {imgpos: [2, 0], hotspot: [0, 0]}, // needs better hotspot
+	selectprotect: {imgpos: [4, 0], hotspot: [0, 0]},
 	copy: {imgpos: [3, 0], hotspot: [0, 0]}, // and this
 	paste: {imgpos: [3, 1], hotspot: [0, 0]}, // this too
 	cut: {imgpos: [3, 2], hotspot: [11, 5]},

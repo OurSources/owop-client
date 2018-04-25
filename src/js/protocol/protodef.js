@@ -97,7 +97,7 @@ class LoginState extends NetworkState {
 	onPacket(packet) {
 		console.log(packet);
 		switch(packet.name) {
-			case "loginStart":
+			case "loginResponse":
 				console.log("BOB ;( " + packet.params.bob);
 				break;
 		}
