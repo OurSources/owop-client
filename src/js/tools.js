@@ -744,6 +744,179 @@ eventSys.once(e.misc.toolsRendered, () => {
 			}
 		});
 	}));
+	
+	addTool(new Tool('Area Protect', cursors.selectprotect, PLAYERFX.NONE, RANK.NONE,
+		tool => {
+			tool.setFxRenderer((fx, ctx, time) => {
+				if (!fx.extra.isLocalPlayer) return 1;
+				var x = fx.extra.player.x;
+				var y = fx.extra.player.y;
+				var fxx = (Math.round(x / 256) * protocol.chunkSize - camera.x) * camera.zoom;
+				var fxy = (Math.round(y / 256) * protocol.chunkSize - camera.y) * camera.zoom;
+				var oldlinew = ctx.lineWidth;
+				ctx.lineWidth = 1;
+				if (tool.extra.end) {
+					var s = tool.extra.start;
+					var e = tool.extra.end;
+					var x = (s[0] * protocol.chunkSize - camera.x) * camera.zoom + 0.5;
+					var y = (s[1] * protocol.chunkSize - camera.y) * camera.zoom + 0.5;
+					var rw = (e[0] - s[0]);
+					var rh = (e[1] - s[1]);
+					var w = rw * camera.zoom * protocol.chunkSize;
+					var h = rh * camera.zoom * protocol.chunkSize;
+					ctx.beginPath();
+					ctx.rect(x, y, w, h);
+					ctx.globalAlpha = 1;
+					ctx.strokeStyle = "#FFFFFF";
+					ctx.stroke();
+					ctx.setLineDash([3, 4]);
+					ctx.strokeStyle = "#000000";
+					ctx.stroke();
+					if (tool.extra.isSure) {
+						ctx.globalAlpha = 0.6;
+						ctx.fillStyle = "#00EE00";
+						ctx.fill();
+					}
+					ctx.globalAlpha = 0.25 + Math.sin(time / 500) / 4;
+					ctx.fillStyle = renderer.patterns.unloaded;
+					ctx.fill();
+					ctx.setLineDash([]);
+					var oldfont = ctx.font;
+					ctx.font = "16px sans-serif";
+					var txt = `${tool.extra.isSure ? "Click again to confirm. " : (!tool.extra.clicking ? "Left/Right click to add/remove protection, respectively. " : "")}(${Math.abs(rw)}x${Math.abs(rh)})`;
+					var txtx = window.innerWidth >> 1;
+					var txty = window.innerHeight >> 1;
+					txtx = Math.max(x, Math.min(txtx, x + w));
+					txty = Math.max(y, Math.min(txty, y + h));
+
+					drawText(ctx, txt, txtx, txty, true);
+					ctx.font = oldfont;
+					ctx.lineWidth = oldlinew;
+					return 0;
+				} else {
+					ctx.beginPath();
+					ctx.moveTo(0, fxy + 0.5);
+					ctx.lineTo(window.innerWidth, fxy + 0.5);
+					ctx.moveTo(fxx + 0.5, 0);
+					ctx.lineTo(fxx + 0.5, window.innerHeight);
+
+					//ctx.lineWidth = 1;
+					ctx.globalAlpha = 1;
+					ctx.strokeStyle = "#FFFFFF";
+					ctx.stroke();
+					ctx.setLineDash([3]);
+					ctx.strokeStyle = "#000000";
+					ctx.stroke();
+
+					ctx.setLineDash([]);
+					ctx.lineWidth = oldlinew;
+					return 1;
+				}
+			});
+
+			tool.extra.start = null;
+			tool.extra.end = null;
+			tool.extra.clicking = false;
+			tool.extra.isSure = false;
+			
+			var timeout = null;
+			
+			const sure = () => {
+				if (tool.extra.isSure) {
+					clearTimeout(timeout);
+					timeout = null;
+					tool.extra.isSure = false;
+					return true;
+				}
+				tool.extra.isSure = true;
+				setTimeout(() => {
+					tool.extra.isSure = false;
+					timeout = null;
+				}, 1000);
+				return false;
+			};
+
+			tool.setEvent('mousedown', (mouse, event) => {
+				var get = {
+					rx() { return mouse.tileX / protocol.chunkSize; },
+					ry() { return mouse.tileY / protocol.chunkSize },
+					x() { return Math.round(mouse.tileX / protocol.chunkSize); },
+					y() { return Math.round(mouse.tileY / protocol.chunkSize); }
+				};
+				var s = tool.extra.start;
+				var e = tool.extra.end;
+				const isInside = () => get.rx() >= s[0] && get.rx() < e[0] && get.ry() >= s[1] && get.ry() < e[1];
+				if (mouse.buttons === 1 && !tool.extra.end) {
+					tool.extra.start = [get.x(), get.y()];
+					tool.extra.clicking = true;
+					tool.setEvent('mousemove', (mouse, event) => {
+						if (tool.extra.start && mouse.buttons === 1) {
+							tool.extra.end = [get.x(), get.y()];
+							return 1;
+						}
+					});
+					const finish = () => {
+						tool.setEvent('mousemove mouseup deselect', null);
+						tool.extra.clicking = false;
+						var s = tool.extra.start;
+						var e = tool.extra.end;
+						if (e) {
+							if (s[0] === e[0] || s[1] === e[1]) {
+								tool.extra.start = null;
+								tool.extra.end = null;
+							}
+							if (s[0] > e[0]) {
+								var tmp = e[0];
+								e[0] = s[0];
+								s[0] = tmp;
+							}
+							if (s[1] > e[1]) {
+								var tmp = e[1];
+								e[1] = s[1];
+								s[1] = tmp;
+							}
+						}
+						renderer.render(renderer.rendertype.FX);
+					};
+					tool.setEvent('deselect', finish);
+					tool.setEvent('mouseup', (mouse, event) => {
+						if (!(mouse.buttons & 1)) {
+							finish();
+						}
+					});
+				} else if (mouse.buttons === 1 && tool.extra.end) {
+					if (isInside() && sure()) {
+						tool.extra.start = null;
+						tool.extra.end = null;
+						var [x, y, w, h] = [s[0], s[1], e[0] - s[0], e[1] - s[1]];
+						for (var i = x; i < x + w; i++) {
+							for (var j = y; j < y + h; j++) {
+								var chunk = misc.world.getChunkAt(i, j);
+								if (chunk && !chunk.locked) {
+									net.protocol.protectChunk(i, j, 1);
+								}
+							}
+						}
+					} else if (!isInside()) {
+						tool.extra.start = null;
+						tool.extra.end = null;
+					}
+				} else if (mouse.buttons === 2 && tool.extra.end && isInside() && sure()) {
+					tool.extra.start = null;
+					tool.extra.end = null;
+					var [x, y, w, h] = [s[0], s[1], e[0] - s[0], e[1] - s[1]];
+					for (var i = x; i < x + w; i++) {
+						for (var j = y; j < y + h; j++) {
+							var chunk = misc.world.getChunkAt(i, j);
+							if (chunk && chunk.locked) {
+								net.protocol.protectChunk(i, j, 0);
+							}
+						}
+					}
+				}
+			});
+		}
+	));
 
 	addTool(new Tool('Paste', cursors.paste, PLAYERFX.NONE, RANK.ADMIN, tool => {
 		tool.setFxRenderer((fx, ctx, time) => {
