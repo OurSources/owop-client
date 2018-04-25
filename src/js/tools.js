@@ -745,7 +745,7 @@ eventSys.once(e.misc.toolsRendered, () => {
 		});
 	}));
 	
-	addTool(new Tool('Area Protect', cursors.selectprotect, PLAYERFX.NONE, RANK.NONE,
+	addTool(new Tool('Area Protect', cursors.selectprotect, PLAYERFX.NONE, RANK.MODERATOR,
 		tool => {
 			tool.setFxRenderer((fx, ctx, time) => {
 				if (!fx.extra.isLocalPlayer) return 1;
