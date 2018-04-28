@@ -8,7 +8,8 @@
 		<meta name="keywords" content="pixel, game, draw, online, cursors, canvas, world">
 
 		<style><%=require('./css/style.css')%></style>
-		
+
+		<script src="https://www.google.com/recaptcha/api.js" async defer></script>
 		<script src="https://www.gstatic.com/firebasejs/4.8.1/firebase.js"></script>
 		<script>
 			// Initialize Firebase
@@ -27,6 +28,7 @@
 		<div id="viewport">
 			<canvas id="animations"></canvas>
 		</div>
+		<div id="palette-bg"></div>
 		<div id="load-scr">
 			<ul id="load-ul">
 				<li>
@@ -48,8 +50,7 @@
 				<script>document.getElementById('status').className='whitetext';</script>
 			</ul>
 		</div>
-		<div id="palette-bg"></div>
-		<span id="xy-display"></span>
+		<span id="xy-display">X: 0, Y: 0</span>
 		<span id="playercount-display"></span>
 		<div id="windows" class="pixelated"></div>
 		<div id="palette">
@@ -58,7 +59,7 @@
 			</div>
 			<div id="palette-colors"></div>
 		</div>
-		<button id="help-button"><img src="<%=require('./img/help.png')%>" /></button>
+		<!--<button id="help-button"><img src="<%=require('./img/help.png')%>" /></button>-->
 		<div id="dev-chat" class="hide">
 			<ul id="dev-chat-messages"></ul>
 		</div>
@@ -89,5 +90,6 @@
 				</ul>
 			</div>
 		</div>
+		<div class="g-recaptcha" data-sitekey="6Ld8_lUUAAAAAExuDSUH6ol5kTnVBMCGU_kF2xv8" data-callback="captchaSubmit" data-size="invisible"></div>
 	</body>
 </html>

@@ -17,7 +17,7 @@ import { World } from './World.js';
 import { camera, renderer, moveCameraBy } from './canvas_renderer.js';
 import { net } from './networking.js';
 import { updateClientFx, player } from './local_player.js';
-import { resolveProtocols, definedProtos } from './protocol/all.js';
+//import { resolveProtocols, definedProtos } from './protocol/all.js';
 import { windowSys, GUIWindow, OWOPDropDown } from './windowsys.js';
 
 import launchSoundUrl from '../audio/launch.mp3';
@@ -406,35 +406,31 @@ function inGameDisconnected() {
 	elements.chatInput.style.display = "";
 }
 
-function retryingConnect(server, worldName) {
+function connect(serverAddress, worldName, attempt) {
 	if (misc.connecting && !net.isConnected()) { /* We're already connected/trying to connect */
 		return;
 	}
 	misc.connecting = true;
-	const tryConnect = (tryN) => {
-		eventSys.once(e.net.connecting, () => {
-			console.debug(`Trying '${server.url}...`)
-			statusMsg(true, `Connecting...`);
-			showLoadScr(true, false);
-		});
-		net.connect(server, worldName);
-		const disconnected = () => {
-			++tryN;
-			statusMsg(true, `Couldn't connect to server, retrying... (${tryN})`);
-			setTimeout(tryConnect, Math.min(tryN * 2000, 10000), tryN);
-			eventSys.removeListener(e.net.connected, connected);
-		};
-		const connected = () => {
-			statusMsg(false, "Connected!");
-			eventSys.removeListener(e.net.disconnected, disconnected);
-			eventSys.once(e.net.disconnected, inGameDisconnected);
-			misc.connecting = false;
-		};
-
-		eventSys.once(e.net.connected, connected);
-		eventSys.once(e.net.disconnected, disconnected);
+	attempt = attempt || 0;
+	net.connect(serverAddress, worldName);
+	console.debug(`Trying ${serverAddress}...`)
+	statusMsg(true, `Connecting...`);
+	showLoadScr(true, false);
+	const disconnected = () => {
+		attempt++;
+		statusMsg(true, `Couldn't connect to server, retrying... (${attempt})`);
+		setTimeout(connect, Math.min(attempt * 2000, 10000), serverAddress, worldName, attempt);
+		eventSys.removeListener(e.net.connected, connected);
 	};
-	tryConnect(0);
+	const connected = () => {
+		statusMsg(false, "Connected!");
+		eventSys.removeListener(e.net.disconnected, disconnected);
+		eventSys.once(e.net.disconnected, inGameDisconnected);
+		misc.connecting = false;
+	};
+
+	eventSys.once(e.net.connected, connected);
+	eventSys.once(e.net.disconnected, disconnected);
 }
 
 function saveWorldPasswords() {
@@ -467,6 +463,8 @@ function checkFunctionality(callback) {
 }
 
 function init() {
+	statusMsg(true, "Initializing...");
+
 	var viewport = elements.viewport;
 	var chatinput = elements.chatInput;
 
@@ -791,22 +789,13 @@ function init() {
 	viewport.addEventListener("touchcancel", touchEventNoUpdate('touchcancel'), { passive: true });
 
 	// Some cool custom css
-	console.log("%c" +
-		" _ _ _         _   _    _____ ___    _____ _         _     \n" +
-		"| | | |___ ___| |_| |  |     |  _|  |  _  |_|_ _ ___| |___ \n" +
-		"| | | | . |  _| | . |  |  |  |  _|  |   __| |_'_| -_| |_ -|\n" +
-		"|_____|___|_| |_|___|  |_____|_|    |__|  |_|_,_|___|_|___|",
-		"font-size: 15px; font-weight: bold;"
-	);
-	console.log("%cWelcome to the developer console!", "font-size: 20px; font-weight: bold; color: #F0F;");
+	console.log("%c+", "background: url(http://ourworldofpixels.com/img/owop.png); padding: 48px 56px; font-size: 0;");
 
 	//windowSys.addWindow(new OWOPDropDown());
-	resolveProtocols();
+	//resolveProtocols();
 
 	/* Calls other initialization functions */
 	eventSys.emit(e.init);
-
-	updateXYDisplay(0, 0);
 
 	var worldName = decodeURIComponent(window.location.pathname);
 	if (worldName[0] === '/') {
@@ -815,14 +804,13 @@ function init() {
 
 	misc.urlWorldName = worldName;
 
-	retryingConnect(options.serverAddress, misc.urlWorldName);
+	connect(options.serverAddress, misc.urlWorldName);
 
-	elements.reconnectBtn.onclick = () => retryingConnect(options.serverAddress, misc.urlWorldName);
+	elements.reconnectBtn.onclick = () => connect(options.serverAddress, misc.urlWorldName);
 
 	misc.tickInterval = setInterval(tick, 1000 / options.tickSpeed);
 }
 
-eventSys.once(e.loaded, () => statusMsg(true, "Initializing..."));
 eventSys.once(e.misc.logoMakeRoom, () => {
 	statusMsg(false, null);
 	logoMakeRoom();
@@ -974,15 +962,19 @@ window.addEventListener("load", () => {
 
 	elements.chatInput = document.getElementById("chat-input");
 
-	document.getElementById("help-button").addEventListener("click", function () {
+	/*document.getElementById("help-button").addEventListener("click", function () {
 		document.getElementById("help").className = "";
 	});
 	document.getElementById("help-close").addEventListener("click", function () {
 		document.getElementById("help").className = "hidden";
-	});
+	});*/
 
 	checkFunctionality(() => eventSys.emit(e.loaded));
 });
+
+window.captchaSubmit = function(key) {
+	console.log(key);
+};
 
 /* Public API definitions */
 PublicAPI.emit = eventSys.emit.bind(eventSys);
@@ -1002,3 +994,4 @@ PublicAPI.chat = {
 	set sendModifier(fn) { misc.chatSendModifier = fn; }
 };
 PublicAPI.sounds = sounds;
+PublicAPI.net = net;

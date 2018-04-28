@@ -89,10 +89,7 @@ if (storageEnabled()) {
 }
 
 export const options = propertyDefaults(userOptions, {
-	serverAddress: {
-		proto: 'protodef',
-		url: `ws://${location.hostname}:${location.hostname === 'ourworldofpixels.com' ? 443 : 9000}`
-	}, // The server address that websockets connect to
+	serverAddress: `ws://${location.hostname}:${location.hostname === 'ourworldofpixels.com' ? 443 : 9000}`, // The server address that websockets connect to
 	fallbackFps: 30, // Fps used if requestAnimationFrame is not supported
 	maxChatBuffer: 256, // How many chat messages to retain in the chatbox
 	tickSpeed: 30, // How many times per second to run a tick
