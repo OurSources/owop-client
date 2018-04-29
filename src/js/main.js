@@ -412,10 +412,12 @@ function connect(serverAddress, worldName, attempt) {
 	}
 	misc.connecting = true;
 	attempt = attempt || 0;
+	
 	net.connect(serverAddress, worldName);
-	console.debug(`Trying ${serverAddress}...`)
+	console.debug(`Trying ${serverAddress}...`);
 	statusMsg(true, `Connecting...`);
 	showLoadScr(true, false);
+	
 	const disconnected = () => {
 		attempt++;
 		statusMsg(true, `Couldn't connect to server, retrying... (${attempt})`);
@@ -974,6 +976,8 @@ window.addEventListener("load", () => {
 
 window.captchaSubmit = function(key) {
 	console.log(key);
+	
+	net.protocol.loginGuest(key);
 };
 
 /* Public API definitions */

@@ -8,7 +8,7 @@ export const net = {
 };
 
 function isConnected() {
-	return net.protocol !== null && net.protocol.isConnected();
+	return net.protocol !== null && net.protocol.connected;
 }
 
 function connect(serverAddress, worldName) {
