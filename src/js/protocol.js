@@ -94,7 +94,7 @@ export class Protocol {
 		
 		switch(packet.name) {
 			case "loginResponse":
-				
+				this.state = States.PLAY;
 				break;
 		}
 	}
