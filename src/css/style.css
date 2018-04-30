@@ -1,6 +1,10 @@
 @import url(/css/pixel_font.css);
 @import url(/css/styled_scrollbar.css);
 
+@import url(/css/global.css);
+@import url(/css/load_screen.css);
+@import url(/css/chat.css);
+
 html, body {
 	font: 16px pixel-op, sans-serif;
 	width: 100%;
@@ -8,6 +12,7 @@ html, body {
 	margin: 0;
 	touch-action: none;
 	position: fixed;
+	user-select: none;
 }
 
 body {
@@ -16,16 +21,25 @@ body {
 	background-size: 16px;
 }
 
-html {
-	user-select: none;
-}
-
 hr {
 	border-color: rgba(0, 0, 0, 0.2);
 }
 
-.hide {
-	display: none!important;
+#user {
+	position: absolute;
+	top: 0;
+	right: 0;
+	margin: 10px;
+}
+#signin {
+	line-height: 28px;
+	padding: 0 12px;
+	color: #fff;
+	font-weight: bold;
+	outline: none;
+	background-color: #4285f4;
+	border: 1px solid rgba(0, 0, 0, 0.1);
+	border-radius: 2px;
 }
 
 .selectable {
@@ -77,50 +91,6 @@ button.winframe:active {
 
 img, #tool-select {
 	image-rendering: pixelated;
-}
-
-#load-scr {
-	position: absolute;
-	height: 100%;
-	width: 100%;
-	text-align: center;
-	font: 0/0 a;
-	pointer-events: none;
-	transition: transform 1.5s cubic-bezier(0.68, -0.55, 0.27, 1.55);
-	background-image: url(/img/unloaded.png);
-	box-shadow: 0 0 5px #000;
-}
-
-#load-scr:before {
-	content: ' ';
-	display: inline-block;
-	vertical-align: middle;
-	height: 100%;
-}
-
-#load-ul {
-	display: inline-block;
-	vertical-align: middle;
-	list-style-type: none;
-	padding: 0;
-	margin: 0;
-	max-width: 50%;
-	min-width: 224px;
-	pointer-events: initial;
-	transition: transform 1s;
-}
-
-#noscript-msg, #status {
-	font: 16px pixel-op;
-}
-
-#status-msg {
-	vertical-align: super;
-	text-shadow: -1px 0 #000, 0 1px #000, 1px 0 #000, 0 -1px #000, 0 0 2px #000;
-}
-
-#spinner {
-	margin-right: 8px;
 }
 
 #viewport, #windows, #animations {
@@ -243,7 +213,7 @@ button:focus {
 	border-image: url(/img/small_border.png) 5 repeat;
 	border-image-outset: 1px;
 	background-color: #7e635c;
-	box-shadow: 0px 0px 5px #000;
+	box-shadow: 0 0 1px 0px rgba(0, 0, 0, 0.5);
 }
 #toole-container > button > div {
 	/* ugly */
@@ -416,109 +386,4 @@ button:focus {
 }
 #help.hidden {
 	display: none;
-}
-
-#chat {
-	transform: translateY(100%);
-}
-
-#chat, #dev-chat {
-	position: absolute;
-	left: 0;
-	bottom: 0;
-	min-width: 20%;
-	max-width: 450px;
-	/* max-height: 40%; // causes problems on old browsers */
-	display: flex;
-	font-family: pixel-op, monospace;
-	flex-direction: column;
-	background-color: transparent;
-	pointer-events: none;
-	overflow: hidden;
-	transition: background-color 0.2s, box-shadow 0.2s, transform 0.75s;
-	animation-fill-mode: forwards;
-}
-#dev-chat {
-	right: 0;
-	left: initial;
-}
-#chat.active, #dev-chat.active {
-	background-color: rgba(0, 0, 0, 0.8);
-	box-shadow: 0px 0px 5px #000;
-	pointer-events: all;
-	overflow-y: auto;
-}
-
-@keyframes fade {
-	from { opacity: 1; }
-	to { opacity: 0; }
-}
-
-#chat-messages > li {
-	background-color: rgba(0, 0, 0, 0.8);
-	animation-name: fade;
-	animation-duration: 3s;
-	animation-delay: 15s;
-	animation-fill-mode: forwards;
-	transition: background-color 0.2s;
-	white-space: pre-wrap;
-}
-#chat-messages > li a:link { color: #82c9ff; }
-#chat-messages > li a:visited { color: #ab80f9; }
-#chat-messages > li a:hover { color: #76b0dc; }
-#chat-messages > li > .nick {
-	color: #3ab2ff;
-}
-#chat-messages > li.moderator {
-	color: #86ff41;
-}
-#chat-messages > li.admin {
-	color: #ff4f4f;
-}
-#chat-messages > li.discord > .nick {
-	color: #6cffe7;
-}
-#chat-messages > li.server {
-	color: #ff41e4;
-}
-#chat-messages > li.tell {
-	color: #ffb735;
-}
-
-#chat-messages.active > li {
-	background-color: initial;
-	animation-duration: 0s;
-	animation-direction: reverse;
-}
-
-#chat-messages, #dev-chat-messages {
-	flex: 1;
-	margin: 0;
-	padding: 0;
-	font-size: 16px;
-	max-height: 40vh;
-	word-wrap: break-word;
-	overflow: inherit;
-	vertical-align: bottom;
-}
-#chat-input {
-	flex: 0;
-	height: 16px;
-	color: #FFF;
-	pointer-events: all;
-	border: 1px solid #666;
-	padding: 4px;
-	background: rgba(0, 0, 0, 0.8);
-	font-family: pixel-op, sans-serif;
-	font-size: 16px;
-	resize: none;
-	overflow-y: scroll;
-	display: none;
-}
-#chat-input:focus {
-	outline: none;
-}
-
-#chat-input::-webkit-input-placeholder {
-	color: #BBB;
 }

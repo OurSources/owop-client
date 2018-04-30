@@ -105,6 +105,7 @@ export const options = propertyDefaults(userOptions, {
 	toolSetUrl: toolSet,
 	unloadedPatternUrl: unloadedPat,
 	backgroundUrl: null,
+	chunkSize: 256,
 	/* Bug only affects Windows users with an Intel graphics card,
 	 * since we can't easily know the client's GPU,
 	 * activate for all windows users ¯\_(ツ)_/¯

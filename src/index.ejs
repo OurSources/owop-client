@@ -25,49 +25,50 @@
 		</script>
 	</head>
 	<body>
-		<div id="viewport">
+		<!--<div id="viewport">
 			<canvas id="animations"></canvas>
+		</div>-->
+		<!--<div id="palette-bg"></div>-->
+		<div id="user">
+			<button id="signin">Sign in</button>
 		</div>
-		<div id="palette-bg"></div>
-		<div id="load-scr">
-			<ul id="load-ul">
-				<li>
-					<img id="logo" src="<%=require('./img/owop.png')%>" width="224px" height="190px" alt="Our World Of Pixels" draggable="false"/>
-				</li>
+		<div id="load-screen">
+			<div class="center">
+				<img class="logo" src="<%=require('./img/owop.png')%>" alt="Our World Of Pixels" draggable="false">
 				<noscript>
-					<li id="noscript-msg" class="whitetext framed">
+					<div id="noscript-msg" class="framed">
 						<p>World Of Pixels is an infinite canvas where you can draw online with other people, or explore many user created worlds.</p>
 						<p>But to use the website, you first need to <a href="http://www.enable-javascript.com/" target="_blank">enable javascript</a>!</p>
-					</li>
+					</div>
 				</noscript>
-				<li id="status" class="whitetext hide">
-					<img id="spinner" src="<%=require('./img/loading.gif')%>"/>
-					<span id="status-msg">Loading...</span>
-				</li>
-				<li id="load-options" class="framed hide">
+				<div id="load-status" class="hidden">
+					<img id="load-spinner" src="<%=require('./img/loading.gif')%>"/>
+					<span id="load-msg">Loading...</span>
+				</div>
+				<div id="load-options" class="framed hidden">
 					<button id="reconnect-btn">Reconnect</button>
-				</li>
-				<script>document.getElementById('status').className='whitetext';</script>
-			</ul>
+				</div>
+			</div>
+			<div class="g-recaptcha" data-sitekey="6Ld8_lUUAAAAAExuDSUH6ol5kTnVBMCGU_kF2xv8" data-callback="captchaSubmit" data-size="invisible"></div>
 		</div>
-		<span id="xy-display">X: 0, Y: 0</span>
-		<span id="playercount-display"></span>
-		<div id="windows" class="pixelated"></div>
-		<div id="palette">
+		<!--<span id="xy-display">X: 0, Y: 0</span>-->
+		<!--<span id="playercount-display"></span>-->
+		<!--<div id="windows" class="pixelated"></div>-->
+		<!--<div id="palette">
 			<div id="palette-create">
 				<input id="palette-input" type="color"/>
 			</div>
 			<div id="palette-colors"></div>
-		</div>
+		</div>-->
 		<!--<button id="help-button"><img src="<%=require('./img/help.png')%>" /></button>-->
-		<div id="dev-chat" class="hide">
+		<!--<div id="dev-chat" class="hide">
 			<ul id="dev-chat-messages"></ul>
 		</div>
 		<div id="chat">
 			<ul id="chat-messages"></ul>
 			<textarea id="chat-input" draggable="false" type="text" maxlength="80" placeholder="Chat here" disabled></textarea>
-		</div>
-		<div id="help" class="hidden">
+		</div>-->
+		<!--<div id="help" class="hidden">
 			<span class="title">Help</span>
 			<button id="help-close" class="windowCloseButton"></button>
 			<div class="content whitetext">
@@ -89,7 +90,6 @@
 					<li><b>P / M / O</b> - Select Pipette / Move / Cursor tool</li>
 				</ul>
 			</div>
-		</div>
-		<div class="g-recaptcha" data-sitekey="6Ld8_lUUAAAAAExuDSUH6ol5kTnVBMCGU_kF2xv8" data-callback="captchaSubmit" data-size="invisible"></div>
+		</div>-->
 	</body>
 </html>

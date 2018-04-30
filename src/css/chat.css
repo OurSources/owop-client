@@ -1,0 +1,104 @@
+@keyframes fade {
+	from { opacity: 1; }
+	to { opacity: 0; }
+}
+
+#chat {
+	transform: translateY(100%);
+}
+
+#chat, #dev-chat {
+	position: absolute;
+	left: 0;
+	bottom: 0;
+	min-width: 20%;
+	max-width: 450px;
+	/* max-height: 40%; // causes problems on old browsers */
+	display: flex;
+	font-family: pixel-op, monospace;
+	flex-direction: column;
+	background-color: transparent;
+	pointer-events: none;
+	overflow: hidden;
+	transition: background-color 0.2s, box-shadow 0.2s, transform 0.75s;
+	animation-fill-mode: forwards;
+}
+#dev-chat {
+	right: 0;
+	left: initial;
+}
+#chat.active, #dev-chat.active {
+	background-color: rgba(0, 0, 0, 0.8);
+	box-shadow: 0px 0px 5px #000;
+	pointer-events: all;
+	overflow-y: auto;
+}
+
+#chat-messages > li {
+	background-color: rgba(0, 0, 0, 0.8);
+	animation-name: fade;
+	animation-duration: 3s;
+	animation-delay: 15s;
+	animation-fill-mode: forwards;
+	transition: background-color 0.2s;
+	white-space: pre-wrap;
+}
+#chat-messages > li a:link { color: #82c9ff; }
+#chat-messages > li a:visited { color: #ab80f9; }
+#chat-messages > li a:hover { color: #76b0dc; }
+#chat-messages > li > .nick {
+	color: #3ab2ff;
+}
+#chat-messages > li.moderator {
+	color: #86ff41;
+}
+#chat-messages > li.admin {
+	color: #ff4f4f;
+}
+#chat-messages > li.discord > .nick {
+	color: #6cffe7;
+}
+#chat-messages > li.server {
+	color: #ff41e4;
+}
+#chat-messages > li.tell {
+	color: #ffb735;
+}
+
+#chat-messages.active > li {
+	background-color: initial;
+	animation-duration: 0s;
+	animation-direction: reverse;
+}
+
+#chat-messages, #dev-chat-messages {
+	flex: 1;
+	margin: 0;
+	padding: 0;
+	font-size: 16px;
+	max-height: 40vh;
+	word-wrap: break-word;
+	overflow: inherit;
+	vertical-align: bottom;
+}
+#chat-input {
+	flex: 0;
+	height: 16px;
+	color: #FFF;
+	pointer-events: all;
+	border: 1px solid #666;
+	padding: 4px;
+	background: rgba(0, 0, 0, 0.8);
+	font-family: pixel-op, sans-serif;
+	font-size: 16px;
+	resize: none;
+	overflow-y: scroll;
+	display: none;
+}
+#chat-input:focus {
+	outline: none;
+}
+
+#chat-input::-webkit-input-placeholder {
+	color: #BBB;
+}

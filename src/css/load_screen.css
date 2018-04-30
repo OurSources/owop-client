@@ -1,0 +1,58 @@
+#load-screen {
+	position: absolute;
+	height: 100%;
+	width: 100%;
+	
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	
+	background-image: url(/img/unloaded.png);
+	box-shadow: 0 0 5px #000;
+	text-align: center;
+	
+	color: #fff;
+	font: 16px pixel-op;
+	
+	transition: transform 1.5s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+}
+
+#load-screen > .center {
+	width: 100%;
+	max-width: 380px;
+	pointer-events: initial;
+	transition: transform 1s;
+}
+
+#load-screen a {
+	color: #00ceff;
+}
+
+#load-screen .logo {
+	width: 165px;
+	filter: drop-shadow(2px 2px 0px rgba(0, 0, 0, 0.4));
+}
+
+#noscript-msg {
+	margin-top: 16px;
+	text-shadow: -1px 0 #000, 0 1px #000, 1px 0 #000, 0 -1px #000;
+}
+#noscript-msg p {
+	margin: 12px 0;
+}
+
+#load-screen #load-status {
+	margin-top: 16px;
+}
+#load-msg {
+	vertical-align: super;
+	text-shadow: -1px 0 #000, 0 1px #000, 1px 0 #000, 0 -1px #000, 0 0 2px #000;
+}
+
+#load-screen #load-spinner {
+	display: none;
+	margin-right: 8px;
+}
+#load-screen #load-status.spinner #load-spinner {
+	display: inline-block;
+}
