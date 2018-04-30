@@ -1,13 +1,14 @@
 "use strict";
 
+import { EventEmitter } from "events";
+
 import config from "./config";
 
 import { States, Protocol } from "./protocol";
 
-export default class Networking {
-	constructor(serverAddress, worldName) {
-		this.worldName = worldName || config.defaultWorld;
-		
+class NetBase extends EventEmitter {
+	constructor(serverAddress) {
+		super();
 		this.protocol = new Protocol();
 		
 		this.state = States.LOGIN;
@@ -31,47 +32,54 @@ export default class Networking {
 	}
 	
 	openHandler() {
+		this.emit("open");
 		
 		grecaptcha.execute();
 	}
 	
 	messageHandler(message) {
 		message = Buffer.from(message.data);
-		console.log(message);
 		let packet = this.protocol.states[this.state].deserialize(message);
-		console.log(packet);
 		
-		if (this.state == States.LOGIN) {
-			switch(packet.name) {
-				case "loginResponse":
-					this.state = States.PLAY;
-					break;
-			}
-		} else if (this.state == States.PLAY) {
-			switch(packet.name) {
-				case "worldData":
-					
-					break;
-			}
-		}
+		this.emit("packet", packet);
+		
+		this.emit(packet.name, packet.params);
 	}
 	
 	closeHandler() {
-		
+		this.emit("close");
 	}
 	
-	sendPacket(packet) {
-		this.ws.send(this.protocol.states[this.state].serialize(packet));
+	sendPacket(name, params) {
+		this.ws.send(this.protocol.states[this.state].serialize({
+			name: name,
+			params: params
+		}));
+	}
+}
+
+export default class Networking extends NetBase {
+	constructor(serverAddress, worldName) {
+		super(serverAddress);
+		
+		this.worldName = worldName || config.defaultWorld;
+		
+		this.on("packet", console.log);
+		
+		this.on("loginResponse", function(data) {
+			this.state = States.PLAY;
+		}.bind(this));
+		
+		this.on("worldData", function(data) {
+			
+		}.bind(this));
 	}
 	
 	loginGuest(token) {
-		this.sendPacket({
-			name: "login",
-			params: {
-				guest: true,
-				token: token,
-				worldName: this.worldName
-			}
+		this.sendPacket("login", {
+			guest: true,
+			token: token,
+			worldName: this.worldName
 		});
 	}
 }

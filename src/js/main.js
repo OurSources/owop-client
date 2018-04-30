@@ -20,6 +20,8 @@ class Game {
 		this.loadScreen.setMessage("Initializing...", true);
 		
 		this.net = new Networking("ws://localhost:9000", "main");
+		
+		this.world = null;
 	}
 }
 
