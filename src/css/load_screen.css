@@ -1,3 +1,15 @@
+@keyframes load-screen-hide {
+	0% {
+		transform: scale(1);
+		opacity: 1;
+	}
+	
+	100% {
+		transform: scale(0.8);
+		opacity: 0;
+	}
+}
+
 #load-screen {
 	position: absolute;
 	height: 100%;
@@ -14,7 +26,12 @@
 	color: #fff;
 	font: 16px pixel-op;
 	
-	transition: transform 1.5s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+	overflow: hidden;
+	
+	/*transition: transform 1.5s cubic-bezier(0.68, -0.55, 0.27, 1.55);*/
+}
+#load-screen.hide {
+	animation: load-screen-hide 1s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
 }
 
 #load-screen > .center {

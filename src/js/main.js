@@ -11,6 +11,7 @@ import Networking from "./networking";
 class Game {
 	constructor() {
 		this.loadScreen = new LoadScreen(
+			document.getElementById("load-screen"),
 			document.getElementById("load-status"),
 			document.getElementById("load-msg")
 		);

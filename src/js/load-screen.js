@@ -1,13 +1,18 @@
 "use strict";
 
 export class LoadScreen {
-	constructor(status, msg) {
+	constructor(screen, status, msg) {
+		this.screen = screen;
 		this.status = status;
 		this.msg = msg;
 	}
 	
 	setVisible(visible) {
-		
+		if (visible) {
+			this.screen.classList.remove("hide");
+		} else {
+			this.screen.classList.add("hide");
+		}
 	}
 	
 	setMessage(message, showSpinner) {
