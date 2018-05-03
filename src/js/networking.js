@@ -16,15 +16,9 @@ class NetBase extends EventEmitter {
 		this.ws = new WebSocket(serverAddress);
 		this.ws.binaryType = "arraybuffer";
 
-		this.ws.addEventListener("open", function() {
-			this.openHandler();
-		}.bind(this));
-		this.ws.addEventListener("message", function(message) {
-			this.messageHandler(message);
-		}.bind(this));
-		this.ws.addEventListener("close", function() {
-			this.closeHandler();
-		}.bind(this));
+		this.ws.addEventListener("open", () => this.openHandler());
+		this.ws.addEventListener("message", (message) => this.messageHandler(message));
+		this.ws.addEventListener("close", () => this.closeHandler());
 	}
 	
 	get connected() {
@@ -66,13 +60,13 @@ export default class Networking extends NetBase {
 		
 		this.on("packet", console.log);
 		
-		this.on("loginResponse", function(data) {
+		this.on("loginResponse", (data) => {
 			this.state = States.PLAY;
-		}.bind(this));
+		});
 		
-		this.on("worldData", function(data) {
+		this.on("worldData", (data) => {
 			
-		}.bind(this));
+		});
 	}
 	
 	loginGuest(token) {
