@@ -249,7 +249,7 @@ eventSys.once(e.misc.toolsRendered, () => {
 	));
 
 	// Erase/Fill tool
-	addTool(new Tool('Eraser', cursors.erase, PLAYERFX.RECT_SELECT_ALIGNED(16), RANK.ADMIN,
+	addTool(new Tool('Eraser', cursors.erase, PLAYERFX.RECT_SELECT_ALIGNED(16), RANK.MODERATOR,
 		tool => {
 			function fillChunk(chunkX, chunkY, c) {
 				const color = c[2] << 16 | c[1] << 8 | c[0];
@@ -265,8 +265,9 @@ eventSys.once(e.misc.toolsRendered, () => {
 						}
 					}
 					if (!empty) {
-						chunk.set(color);
-						net.protocol.setChunk(chunkX, chunkY, new Array(256).fill(color));
+						if (net.protocol.clearChunk(chunkX, chunkY, c)) {
+							chunk.set(color);
+						}
 					}
 				}
 			}

@@ -53,7 +53,7 @@ export const OldProtocol = {
 		9: 'protect'
 	},
 	misc: {
-		worldVerification: 1234,
+		worldVerification: 4321,
 		chatVerification: String.fromCharCode(10),
 		tokenVerification: 'CaptchA'
 	},
@@ -113,6 +113,8 @@ class OldProtocolImpl extends Protocol {
 		this.chatBucket = new Bucket(params[0], params[1]);
 		params = OldProtocol.placeBucket[player.rank];
 		this.placeBucket = new Bucket(params[0], params[1]);
+		
+		this.eraseBucket = new Bucket(1, 1.1);
 
 		this.interval = null;
 
@@ -414,12 +416,19 @@ class OldProtocolImpl extends Protocol {
 		this.ws.send(buf.buffer);
 	}
 
-	clearChunk(x, y) {
-		var array = new ArrayBuffer(9);
-		var dv = new DataView(array);
-		dv.setInt32(0, x, true);
-		dv.setInt32(4, y, true);
-		this.ws.send(array);
+	clearChunk(x, y, rgb) {
+		if (player.rank == RANK.ADMIN || (player.rank == RANK.MODERATOR && this.eraseBucket.canSpend(1))) {
+			var array = new ArrayBuffer(13);
+			var dv = new DataView(array);
+			dv.setInt32(0, x, true);
+			dv.setInt32(4, y, true);
+			dv.setUint8(8, rgb[0]);
+			dv.setUint8(9, rgb[1]);
+			dv.setUint8(10, rgb[2]);
+			this.ws.send(array);
+			return true;
+		}
+		return false;
 	}
 }
 
