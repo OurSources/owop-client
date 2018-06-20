@@ -90,16 +90,16 @@ if (storageEnabled()) {
 
 export const options = propertyDefaults(userOptions, {
 	serverAddress: [{
+		default: false,
+		title: 'Localhost',
+		proto: 'old',
+		url: 'ws://localhost:9000',
+		maxRetries: 1
+	},{
 		default: true,
 		title: 'Official server',
 		proto: 'old',
 		url: 'ws://ourworldofpixels.com:443'
-	},{
-		default: false,
-		title: 'Localhost',
-		proto: 'old',
-		url: 'ws://localhost:25565',
-		maxRetries: 1
 	}], // The server address that websockets connect to
 	fallbackFps: 30, // Fps used if requestAnimationFrame is not supported
 	maxChatBuffer: 256, // How many chat messages to retain in the chatbox
@@ -116,12 +116,8 @@ export const options = propertyDefaults(userOptions, {
 	toolSetUrl: toolSet,
 	unloadedPatternUrl: unloadedPat,
 	backgroundUrl: null,
-	/* Bug only affects Windows users with an Intel graphics card,
-	 * since we can't easily know the client's GPU,
-	 * activate for all windows users ¯\_(ツ)_/¯
-	 */
+	/* Bug only affects Windows users with an old Intel graphics card driver */
 	chunkBugWorkaround: false // navigator.userAgent.indexOf('Windows NT') !== -1
-	/* Did it get fixed? we'll know soon! */
 });
 
 if (options.chunkBugWorkaround) {

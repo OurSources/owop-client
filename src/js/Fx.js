@@ -1,9 +1,10 @@
 "use strict";
 import { colorUtils as color } from './util/color.js';
-import { EVENTS as e, protocol } from './conf.js';
+import { EVENTS as e, protocol, RANK } from './conf.js';
 import { getTime } from './util/misc.js';
 import { eventSys, PublicAPI } from './global.js';
 import { camera, renderer } from './canvas_renderer.js';
+import { player } from './local_player.js';
 
 export const PLAYERFX = {
 	NONE: null,
@@ -29,9 +30,20 @@ export const WORLDFX = {
 		}
 		var fxx = (x * size - camera.x) * camera.zoom;
 		var fxy = (y * size - camera.y) * camera.zoom;
+		var s = camera.zoom * size;
 		ctx.globalAlpha = alpha;
 		ctx.strokeStyle = fx.extra.htmlRgb || "#000000";
-		ctx.strokeRect(fxx, fxy, camera.zoom * size, camera.zoom * size);
+		ctx.strokeRect(fxx, fxy, s, s);
+		if (player.rank >= RANK.MODERATOR && camera.zoom >= 8 && fx.extra.tag) {
+			fxx += s;
+			var str = fx.extra.tag;
+			var ts = ctx.measureText(str).width;
+			ctx.fillStyle = "#FFFFFF";
+			ctx.strokeStyle = "#000000";
+			ctx.strokeText(str, fxx, fxy);
+			ctx.fillText(str, fxx, fxy);
+		}
+
 		return 0; /* 0 = Animation not finished */
 	}
 };
@@ -93,7 +105,7 @@ eventSys.on(e.net.world.tilesUpdated, tiles => {
 	for (var i = 0; i < tiles.length; i++) {
 		var t = tiles[i];
 		if (camera.isVisible(t.x, t.y, 1, 1)) {
-			new Fx(WORLDFX.RECT_FADE_ALIGNED(1, t.x, t.y), { htmlRgb: color.toHTML(t.rgb ^ 0xFFFFFF) });
+			new Fx(WORLDFX.RECT_FADE_ALIGNED(1, t.x, t.y), { htmlRgb: color.toHTML(t.rgb ^ 0xFFFFFF) , tag: '' + t.id});
 			made = true;
 		}
 	}

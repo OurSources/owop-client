@@ -55,6 +55,7 @@ export const elements = {
 };
 
 export const misc = {
+	localStorage: storageEnabled() && window.localStorage,
 	_world: null,
 	lastXYDisplay: [-1, -1],
 	chatRecvModifier: msg => msg,
@@ -282,6 +283,14 @@ function showDevChat(bool) {
 	elements.devChat.style.display = bool ? "" : "none";
 }
 
+export function revealSecrets(bool) {
+	if (bool) {
+		PublicAPI.net = net;
+	} else {
+		delete PublicAPI.net;
+	}
+}
+
 function showPlayerList(bool) {
 	if (bool) {
 		windowSys.addWindow(playerListWindow);
@@ -444,7 +453,7 @@ function retryingConnect(serverGetter, worldName) {
 
 function saveWorldPasswords() {
 	if (misc.storageEnabled) {
-		localStorage.worldPasswords = JSON.stringify(misc.worldPasswords);
+		misc.localStorage.worldPasswords = JSON.stringify(misc.worldPasswords);
 	}
 }
 
@@ -475,9 +484,9 @@ function init() {
 	var viewport = elements.viewport;
 	var chatinput = elements.chatInput;
 
-	if (misc.storageEnabled && localStorage.worldPasswords) {
+	if (misc.storageEnabled && misc.localStorage.worldPasswords) {
 		try {
-			misc.worldPasswords = JSON.parse(localStorage.worldPasswords);
+			misc.worldPasswords = JSON.parse(misc.localStorage.worldPasswords);
 		} catch (e) { }
 	}
 	
@@ -514,15 +523,15 @@ function init() {
 					chatHistory.unshift(text);
 					if (misc.storageEnabled) {
 						if (text.startsWith("/adminlogin ")) {
-							localStorage.adminlogin = text.slice(12);
+							misc.localStorage.adminlogin = text.slice(12);
 						} else if (text.startsWith("/modlogin ")) {
-							localStorage.modlogin = text.slice(10);
+							misc.localStorage.modlogin = text.slice(10);
 						} else if (text.startsWith("/nick")) {
 							var nick = text.slice(6);
 							if (nick.length) {
-								localStorage.nick = nick;
+								misc.localStorage.nick = nick;
 							} else {
-								delete localStorage.nick;
+								delete misc.localStorage.nick;
 							}
 						} else if (text.startsWith("/pass ") && misc.world) {
 							var pass = text.slice(6);
@@ -851,6 +860,7 @@ function init() {
 	elements.reconnectBtn.onclick = () => retryingConnect(serverGetter, misc.urlWorldName);
 
 	misc.tickInterval = setInterval(tick, 1000 / options.tickSpeed);
+	delete window.localStorage;
 }
 
 eventSys.once(e.loaded, () => statusMsg(true, "Initializing..."));
@@ -871,21 +881,21 @@ eventSys.on(e.net.world.setId, id => {
 	}
 
 	function autoNick() {
-		if (localStorage.nick) {
-			net.protocol.sendMessage("/nick " + localStorage.nick);
+		if (misc.localStorage.nick) {
+			net.protocol.sendMessage("/nick " + misc.localStorage.nick);
 		}
 	}
 
 	// Automatic login
-	let desiredRank = localStorage.adminlogin ? RANK.ADMIN : localStorage.modlogin ? RANK.MODERATOR : net.protocol.worldName in misc.worldPasswords ? RANK.USER : RANK.NONE;
+	let desiredRank = misc.localStorage.adminlogin ? RANK.ADMIN : misc.localStorage.modlogin ? RANK.MODERATOR : net.protocol.worldName in misc.worldPasswords ? RANK.USER : RANK.NONE;
 	if (desiredRank > RANK.NONE) {
 		let onWrong = function () {
 			console.log("WRONG");
 			eventSys.removeListener(e.net.sec.rank, onCorrect);
 			if (desiredRank == RANK.ADMIN) {
-				delete localStorage.adminlogin;
+				delete misc.localStorage.adminlogin;
 			} else if (desiredRank == RANK.MODERATOR) {
-				delete localStorage.modlogin;
+				delete misc.localStorage.modlogin;
 			} else if (desiredRank == RANK.USER) {
 				delete misc.worldPasswords[net.protocol.worldName];
 				saveWorldPasswords();
@@ -906,9 +916,9 @@ eventSys.on(e.net.world.setId, id => {
 		eventSys.on(e.net.sec.rank, onCorrect);
 		var msg;
 		if (desiredRank == RANK.ADMIN) {
-			msg = "/adminlogin " + localStorage.adminlogin;
+			msg = "/adminlogin " + misc.localStorage.adminlogin;
 		} else if (desiredRank == RANK.MODERATOR) {
-			msg = "/modlogin " + localStorage.modlogin;
+			msg = "/modlogin " + misc.localStorage.modlogin;
 		} else if (desiredRank == RANK.USER) {
 			msg = "/pass " + misc.worldPasswords[net.protocol.worldName];
 		}

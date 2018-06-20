@@ -9,7 +9,7 @@ export const net = {
 	connect: connect
 };
 
-PublicAPI.net = net;
+//PublicAPI.net = net;
 
 function isConnected() {
 	return net.protocol !== null && net.protocol.isConnected();

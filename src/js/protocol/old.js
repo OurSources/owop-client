@@ -202,22 +202,24 @@ class OldProtocolImpl extends Protocol {
 				updates = [];
 	  			for (var i = dv.getUint16(off, true), j = 0; j < i; j++) {
 					updated = true;
-	  				var bpx = dv.getInt32(2 + off + j * 11, true);
-	  				var bpy = dv.getInt32(2 + off + j * 11 + 4, true);
-	  				var br = dv.getUint8(2 + off + j * 11 + 8);
-	  				var bg = dv.getUint8(2 + off + j * 11 + 9);
-	  				var bb = dv.getUint8(2 + off + j * 11 + 10);
+					var bid = dv.getUint32(2 + off + j * 15, true);
+	  				var bpx = dv.getInt32(2 + off + j * 15 + 4, true);
+	  				var bpy = dv.getInt32(2 + off + j * 15 + 8, true);
+	  				var br = dv.getUint8(2 + off + j * 15 + 12);
+	  				var bg = dv.getUint8(2 + off + j * 15 + 13);
+	  				var bb = dv.getUint8(2 + off + j * 15 + 14);
 					var bbgr = bb << 16 | bg << 8 | br;
 					updates.push({
 						x: bpx,
 						y: bpy,
-						rgb: bbgr
+						rgb: bbgr,
+						id: bid
 					});
 				}
 				if (updated) {
 					eventSys.emit(e.net.world.tilesUpdated, updates);
 				}
-	  			off += dv.getUint16(off, true) * 11 + 2;
+	  			off += dv.getUint16(off, true) * 15 + 2;
 				// Disconnects
 				var decreased = false;
 				updated = false;
