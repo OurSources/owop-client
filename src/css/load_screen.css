@@ -3,7 +3,7 @@
 		transform: scale(1);
 		opacity: 1;
 	}
-	
+
 	100% {
 		transform: scale(0.8);
 		opacity: 0;
@@ -14,20 +14,22 @@
 	position: absolute;
 	height: 100%;
 	width: 100%;
-	
+
 	display: flex;
 	justify-content: center;
 	align-items: center;
-	
-	background-image: url(/img/unloaded.png);
+
+	background: url(/img/load-bg.png) center;
+	background-size: 64px;
+	image-rendering: pixelated;
 	box-shadow: 0 0 5px #000;
 	text-align: center;
-	
+
 	color: #fff;
 	font: 16px pixel-op;
-	
+
 	overflow: hidden;
-	
+
 	/*transition: transform 1.5s cubic-bezier(0.68, -0.55, 0.27, 1.55);*/
 }
 #load-screen.hide {

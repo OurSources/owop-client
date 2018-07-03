@@ -15,20 +15,24 @@ class Game {
 			document.getElementById("load-status"),
 			document.getElementById("load-msg")
 		);
-		
+
 		this.loadScreen.setMessage("Loading...", true);
-		
+
 		this.loadScreen.setMessage("Initializing...", true);
-		
+
 		this.net = new Networking("ws://localhost:9000", "main");
-		
+
+		this.net.on("clientData", () => {
+			this.loadScreen.setVisible(false);
+		});
+
 		this.world = null;
 	}
 }
 
 window.addEventListener("load", async function() {
 	await compat();
-	
+
 	window.Game = new Game();
 });
 

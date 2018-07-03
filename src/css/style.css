@@ -5,6 +5,8 @@
 @import url(/css/load_screen.css);
 @import url(/css/chat.css);
 
+@import url(/css/windows.css);
+
 html, body {
 	font: 16px pixel-op, sans-serif;
 	width: 100%;
@@ -21,15 +23,23 @@ body {
 	background-size: 16px;
 }
 
-hr {
-	border-color: rgba(0, 0, 0, 0.2);
-}
-
 #user {
 	position: absolute;
 	top: 0;
 	right: 0;
 	margin: 10px;
+	font-size: 0;
+}
+#help-button {
+	line-height: 28px;
+	padding: 0 10px;
+	margin-right: 10px;
+	color: #fff;
+	font-weight: bold;
+	outline: none;
+	background-color: #483a98;
+	border: 1px solid rgba(0, 0, 0, 0.5);
+	border-radius: 2px;
 }
 #signin {
 	line-height: 28px;
@@ -38,352 +48,6 @@ hr {
 	font-weight: bold;
 	outline: none;
 	background-color: #4285f4;
-	border: 1px solid rgba(0, 0, 0, 0.1);
+	border: 1px solid rgba(0, 0, 0, 0.2);
 	border-radius: 2px;
-}
-
-.selectable {
-	user-select: text;
-}
-
-.centered {
-	position: absolute;
-	padding-top: 1px; /* fix captcha window not being pixel perfect */
-	top: 50%;
-	left: 50%;
-	transform: translate(-50%, -50%);
-}
-
-.centeredChilds {
-	display: flex;
-	justify-content: center;
-	align-items: center;
-}
-
-.tooltip {
-	pointer-events: none;
-	position: absolute;
-	top: 0;
-	left: 0;
-	opacity: 0.9;
-}
-
-.owopdropdown {
-	pointer-events: none!important;
-	padding: 0!important;
-	padding-top: 1px!important;
-	top: 0;
-	left: 50%;
-	transform: translateX(-50%);
-	border: none!important;
-	background-color: rgba(0, 0, 0, 0)!important;
-	transition: transform 0.5s ease-out;
-}
-button.winframe:active {
-	border-image: inherit;
-}
-
-.whitetext, #xy-display, #chat, #dev-chat, #playercount-display {
-	color: #FFF;
-	font: 16px pixel-op, sans-serif;
-	text-shadow: -1px 0 #000, 0 1px #000, 1px 0 #000, 0 -1px #000;
-}
-
-img, #tool-select {
-	image-rendering: pixelated;
-}
-
-#viewport, #windows, #animations {
-	position: absolute;
-}
-
-#windows {
-	pointer-events: none;
-	width: 100%;
-	height: 100%;
-}
-
-#windows > div, .winframe { /* Frame */
-	position: absolute;
-	pointer-events: initial;
-	background-color: #aba389;
-	border: 11px #aba389 solid;
-	border-width: 11px;
-	border-image: url(/img/window_out.png) 11 repeat;
-	border-image-outset: 1px;
-	box-shadow: 0px 0px 5px #000;
-}
-#windows > div > span { /* Title */
-	display: block;
-	pointer-events: none;
-	margin-top: -7px;
-	text-shadow: 1px 1px #4d313b;
-	color: #7e635c;
-	margin-bottom: 3px;
-	min-width: 100%;
-	text-align: center;
-}
-.windowCloseButton { /* Close button */
-	position: absolute;
-	right: 0;
-	top: -2px;
-	width: 9px;
-	height: 9px;
-	padding: 0;
-	background-image: url(/img/gui.png);
-	background-position: -48px -32px;
-	background-color: #ff7979;
-	border: none;
-}
-button.windowCloseButton:active {
-	background-image: url(/img/gui.png);
-	background-position: -48px -41px;
-}
-.wincontainer { /* Item container of windows */
-	overflow: auto;
-	min-width: 100%;
-	/* width: 0;  Older browsers fix */
-	height: 100%;
-	margin: 0 -5px -5px -5px;
-	background-color: #7e635c;
-	border: 5px #7e635c solid;
-	border-width: 5px;
-	border-image: url(/img/window_in.png) 5 repeat;
-}
-#windows > div > div > input {
-	border: 6px #7e635c solid;
-	border-image: url(/img/small_border.png) 6 repeat;
-	border-image-outset: 1px;
-}
-#windows > div > div > * {
-	box-sizing: border-box;
-}
-
-button {
-	border: 6px #aba389 outset;
-	border-image: url(/img/button.png) 6 repeat;
-	background-color: #aba389;
-	transition: filter 0.125s;
-}
-button:hover {
-	filter: brightness(110%);
-	transition: filter 0.125s;
-}
-button:active {
-	border-style: inset;
-	border-image: url(/img/button_pressed.png) 6 repeat;
-	filter: brightness(90%);
-	transition: none;
-}
-button:focus {
-	outline: none;
-}
-
-#clusters > canvas {
-	position: absolute;
-	background-image: url(/img/unloaded.png);
-	background-size: 8px;
-}
-
-#animations {
-	top: 0;
-	left: 0;
-}
-#xy-display, #playercount-display, #palette {
-	position: absolute;
-	pointer-events: none;
-	transform: translateY(-100%);
-	transition: transform 0.75s;
-}
-#xy-display {
-	padding-left: 2px;
-	left: -4px;
-	top: -4px;
-}
-#playercount-display {
-	right: -4px;
-	top: -4px;
-}
-
-#toole-container {
-	overflow: hidden;
-}
-#playercount-display, #xy-display, #palette-create, #palette, .framed {
-	border: 5px #aba389 solid;
-	border-image: url(/img/small_border.png) 5 repeat;
-	border-image-outset: 1px;
-	background-color: #7e635c;
-	box-shadow: 0 0 1px 0px rgba(0, 0, 0, 0.5);
-}
-#toole-container > button > div {
-	/* ugly */
-	position: fixed;
-	margin: -18px -4px;
-	width: 36px;
-	height: 36px;
-}
-#toole-container > button {
-	position: relative;
-	display: inline-block;
-	width: 40px;
-	height: 40px;
-	padding: 0;
-}
-#toole-container > button.selected {
-	background-color: #aaa;
-}
-
-#tool-select > button > div {
-	position: absolute;
-	width: 36px;
-	height: 36px;
-	margin-left: 50%;
-	transform: translate(-50%, -50%);
-}
-
-#palette {
-	right: -5px;
-	top: 50%;
-	transform: translateY(-50%) translateX(200%);
-	width: 45px;
-	height: 40px;
-	box-sizing: border-box;
-}
-#palette-bg {
-	position: absolute;
-	height: 100%;
-	width: 44px;
-	top: 0;
-	right: 0;
-	background-color: rgba(0, 0, 0, 0.3);
-	pointer-events: none;
-}
-#palette-create {
-	position: absolute;
-	right: 50px;
-	top: 50%;
-	transform: translateY(-50%);
-	width: 24px;
-	height: 24px;
-	box-sizing: border-box;
-	background-image: url(/img/plus.png);
-	background-repeat: no-repeat;
-	pointer-events: all;
-}
-#palette-input {
-	box-sizing: border-box;
-	width: 100%;
-	height: 100%;
-	position: absolute;
-	opacity: 0;
-	cursor: pointer;
-}
-#palette-colors {
-	position: absolute;
-	left: -1px;
-	top: -9px;
-	transition: transform 0.2s ease-out;
-}
-#palette-colors > div {
-	width: 32px;
-	height: 32px;
-	margin: 8px 0;
-	border: 1px solid rgba(0, 0, 0, 0.3);
-	box-sizing: border-box;
-	pointer-events: all;
-	cursor: pointer;
-}
-
-#player-list {
-	max-height: 300px;
-	overflow-y: scroll;
-}
-#player-list > table {
-	border-collapse: collapse;
-	border: 1px solid #000;
-	color: #fff;
-	text-shadow: -1px 0 #000, 0 1px #000, 1px 0 #000, 0 -1px #000;
-	padding: 2px;
-}
-#player-list > table > tr:nth-child(odd) {
-	background-color: rgba(0, 0, 0, 0.1);
-}
-#player-list > table > tr:nth-child(even) {
-	background-color: rgba(0, 0, 0, 0.3);
-}
-#player-list > table > tr:first-child {
-	text-align: left;
-	background-color: rgba(0, 0, 0, 0.5);
-}
-#player-list td, #player-list th {
-	padding: 2px 6px;
-}
-#player-list > table > tr > td:nth-child(1) {
-	border-right: 1px solid rgba(0, 0, 0, 0.5);
-}
-#player-list > table > tr > td:nth-child(2) {
-	border-right: 1px solid rgba(0, 0, 0, 0.3);
-}
-
-#help-button {
-	position: absolute;
-	bottom: 0;
-	right: 0;
-	padding: 0;
-	margin: 16px;
-}
-#help-button > img {
-	width: 64px;
-	display: block;
-}
-
-#help {
-	position: absolute;
-	top: 50%;
-	left: 50%;
-	transform: translate(-50%, -50%);
-	width: 80%;
-	max-width: 800px;
-
-	background-color: #aba389;
-	border: 11px #aba389 solid;
-	border-width: 11px;
-	border-image: url(/img/window_out.png) 11 repeat;
-	border-image-outset: 1px;
-	box-shadow: 0px 0px 5px #000;
-}
-#help > .title {
-	display: block;
-	pointer-events: none;
-	margin-top: -7px;
-	text-shadow: 1px 1px #4d313b;
-	color: #7e635c;
-	margin-bottom: 3px;
-	min-width: 100%;
-	text-align: center;
-}
-#help > .content {
-	overflow: auto;
-	min-width: 100%;
-	/* width: 0;  Older browsers fix */
-	height: 100%;
-	margin: 0 -5px -5px -5px;
-	background-color: #7e635c;
-	border: 5px #7e635c solid;
-	border-width: 5px;
-	border-image: url(/img/window_in.png) 5 repeat;
-}
-#help > .content > .links {
-	text-align: center;
-}
-#help > .content > .links > a {
-	display: inline-block;
-	vertical-align: middle;
-	width: 76px;
-}
-#help > .content > .links > a > img {
-	width: 100%;
-}
-#help.hidden {
-	display: none;
 }
