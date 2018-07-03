@@ -90,7 +90,7 @@ if (storageEnabled()) {
 
 export const options = propertyDefaults(userOptions, {
 	serverAddress: [{
-		default: false,
+		default: !PRODUCTION_BUILD,
 		title: 'Localhost',
 		proto: 'old',
 		url: 'ws://localhost:9000',

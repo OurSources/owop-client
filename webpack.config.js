@@ -113,6 +113,10 @@ module.exports = async env => {
 		console.log(`Cleaning build dir: '${config.output.path}'`);
 		await fs.remove(config.output.path);
 	}
+	
+	config.plugins.push(new webpack.DefinePlugin({
+		'PRODUCTION_BUILD': JSON.stringify(!!env.release)
+	}));
 
 	return config;
 };

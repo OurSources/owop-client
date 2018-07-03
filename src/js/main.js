@@ -836,15 +836,17 @@ function init() {
 		for (var i = 0; i < serverList.length; i++) {
 			if (serverList[i].default) {
 				defaults.push(serverList[i]);
-			} else {
-				availableServers.push(serverList[i]);
 			}
+			availableServers.push(serverList[i]);
 		}
 		var index = 0;
 		return (next) => {
 			if (next) {
-				defaults.pop();
-				++index;
+				if (defaults.length) {
+					defaults.shift();
+				} else {
+					++index;
+				}
 			}
 			if (defaults.length) {
 				var sv = defaults[0];
