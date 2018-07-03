@@ -59,7 +59,7 @@ export const OldProtocol = {
 	},
 	opCode: {
 		client: {
-			
+
 		},
 		server: {
 			setId: 0,
@@ -113,7 +113,7 @@ class OldProtocolImpl extends Protocol {
 		this.chatBucket = new Bucket(params[0], params[1]);
 		params = OldProtocol.placeBucket[player.rank];
 		this.placeBucket = new Bucket(params[0], params[1]);
-		
+
 		this.eraseBucket = new Bucket(1, 1.1);
 
 		this.interval = null;
@@ -151,7 +151,7 @@ class OldProtocolImpl extends Protocol {
 			}
 			return;
 		}
-		
+
 		var dv = new DataView(message);
 		var oc = OldProtocol.opCode.server;
 		switch (dv.getUint8(0)) {
@@ -241,7 +241,7 @@ class OldProtocolImpl extends Protocol {
 					}
 				}
 				break;
-				
+
 			case oc.chunkLoad: // Get chunk
 				var chunkX = dv.getInt32(1, true);
 				var chunkY = dv.getInt32(5, true);
@@ -266,18 +266,18 @@ class OldProtocolImpl extends Protocol {
 					eventSys.emit(e.net.chunk.load, chunk);
 				}
 				break;
-				
+
 			case oc.teleport: // Teleport
 				let x = dv.getInt32(1, true);
 				let y = dv.getInt32(5, true);
 				eventSys.emit(e.net.world.teleported, x, y);
 				break;
-				
+
 			case oc.setRank: // new rank
 				networkRankVerification[0] = dv.getUint8(1);
 				eventSys.emit(e.net.sec.rank, dv.getUint8(1));
 				break;
-				
+
 			case oc.captcha: // Captcha
 				switch (dv.getUint8(1)) {
 					case captchaState.CA_WAITING:
@@ -293,13 +293,13 @@ class OldProtocolImpl extends Protocol {
 					   break;
 				}
 				break;
-				
+
 			case oc.setPQuota:
 				let rate = dv.getUint16(1, true);
 				let per = dv.getUint16(3, true);
 				this.placeBucket = new Bucket(rate, per);
 				break;
-				
+
 			case oc.chunkProtected:
 				let cx = dv.getInt32(1, true);
 				let cy = dv.getInt32(5, true);
@@ -321,7 +321,7 @@ class OldProtocolImpl extends Protocol {
 		this.ws.send(array);
 		return nstr[1];
 	}
-	
+
 	requestChunk(x, y) {
 		let wb = OldProtocol.worldBorder;
 		var key = `${x},${y}`;
@@ -340,7 +340,7 @@ class OldProtocolImpl extends Protocol {
 	allChunksLoaded() {
 		return this.waitingForChunks === 0;
 	}
-		
+
 	updatePixel(x, y, rgb) {
 		var distx = Math.trunc(x / OldProtocol.chunkSize) - Math.trunc(this.lastSentX / (OldProtocol.chunkSize * 16)); distx *= distx;
 		var disty = Math.trunc(y / OldProtocol.chunkSize) - Math.trunc(this.lastSentY / (OldProtocol.chunkSize * 16)); disty *= disty;
@@ -358,7 +358,7 @@ class OldProtocolImpl extends Protocol {
 		}
 		return false;
 	}
-		
+
 	sendUpdates() {
 		var worldx = mouse.worldX;
 		var worldy = mouse.worldY;
@@ -382,7 +382,7 @@ class OldProtocolImpl extends Protocol {
 			this.ws.send(array);
 		}
 	}
-		
+
 	sendMessage(str) {
 		if (str.length && this.id !== null) {
 			if (player.rank == RANK.ADMIN || this.chatBucket.canSpend(1)) {
@@ -394,7 +394,7 @@ class OldProtocolImpl extends Protocol {
 			}
 		}
 	}
-	
+
 	protectChunk(x, y, newState) {
 		var array = new ArrayBuffer(10);
 		var dv = new DataView(array);

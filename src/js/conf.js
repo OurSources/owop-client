@@ -108,6 +108,7 @@ export const options = propertyDefaults(userOptions, {
 	movementSpeed: 1, /* Pixels per tick */
 	defaultWorld: 'main',
 	enableSounds: true,
+	enableIdView: true,
 	defaultZoom: 16,
 	zoomStrength: 1,
 	zoomLimitMin: 1,

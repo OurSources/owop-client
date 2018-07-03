@@ -1,6 +1,6 @@
 "use strict";
 import { colorUtils as color } from './util/color.js';
-import { EVENTS as e, protocol, RANK } from './conf.js';
+import { EVENTS as e, protocol, RANK, options } from './conf.js';
 import { getTime } from './util/misc.js';
 import { eventSys, PublicAPI } from './global.js';
 import { camera, renderer } from './canvas_renderer.js';
@@ -34,7 +34,7 @@ export const WORLDFX = {
 		ctx.globalAlpha = alpha;
 		ctx.strokeStyle = fx.extra.htmlRgb || "#000000";
 		ctx.strokeRect(fxx, fxy, s, s);
-		if (player.rank >= RANK.MODERATOR && camera.zoom >= 8 && fx.extra.tag) {
+		if (options.enableIdView && player.rank >= RANK.MODERATOR && camera.zoom >= 8 && fx.extra.tag) {
 			fxx += s;
 			var str = fx.extra.tag;
 			var ts = ctx.measureText(str).width;
