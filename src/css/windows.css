@@ -8,9 +8,135 @@
 
 #windows > div {
 	position: absolute;
-	background-color: #aba389;
-	border: 11px solid #aba389;
-	border-image: url(/img/window_out.png) 11 repeat;
+	display: flex;
+	flex-direction: column;
+
+	pointer-events: auto;
+}
+#windows > div::before {
+	content: "";
+	position: absolute;
+	top: -4px;
+	left: -4px;
+	bottom: -4px;
+	right: -4px;
+
+	border-style: solid;
+	border-width: 30px 10px 10px 10px;
+	border-image: url(/img/window.png) 30 10 10 10 repeat;
 	border-image-outset: 1px;
+	background-color: #7e635c;
+
 	box-shadow: 2px 2px 1px 0px rgba(0, 0, 0, 0.3);
 }
+
+#windows > div > .head {
+	flex: 0 0 auto;
+	height: 20px;
+	display: flex;
+	z-index: 1;
+}
+
+#windows > div > .head > .title {
+	flex: 1 1 auto;
+	line-height: 20px;
+	text-align: center;
+	text-shadow: 1px 1px #4d313b;
+	color: #7e635c;
+
+	pointer-events: none;
+}
+
+#windows > div > .head > .close {
+	position: absolute;
+	top: 6px;
+	right: 6px;
+	width: 9px;
+	height: 9px;
+	padding: 0;
+	background-image: url(/img/gui.png);
+	background-position: -48px -32px;
+	background-color: #ff7979;
+	border: none;
+
+	display: none;
+}
+#windows > div.closeable > .head > .close {
+	display: block;
+}
+
+#windows > div > .body {
+	flex: 1 1 auto;
+	margin: 6px;
+	overflow: auto;
+	z-index: 1;
+}
+
+#windows > div > .resize {
+	position: absolute;
+	top: -8px;
+	left: -8px;
+	bottom: -8px;
+	right: -8px;
+	z-index: 1;
+}
+#windows > div > .resize > div {
+	position: absolute;
+}
+#windows > div > .resize > .n {
+	top: 0;
+	left: 16px;
+	right: 16px;
+	height: 16px;
+	cursor: n-resize;
+}
+#windows > div > .resize > .nw {
+	top: 0;
+	left: 0;
+	width: 16px;
+	height: 16px;
+	cursor: nw-resize;
+}
+#windows > div > .resize > .w {
+	left: 0;
+	top: 16px;
+	bottom: 16px;
+	width: 16px;
+	cursor: w-resize;
+}
+#windows > div > .resize > .sw {
+	bottom: 0;
+	left: 0;
+	width: 16px;
+	height: 16px;
+	cursor: sw-resize;
+}
+#windows > div > .resize > .s {
+	bottom: 0;
+	left: 16px;
+	right: 16px;
+	height: 16px;
+	cursor: s-resize;
+}
+#windows > div > .resize > .se {
+	bottom: 0;
+	right: 0;
+	width: 16px;
+	height: 16px;
+	cursor: se-resize;
+}
+#windows > div > .resize > .e {
+	right: 0;
+	top: 16px;
+	bottom: 16px;
+	width: 16px;
+	cursor: e-resize;
+}
+#windows > div > .resize > .ne {
+	top: 0;
+	right: 0;
+	width: 16px;
+	height: 16px;
+	cursor: ne-resize;
+}
+

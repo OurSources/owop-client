@@ -27,8 +27,6 @@ class NetBase extends EventEmitter {
 
 	openHandler() {
 		this.emit("open");
-
-		grecaptcha.execute();
 	}
 
 	messageHandler(message) {
@@ -58,6 +56,10 @@ export default class Networking extends NetBase {
 
 		this.worldName = worldName || config.defaultWorld;
 
+		this.on("open", () => {
+			grecaptcha.execute();
+		});
+
 		this.on("packet", console.log);
 
 		this.on("loginResponse", (data) => {
@@ -74,6 +76,16 @@ export default class Networking extends NetBase {
 			guest: true,
 			token: token,
 			worldName: this.worldName
+		});
+	}
+
+	getChunk(zoom, x, y) {
+		return new Promise((resolve, reject) => {
+			let request = new XMLHttpRequest();
+			request.addEventListener("load", () => {
+
+			});
+			request.open("GET", "http://localhost:8080");
 		});
 	}
 }
