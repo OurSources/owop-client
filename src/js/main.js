@@ -169,7 +169,14 @@ function receiveMessage(text) {
 			get text() { return realText; },
 			incCount: () => {
 				var times = span.recvTimes || 1;
-				span.innerHTML = `${text} [x${++times}]`;
+				span.innerHTML = `${anchorme(text, {
+					attributes: [
+						{
+							name: "target",
+							value: "blank"
+						}
+					]
+				})} [x${++times}]`;
 				span.recvTimes = times;
 				message.style.animation = 'none'; /* Reset fading anim */
 				message.offsetHeight; /* Reflow */
