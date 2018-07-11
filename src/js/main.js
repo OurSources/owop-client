@@ -496,7 +496,7 @@ function init() {
 			misc.worldPasswords = JSON.parse(misc.localStorage.worldPasswords);
 		} catch (e) { }
 	}
-	
+
 	misc.lastCleanup = 0;
 
 	viewport.oncontextmenu = () => false;
@@ -811,6 +811,11 @@ function init() {
 	viewport.addEventListener("touchend", touchEventNoUpdate('touchend'), { passive: true });
 	viewport.addEventListener("touchcancel", touchEventNoUpdate('touchcancel'), { passive: true });
 
+	elements.soundToggle.addEventListener('change', e => {
+		options.enableSounds = !elements.soundToggle.checked;
+	});
+	options.enableSounds = !elements.soundToggle.checked;
+
 	// Some cool custom css
 	console.log("%c" +
 		" _ _ _         _   _    _____ ___    _____ _         _     \n" +
@@ -1023,6 +1028,8 @@ window.addEventListener("load", () => {
 	elements.windows = document.getElementById("windows");
 
 	elements.chatInput = document.getElementById("chat-input");
+
+	elements.soundToggle = document.getElementById("no-sound");
 
 	document.getElementById("help-button").addEventListener("click", function () {
 		document.getElementById("help").className = "";
