@@ -89,7 +89,8 @@ export const player = {
 	},
 	/* TODO: Clear confusion between netid and tool id */
 	get toolId() { return net.currentServer.proto.tools.id[toolSelected.id]; },
-	get tools() { return tools; }
+	get tools() { return tools; },
+	get id() { return net.protocol.id; }
 };
 
 PublicAPI.player = player;
