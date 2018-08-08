@@ -519,6 +519,6 @@ button:focus {
 	outline: none;
 }
 
-#chat-input::-webkit-input-placeholder {
+#chat-input::placeholder {
 	color: #BBB;
 }
