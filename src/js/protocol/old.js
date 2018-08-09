@@ -114,7 +114,7 @@ class OldProtocolImpl extends Protocol {
 		params = OldProtocol.placeBucket[player.rank];
 		this.placeBucket = new Bucket(params[0], params[1]);
 
-		this.eraseBucket = new Bucket(1, 1.1);
+		this.eraseBucket = this.placeBucket;
 
 		this.interval = null;
 
