@@ -3,8 +3,9 @@ import { colorUtils as color } from './util/color.js';
 import { EVENTS as e, protocol, RANK, options } from './conf.js';
 import { getTime } from './util/misc.js';
 import { eventSys, PublicAPI } from './global.js';
-import { camera, renderer } from './canvas_renderer.js';
+import { camera, renderer, ghosts, Ghost } from './canvas_renderer.js';
 import { player } from './local_player.js';
+import { misc } from './main.js';
 
 export const PLAYERFX = {
 	NONE: null,
@@ -66,7 +67,7 @@ export class Fx {
 		}
 		return 1;
 	}
-	
+
 	setVisibleFunc(func) {
 		Object.defineProperty(this, 'visible', {
 			get: func
@@ -80,7 +81,7 @@ export class Fx {
 	setRenderer(func) {
 		this.renderFunc = func;
 	}
-	
+
 	update(extra) {
 		this.extra = extra;
 	}
@@ -102,8 +103,10 @@ PublicAPI.fx = {
 eventSys.on(e.net.world.tilesUpdated, tiles => {
 	let time = getTime(true);
 	let made = false;
+
 	for (var i = 0; i < tiles.length; i++) {
 		var t = tiles[i];
+
 		if (camera.isVisible(t.x, t.y, 1, 1)) {
 			new Fx(WORLDFX.RECT_FADE_ALIGNED(1, t.x, t.y), { htmlRgb: color.toHTML(t.rgb ^ 0xFFFFFF) , tag: '' + t.id});
 			made = true;

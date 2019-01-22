@@ -50,7 +50,8 @@ export const OldProtocol = {
 		6: 'paste',
 		7: 'export',
 		8: 'line',
-		9: 'protect'
+		9: 'protect',
+		10: 'copy'
 	},
 	misc: {
 		worldVerification: 4321,
@@ -69,7 +70,8 @@ export const OldProtocol = {
 			setRank: 4,
 			captcha: 5,
 			setPQuota: 6,
-			chunkProtected: 7
+			chunkProtected: 7,
+			maxCount: 8
 		}
 	}
 };
@@ -114,11 +116,10 @@ class OldProtocolImpl extends Protocol {
 		params = OldProtocol.placeBucket[player.rank];
 		this.placeBucket = new Bucket(params[0], params[1]);
 
-		this.eraseBucket = this.placeBucket;
-
 		this.interval = null;
 
 		this.joinFunc = () => {
+			this.placeBucket.allowance = 0;
 			this.interval = setInterval(() => this.sendUpdates(), 1000 / OldProtocol.netUpdateSpeed);
 		};
 
@@ -306,6 +307,10 @@ class OldProtocolImpl extends Protocol {
 				let newState = dv.getUint8(9);
 				eventSys.emit(e.net.chunk.lock, cx, cy, newState);
 				break;
+
+			case oc.maxCount:
+				eventSys.emit(e.net.maxCount, dv.getUint16(1, true));
+				break;
 		}
 	}
 
@@ -406,6 +411,10 @@ class OldProtocolImpl extends Protocol {
 	}
 
 	setChunk(x, y, data) {
+		if (!(player.rank == RANK.ADMIN || (player.rank == RANK.MODERATOR && this.placeBucket.canSpend(1.25)))) {
+			return false;
+		}
+
 		var buf = new Uint8Array(8 + OldProtocol.chunkSize * OldProtocol.chunkSize * 3);
 		var dv = new DataView(buf.buffer);
 		dv.setInt32(0, x, true);
@@ -416,10 +425,11 @@ class OldProtocolImpl extends Protocol {
 			buf[b + 2] = data[i] >> 16 & 0xFF;
 		}
 		this.ws.send(buf.buffer);
+		return true;
 	}
 
 	clearChunk(x, y, rgb) {
-		if (player.rank == RANK.ADMIN || (player.rank == RANK.MODERATOR && this.eraseBucket.canSpend(1))) {
+		if (player.rank == RANK.ADMIN || (player.rank == RANK.MODERATOR && this.placeBucket.canSpend(1))) {
 			var array = new ArrayBuffer(13);
 			var dv = new DataView(array);
 			dv.setInt32(0, x, true);

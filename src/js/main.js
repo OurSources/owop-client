@@ -9,7 +9,7 @@ import anchorme from './util/anchorme.js';
 
 import { CHUNK_SIZE, EVENTS as e, RANK } from './conf.js';
 import { Bucket } from './util/Bucket.js';
-import { escapeHTML, getTime, getCookie, cookiesEnabled, storageEnabled, loadScript, eventOnce } from './util/misc.js';
+import { escapeHTML, getTime, getCookie, setCookie, cookiesEnabled, storageEnabled, loadScript, eventOnce } from './util/misc.js';
 
 import { eventSys, PublicAPI } from './global.js';
 import { options } from './conf.js';
@@ -18,7 +18,7 @@ import { camera, renderer, moveCameraBy } from './canvas_renderer.js';
 import { net } from './networking.js';
 import { updateClientFx, player } from './local_player.js';
 import { resolveProtocols, definedProtos } from './protocol/all.js';
-import { windowSys, GUIWindow, OWOPDropDown } from './windowsys.js';
+import { windowSys, GUIWindow, OWOPDropDown, UtilDialog } from './windowsys.js';
 
 import launchSoundUrl from '../audio/launch.mp3';
 import placeSoundUrl from '../audio/place.mp3';
@@ -107,12 +107,15 @@ export var playerListWindow = new GUIWindow('Players', {closeable: true}, wdow =
 }).move(window.innerWidth - 240, 32);
 
 function getNewWorldApi() {
-	var obj = {};
+	var obj = {
+		get name() { return misc.world.name; }
+	};
 	var defProp = function (prop) {
 		Object.defineProperty(obj, prop, {
 			get: function () { return misc.world && this['_' + prop] || (this['_' + prop] = misc.world[prop].bind(misc.world)); }
 		});
 	};
+
 	defProp('getPixel');
 	defProp('setPixel');
 	defProp('undo');
@@ -186,6 +189,7 @@ function receiveMessage(text) {
 		if (!isAdmin) {
 			text = escapeHTML(text).replace(/\&\#x2F;/g, "/");
 		}
+		text = text.replace(/(?:&lt;|<):(.+?):([0-9]+)(?:&gt;|>)/g, '<img class="emote" title="$1" src="https://cdn.discordapp.com/emojis/$2.png?v=1">');
 		span.innerHTML = anchorme(text, {
 			attributes: [
 				{
@@ -315,8 +319,13 @@ function updateXYDisplay(x, y) {
 	return false;
 }
 
-function updatePlayerCount(count) {
-	elements.playerCountDisplay.innerHTML = count + ' cursor' + (count !== 1 ? 's online' : ' online');
+function updatePlayerCount() {
+	var text = ' cursor' + (misc.playerCount !== 1 ? 's online' : ' online');
+	if (misc.world && 'maxCount' in misc.world) {
+		text = '/' + misc.world.maxCount + text;
+	}
+
+	elements.playerCountDisplay.innerHTML = misc.playerCount + text;
 }
 /*
 function openServerSelector() {
@@ -840,8 +849,9 @@ function init() {
 	}
 
 	misc.urlWorldName = worldName;
+}
 
-
+function connect() {
 	const serverGetter = (serverList => {
 		var defaults = [];
 		var availableServers = [];
@@ -874,7 +884,7 @@ function init() {
 	elements.reconnectBtn.onclick = () => retryingConnect(serverGetter, misc.urlWorldName);
 
 	misc.tickInterval = setInterval(tick, 1000 / options.tickSpeed);
-	delete window.localStorage;
+	//delete window.localStorage;
 }
 
 eventSys.once(e.loaded, () => statusMsg(true, "Initializing..."));
@@ -883,8 +893,31 @@ eventSys.once(e.misc.logoMakeRoom, () => {
 	logoMakeRoom();
 });
 
-eventSys.once(e.loaded, init);
-eventSys.on(e.net.playerCount, updatePlayerCount);
+eventSys.once(e.loaded, function() {
+	init();
+	if (misc.showEUCookieNag) {
+		windowSys.addWindow(new UtilDialog('Cookie notice',
+`This box alerts you that we're going to use cookies!
+If you don't accept their usage, disable cookies and reload the page.`, false, () => {
+			setCookie('nagAccepted', 'true');
+			misc.showEUCookieNag = false;
+			logoMakeRoom(false);
+			connect();
+		}));
+	} else {
+		connect();
+	}
+});
+
+eventSys.on(e.net.maxCount, count => {
+	misc.world.maxCount = count;
+	updatePlayerCount();
+});
+
+eventSys.on(e.net.playerCount, count => {
+	misc.playerCount = count;
+	updatePlayerCount();
+});
 
 eventSys.on(e.net.chat, receiveMessage);
 eventSys.on(e.net.devChat, receiveDevMessage);
@@ -1059,3 +1092,8 @@ PublicAPI.chat = {
 	set sendModifier(fn) { misc.chatSendModifier = fn; }
 };
 PublicAPI.sounds = sounds;
+PublicAPI.poke = () => {
+	if (net.protocol) {
+		net.protocol.lastSentX = Infinity;
+	}
+};

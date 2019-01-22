@@ -137,7 +137,7 @@ class ChunkCluster {
 			this.currentColor = 0;
 		}
 	}
-	
+
 	render() {
 		this.toUpdate = false;
 		for (var i = this.chunks.length; i--;) {
@@ -170,7 +170,7 @@ class ChunkCluster {
 			}
 		}
 	}
-	
+
 	remove() {
 		this.removed = true;
 		if (this.shown) {
@@ -187,7 +187,7 @@ class ChunkCluster {
 		}
 		this.chunks = [];
 	}
-	
+
 	addChunk(chunk) {
 		/* WARNING: Should absMod if not power of two */
 		var x = chunk.x & (protocol.clusterChunkAmount - 1);
@@ -202,7 +202,7 @@ class ChunkCluster {
 		this.chunks.push(chunk);
 		chunk.needsRedraw = true;
 	}
-	
+
 	delChunk(chunk) {
 		chunk.view = null;
 		/* There is no real need to clearRect the chunk area */
@@ -263,13 +263,14 @@ export function unloadFarClusters() { /* Slow? */
 	}
 }
 
+
 function render(type) {
 	var time = getTime(true);
 	var camx = camera.x;
 	var camy = camera.y;
 	var zoom = camera.zoom;
 	var needsRender = 0; /* If an animation didn't finish, render again */
-	
+
 	if (type & renderer.rendertype.WORLD) {
 		var uClusters = rendererValues.updatedClusters;
 		for (var i = 0; i < uClusters.length; i++) {
@@ -278,7 +279,7 @@ function render(type) {
 		}
 		rendererValues.updatedClusters = [];
 	}
-	
+
 	if (type & renderer.rendertype.FX && misc.world !== null) {
 		var ctx = rendererValues.animContext;
 		var visible = rendererValues.visibleClusters;
@@ -291,7 +292,7 @@ function render(type) {
 		if (!allChunksLoaded) {
 			ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 		}
-		
+
 		ctx.lineWidth = 2.5 / 16 * zoom;
 
 		ctx.scale(zoom, zoom);
@@ -316,7 +317,7 @@ function render(type) {
 		}
 
 		ctx.scale(1 / zoom, 1 / zoom); /* probably faster than ctx.save(), ctx.restore() */
-		
+
 		if (background != null) {
 			var newscale = zoom / options.defaultZoom;
 			var oldscale = options.defaultZoom / zoom;
@@ -326,7 +327,7 @@ function render(type) {
 
 			ctx.fillStyle = background;
 			ctx.globalCompositeOperation = "destination-over";
-			
+
 			ctx.scale(newscale, newscale);
 			ctx.fillRect(-gx / newscale, -gy / newscale, ctx.canvas.width * oldscale, ctx.canvas.height * oldscale);
 			ctx.scale(oldscale, oldscale);
@@ -381,6 +382,7 @@ function render(type) {
 		}
 	}
 
+
 	requestRender(needsRender);
 }
 
@@ -408,11 +410,11 @@ function renderPlayer(targetPlayer, fontsize) {
 		return true;
 	}
 
-	
+
 	if (fontsize > 3) {
 		var idstr = targetPlayer.id;
 		var textw = ctx.measureText(idstr).width + (zoom / 2);
-		
+
 		ctx.globalAlpha = 1;
 		ctx.fillStyle = targetPlayer.clr;
 		ctx.fillRect(cx, cy + toolheight, textw, zoom);

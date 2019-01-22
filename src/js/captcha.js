@@ -47,15 +47,5 @@ function requestVerification() {
 }
 
 export function loadAndRequestCaptcha() {
-	if (misc.showEUCookieNag) {
-		windowSys.addWindow(new UtilDialog('Cookie notice',
-`This box alerts you that we're going to use cookies!
-If you don't accept their usage, disable cookies and reload the page.`, false, () => {
-			setCookie('nagAccepted', 'true');
-			misc.showEUCookieNag = false;
-			loadCaptcha(requestVerification);
-		}));
-	} else {
-		loadCaptcha(requestVerification);
-	}
+	loadCaptcha(requestVerification);
 }

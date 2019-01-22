@@ -66,7 +66,8 @@ export const EVENTS = {
 		},
 		sec: {
 			rank: ++evtId
-		}
+		},
+		maxCount: ++evtId
 	}
 };
 

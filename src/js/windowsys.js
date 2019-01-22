@@ -124,7 +124,7 @@ OWOPDropDown.prototype.getWindow = function() {
 	return this.win;
 };
 
-/* wm = WindowManager object 
+/* wm = WindowManager object
  * initfunc = function where all the windows objects should be added,
  *            first function argument is the guiwindow object itself
  */
@@ -136,21 +136,21 @@ export function GUIWindow(title, options, initfunc) {
 	this.frame = document.createElement("div");
 	this.container = document.createElement("div");
 	this.container.className = 'wincontainer';
-	
+
 	if (title) {
 		this.titlespan = document.createElement("span");
 		this.titlespan.innerHTML = title;
-	
+
 		this.frame.appendChild(this.titlespan);
 	}
-	
+
 	this.frame.appendChild(this.container);
-	
+
 	if (options.centered) {
 		options.immobile = true;
 		this.frame.className = "centered";
 	}
-		
+
 	Object.defineProperty(this, "realw", {
 		get: function() {
 			return this.frame.offsetWidth;
@@ -161,16 +161,16 @@ export function GUIWindow(title, options, initfunc) {
 			return this.frame.offsetHeight;
 		}.bind(this)
 	});
-	
+
 	this.elements = [];
-	
+
 	this.creationtime = Date.now();
 	this.currentaction = null; /* Func to call every mousemove evt */
-	
+
 	if (initfunc) {
 		initfunc(this);
 	}
-	
+
 	this.mdownfunc = function(e) {
 		var offx = e.clientX - this.x;
 		var offy = e.clientY - this.y;
@@ -182,29 +182,52 @@ export function GUIWindow(title, options, initfunc) {
 			}
 		}
 	}.bind(this);
-	
+
 	if (options.centerOnce) {
 		/* Ugly solution to wait for offset(Height, Width) values to be available */
 		this.move(window.innerWidth, window.innerHeight); /* Hide the window */
 		waitFrames(2, () => centerWindow(this));
 	}
-	
+
 	this.frame.addEventListener("mousedown", this.mdownfunc);
-	
+
 	this.mupfunc = function(e) {
 		this.currentaction = null;
 	}.bind(this);
-	
+
 	window.addEventListener("mouseup", this.mupfunc);
-	
+
 	this.mmovefunc = function(e) {
 		if (this.currentaction) {
 			this.currentaction(e.clientX, e.clientY);
 		}
 	}.bind(this);
-	
+
 	window.addEventListener("mousemove", this.mmovefunc);
-	
+
+	this.touchfuncbuilder = function(type) {
+		return (event) => {
+			var handlers = {
+				start: this.mdownfunc,
+				move: this.mmovefunc,
+				end: this.mupfunc,
+				cancel: this.mupfunc
+			};
+			var handler = handlers[type];
+			if (handler) {
+				var touches = event.changedTouches;
+				if (touches.length > 0) {
+					handler(touches[0]);
+				}
+			}
+		};
+	}.bind(this);
+
+	this.frame.addEventListener("touchstart", this.touchfuncbuilder("start"));
+	this.frame.addEventListener("touchmove", this.touchfuncbuilder("move"));
+	this.frame.addEventListener("touchend", this.touchfuncbuilder("end"));
+	this.frame.addEventListener("touchcancel", this.touchfuncbuilder("cancel"));
+
 	if(options.closeable) {
 		this.frame.appendChild(mkHTML("button", {
 			onclick: function() {

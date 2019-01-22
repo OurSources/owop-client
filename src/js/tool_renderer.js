@@ -137,7 +137,7 @@ function load(oncomplete) {
 			shadow(i.shadowed, original);
 			tool.hotspot[0] += 2;
 			tool.hotspot[1] += 2; /* Check shadow() for explanation */
-			
+
 			/* Blob-ify images */
 			i.shadowed.toBlob(function(blob) {
 				this.img.shadowblob = URL.createObjectURL(blob);
