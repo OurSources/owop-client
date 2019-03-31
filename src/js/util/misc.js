@@ -11,7 +11,8 @@ PublicAPI.util = {
 	mkHTML,
 	setTooltip,
 	waitFrames,
-	line
+	line,
+	loadScript
 };
 
 let time = Date.now();

@@ -1,5 +1,6 @@
-@import url(/css/pixel_font.css);
-@import url(/css/styled_scrollbar.css);
+@import url(../css/pixel_font.css);
+@import url(../css/styled_scrollbar.css);
+@import url(../css/context.css);
 
 html, body {
 	font: 16px pixel-op, sans-serif;
@@ -12,7 +13,7 @@ html, body {
 
 body {
 	background-color: #d1d1d1;
-	background-image: url(/img/unloaded.png);
+	background-image: url(../img/unloaded.png);
 	background-size: 16px;
 }
 
@@ -87,7 +88,7 @@ img, #tool-select {
 	font: 0/0 a;
 	pointer-events: none;
 	transition: transform 1.5s cubic-bezier(0.68, -0.55, 0.27, 1.55);
-	background-image: url(/img/unloaded.png);
+	background-image: url(../img/unloaded.png);
 	box-shadow: 0 0 5px #000;
 }
 
@@ -139,7 +140,7 @@ img, #tool-select {
 	background-color: #aba389;
 	border: 11px #aba389 solid;
 	border-width: 11px;
-	border-image: url(/img/window_out.png) 11 repeat;
+	border-image: url(../img/window_out.png) 11 repeat;
 	border-image-outset: 1px;
 	box-shadow: 0px 0px 5px #000;
 }
@@ -160,13 +161,13 @@ img, #tool-select {
 	width: 9px;
 	height: 9px;
 	padding: 0;
-	background-image: url(/img/gui.png);
+	background-image: url(../img/gui.png);
 	background-position: -48px -32px;
 	background-color: #ff7979;
 	border: none;
 }
 button.windowCloseButton:active {
-	background-image: url(/img/gui.png);
+	background-image: url(../img/gui.png);
 	background-position: -48px -41px;
 }
 .wincontainer { /* Item container of windows */
@@ -178,11 +179,11 @@ button.windowCloseButton:active {
 	background-color: #7e635c;
 	border: 5px #7e635c solid;
 	border-width: 5px;
-	border-image: url(/img/window_in.png) 5 repeat;
+	border-image: url(../img/window_in.png) 5 repeat;
 }
 #windows > div > div > input {
 	border: 6px #7e635c solid;
-	border-image: url(/img/small_border.png) 6 repeat;
+	border-image: url(../img/small_border.png) 6 repeat;
 	border-image-outset: 1px;
 }
 #windows > div > div > * {
@@ -191,7 +192,7 @@ button.windowCloseButton:active {
 
 button {
 	border: 6px #aba389 outset;
-	border-image: url(/img/button.png) 6 repeat;
+	border-image: url(../img/button.png) 6 repeat;
 	background-color: #aba389;
 	transition: filter 0.125s;
 }
@@ -201,7 +202,7 @@ button:hover {
 }
 button:active {
 	border-style: inset;
-	border-image: url(/img/button_pressed.png) 6 repeat;
+	border-image: url(../img/button_pressed.png) 6 repeat;
 	filter: brightness(90%);
 	transition: none;
 }
@@ -211,7 +212,7 @@ button:focus {
 
 #clusters > canvas {
 	position: absolute;
-	background-image: url(/img/unloaded.png);
+	background-image: url(../img/unloaded.png);
 	background-size: 8px;
 }
 
@@ -240,7 +241,7 @@ button:focus {
 }
 #playercount-display, #xy-display, #palette-create, #palette, .framed {
 	border: 5px #aba389 solid;
-	border-image: url(/img/small_border.png) 5 repeat;
+	border-image: url(../img/small_border.png) 5 repeat;
 	border-image-outset: 1px;
 	background-color: #7e635c;
 	box-shadow: 0px 0px 5px #000;
@@ -296,7 +297,7 @@ button:focus {
 	width: 24px;
 	height: 24px;
 	box-sizing: border-box;
-	background-image: url(/img/plus.png);
+	background-image: url(../img/plus.png);
 	background-repeat: no-repeat;
 	pointer-events: all;
 }
@@ -378,7 +379,7 @@ button:focus {
 	background-color: #aba389;
 	border: 11px #aba389 solid;
 	border-width: 11px;
-	border-image: url(/img/window_out.png) 11 repeat;
+	border-image: url(../img/window_out.png) 11 repeat;
 	border-image-outset: 1px;
 	box-shadow: 0px 0px 5px #000;
 }
@@ -401,7 +402,7 @@ button:focus {
 	background-color: #7e635c;
 	border: 5px #7e635c solid;
 	border-width: 5px;
-	border-image: url(/img/window_in.png) 5 repeat;
+	border-image: url(../img/window_in.png) 5 repeat;
 }
 #help > .content > .links {
 	text-align: center;
@@ -481,7 +482,7 @@ button:focus {
 #chat-messages > li.server {
 	color: #ff41e4;
 }
-#chat-messages > li.tell {
+#chat-messages > li.tell, #chat-messages > li > .tell {
 	color: #ffb735;
 }
 #chat-messages .emote {

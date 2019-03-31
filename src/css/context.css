@@ -1,0 +1,12 @@
+.context-menu {
+	position: absolute;
+	border: 5px #aba389 solid;
+	border-image: url(../img/small_border.png) 5 repeat;
+	border-image-outset: 1px;
+	background-color: #7e635c;
+	box-shadow: 0px 0px 5px #000;
+}
+
+.context-menu > button {
+
+}

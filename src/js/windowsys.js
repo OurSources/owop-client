@@ -1,6 +1,6 @@
 "use strict";
 import { elements } from './main.js';
-import { EVENTS as e } from './conf.js';
+import { EVENTS as e, options } from './conf.js';
 import { PublicAPI, eventSys } from './global.js';
 import { mkHTML, waitFrames } from './util/misc.js';
 
@@ -14,10 +14,17 @@ export const windowSys = {
 	},
 	addWindow: addWindow,
 	delWindow: delWindow,
-	centerWindow: centerWindow
+	centerWindow: centerWindow,
+	closeAllWindows: closeAllWindows
 };
 
 PublicAPI.windowSys = windowSys;
+
+function closeAllWindows() {
+	for (var x in windowSys.windows) {
+		windowSys.windows[x].close();
+	}
+}
 
 export function UtilInput(title, message, inputType, cb) {
 	this.win = new GUIWindow(title, {
@@ -285,6 +292,10 @@ GUIWindow.prototype.close = function() {
 
 /* Window X/Y is specified on window.x, window.y */
 export function addWindow(window) {
+	if (options.noUi) {
+		return window;
+	}
+
 	var realWindow = window.getWindow();
 	if(!windowSys.windows[realWindow.title]) {
 		elements.windows.appendChild(realWindow.frame);

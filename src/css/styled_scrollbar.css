@@ -19,8 +19,8 @@
 	height: 16px;
 	width: 16px;
 	border: 6px solid;
-	border-image: url(/img/button.png) 6 repeat;
-	background-image: url(/img/gui.png);
+	border-image: url(../img/button.png) 6 repeat;
+	background-image: url(../img/gui.png);
 	background-color: #ABA389;
 	border-width: 6px;
 	background-origin: border-box;
@@ -31,11 +31,11 @@
 }
 ::-webkit-scrollbar-button:active {
 	background-color: #8d8671;
-	border-image: url(/img/button_pressed.png) 6 repeat;
+	border-image: url(../img/button_pressed.png) 6 repeat;
 }
 ::-webkit-scrollbar-button:disabled {
 	background-color: #8d8671;
-	border-image: url(/img/button_pressed.png) 6 repeat;
+	border-image: url(../img/button_pressed.png) 6 repeat;
 }
 ::-webkit-scrollbar-button:vertical:increment {
 	background-position: -32px 0px;
@@ -63,7 +63,7 @@
 }
 ::-webkit-scrollbar-thumb {
 	border: 6px solid;
-	border-image: url(/img/button.png) 6 repeat;
+	border-image: url(../img/button.png) 6 repeat;
 	background-color: #ABA389;
 	border-width: 6px;
 }
@@ -72,5 +72,5 @@
 }
 ::-webkit-scrollbar-thumb:active {
 	background-color: #8d8671;
-	border-image: url(/img/button_pressed.png) 6 repeat;
+	border-image: url(../img/button_pressed.png) 6 repeat;
 }

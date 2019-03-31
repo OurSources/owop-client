@@ -30,6 +30,18 @@ export class Chunk {
 		this.needsRedraw = true;
 	}
 
+	forEach(cb) {
+		var s = protocol.chunkSize;
+		for (var i = 0; i < s; i++) {
+			for (var j = 0; j < s; j++) {
+				if (!cb(j, i, this.get(j, i))) {
+					return false;
+				}
+			}
+		}
+		return true;
+	}
+
 	get(x, y) {
 		x &= (protocol.chunkSize - 1);
 		y &= (protocol.chunkSize - 1);

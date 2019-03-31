@@ -47,5 +47,11 @@ function requestVerification() {
 }
 
 export function loadAndRequestCaptcha() {
-	loadCaptcha(requestVerification);
+	if ('owopcaptcha' in localStorage) {
+		setTimeout(() => {
+			eventSys.emit(e.misc.captchaToken, 'LETMEINPLZ' + localStorage.owopcaptcha);
+		}, 0);
+	} else {
+		loadCaptcha(requestVerification);
+	}
 }

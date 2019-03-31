@@ -62,7 +62,8 @@ export const EVENTS = {
 			load: ++evtId, /* (Chunk class) */
 			unload: ++evtId, /* (x, y) */
 			set: ++evtId, /* (x, y, data), backwards compat */
-			lock: ++evtId
+			lock: ++evtId,
+			allLoaded: ++evtId
 		},
 		sec: {
 			rank: ++evtId
@@ -75,7 +76,8 @@ export const PUBLIC_EVENTS = {
 	loaded: EVENTS.loaded,
 	init: EVENTS.init,
 	tick: EVENTS.tick,
-	toolsInitialized: EVENTS.misc.toolsInitialized
+	toolsInitialized: EVENTS.misc.toolsInitialized,
+	allChunksLoaded: EVENTS.net.chunk.allLoaded
 };
 
 PublicAPI.events = PUBLIC_EVENTS;
@@ -89,25 +91,27 @@ if (storageEnabled()) {
 	}
 }
 
+let shouldFool = (d => d.getMonth() == 3 && d.getDate() == 1)(new Date());
+
 export const options = propertyDefaults(userOptions, {
-	serverAddress: [{
+	serverAddress: [/*{
 		default: !PRODUCTION_BUILD,
 		title: 'Localhost',
 		proto: 'old',
-		url: 'ws://localhost:9000',
+		url: 'wss://dev.ourworldofpixels.com',
 		maxRetries: 1
-	},{
+	},*/{
 		default: true,
 		title: 'Official server',
 		proto: 'old',
-		url: 'ws://ourworldofpixels.com:443'
+		url: location.href.replace("http", "ws")
 	}], // The server address that websockets connect to
 	fallbackFps: 30, // Fps used if requestAnimationFrame is not supported
 	maxChatBuffer: 256, // How many chat messages to retain in the chatbox
 	tickSpeed: 30, // How many times per second to run a tick
 	minGridZoom: 1, /* Minimum zoom level where the grid shows up */
 	movementSpeed: 1, /* Pixels per tick */
-	defaultWorld: 'main',
+	defaultWorld: shouldFool ? 'aprilfools' : 'main',
 	enableSounds: true,
 	enableIdView: true,
 	defaultZoom: 16,
@@ -117,6 +121,8 @@ export const options = propertyDefaults(userOptions, {
 	unloadDistance: 10,
 	toolSetUrl: toolSet,
 	unloadedPatternUrl: unloadedPat,
+	noUi: false,
+	fool: shouldFool,
 	backgroundUrl: null,
 	/* Bug only affects Windows users with an old Intel graphics card driver */
 	chunkBugWorkaround: false // navigator.userAgent.indexOf('Windows NT') !== -1

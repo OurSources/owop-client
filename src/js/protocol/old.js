@@ -117,9 +117,11 @@ class OldProtocolImpl extends Protocol {
 		this.placeBucket = new Bucket(params[0], params[1]);
 
 		this.interval = null;
+		this.clet = null;
 
 		this.joinFunc = () => {
 			this.placeBucket.allowance = 0;
+			//this.chatBucket.allowance = 0;
 			this.interval = setInterval(() => this.sendUpdates(), 1000 / OldProtocol.netUpdateSpeed);
 		};
 
@@ -262,7 +264,12 @@ class OldProtocolImpl extends Protocol {
 					eventSys.emit(e.net.chunk.set, chunkX, chunkY, u32data);
 				} else {
 					delete this.chunksLoading[key];
-					this.waitingForChunks--;
+					if (--this.waitingForChunks == 0) {
+						clearTimeout(this.clet);
+						this.clet = setTimeout(() => {
+							eventSys.emit(e.net.chunk.allLoaded);
+						}, 100);
+					}
 					var chunk = new Chunk(chunkX, chunkY, u32data, locked);
 					eventSys.emit(e.net.chunk.load, chunk);
 				}

@@ -20,6 +20,8 @@ import { updateClientFx, player } from './local_player.js';
 import { resolveProtocols, definedProtos } from './protocol/all.js';
 import { windowSys, GUIWindow, OWOPDropDown, UtilDialog } from './windowsys.js';
 
+import { createContextMenu } from './context.js';
+
 import launchSoundUrl from '../audio/launch.mp3';
 import placeSoundUrl from '../audio/place.mp3';
 import clickSoundUrl from '../audio/click.mp3';
@@ -58,6 +60,8 @@ export const misc = {
 	localStorage: storageEnabled() && window.localStorage,
 	_world: null,
 	lastXYDisplay: [-1, -1],
+	devRecvReader: msg => {},
+	chatPostFormatRecvModifier: msg => msg,
 	chatRecvModifier: msg => msg,
 	chatSendModifier: msg => msg,
 	exceptionTimeout: null,
@@ -77,7 +81,7 @@ export const misc = {
 	guiShown: false,
 	cookiesEnabled: cookiesEnabled(),
 	storageEnabled: storageEnabled(),
-	showEUCookieNag: cookiesEnabled() && getCookie("nagAccepted") !== "true",
+	showEUCookieNag: !options.noUi && cookiesEnabled() && getCookie("nagAccepted") !== "true",
 	usingFirefox: navigator.userAgent.indexOf("Firefox") !== -1
 };
 
@@ -130,6 +134,18 @@ function receiveMessage(text) {
 		return;
 	}
 
+	var addContext = (elem, nickname, id) => {
+		elem.addEventListener("click", function(event) {
+			createContextMenu(event.clientX, event.clientY, [
+				["Mute " + nickname, function() {
+					PublicAPI.muted.push(id);
+					receiveMessage("<span style=\"color: #ffa71f\">Muted " + id + "</span>");
+				}]
+			]);
+			event.stopPropagation();
+		});
+	};
+
 	var message = document.createElement("li");
 	var realText = text;
 	var isAdmin = false;
@@ -144,7 +160,23 @@ function receiveMessage(text) {
 	} else if (text.startsWith("[Server]") || text.startsWith("Server:") || text.startsWith("Nickname set to") || text.startsWith("User: ")) {
 		message.className = "server";
 	} else if (text.startsWith("->")) {
-		message.className = "tell";
+		var cuttxt = text.slice(3);
+		var id = parseInt(cuttxt);
+		cuttxt = cuttxt.slice(id.toString().length);
+		if (cuttxt.startsWith(" tells you: ")) {
+			if (PublicAPI.muted.includes(id)) {
+				return;
+			}
+
+			var nick = document.createElement("span");
+			nick.className = "tell";
+			nick.innerHTML = escapeHTML(`-> ${id} tells you: `);
+			addContext(nick, id, id);
+			message.appendChild(nick);
+			text = cuttxt.slice(12);
+		} else {
+			message.className = "tell";
+		}
 	} else if (text.startsWith("(M)")) {
 		message.className = "moderator";
 	} else if (isNaN(text.split(": ")[0]) && text.split(": ")[0].charAt(0) != "[") {
@@ -153,10 +185,24 @@ function receiveMessage(text) {
 	} else {
 		var nick = document.createElement("span");
 		nick.className = "nick";
-		var nickname = text.split(": ")[0] + ": ";
-		nick.innerHTML = escapeHTML(nickname);
+		var nickname = text.split(": ")[0];
+		var id = nickname.startsWith("[") ? nickname.split(" ")[0].slice(1, -1) : nickname;
+		id = parseInt(id);
+		if (PublicAPI.muted.includes(id)) {
+			return;
+		}
+		nick.innerHTML = escapeHTML(nickname + ": ");
+		nick.addEventListener("click", function(event) {
+			createContextMenu(event.clientX, event.clientY, [
+				["Mute " + nickname, function() {
+					PublicAPI.muted.push(id);
+					receiveMessage("<span style=\"color: #ffa71f\">Muted " + id + "</span>");
+				}]
+			]);
+			event.stopPropagation();
+		});
 		message.appendChild(nick);
-		text = text.slice(nickname.length);
+		text = text.slice(nickname.length + 2);
 	}
 	var idIndex = text.indexOf(': '); /* This shouldn't be like this, change on proto switch */
 	if (idIndex !== -1) {
@@ -190,6 +236,7 @@ function receiveMessage(text) {
 			text = escapeHTML(text).replace(/\&\#x2F;/g, "/");
 		}
 		text = text.replace(/(?:&lt;|<):(.+?):([0-9]+)(?:&gt;|>)/g, '<img class="emote" title="$1" src="https://cdn.discordapp.com/emojis/$2.png?v=1">');
+		text = misc.chatPostFormatRecvModifier(text);
 		span.innerHTML = anchorme(text, {
 			attributes: [
 				{
@@ -210,6 +257,9 @@ function receiveMessage(text) {
 }
 
 function receiveDevMessage(text) {
+    try {
+        misc.devRecvReader(text);
+    } catch(e) {}
 	var message = document.createElement("li");
 	var span = document.createElement("span");
 	span.innerHTML = text;
@@ -392,6 +442,8 @@ function showWorldUI(bool) {
 	elements.chat.style.transform = bool ? "initial" : "";
 	elements.chatInput.disabled = !bool;
 	elements.chatInput.style.display = "initial";
+	elements.paletteBg.style.visibility = bool ? "" : "hidden";
+	elements.helpButton.style.visibility = bool ? "" : "hidden";
 }
 
 function showLoadScr(bool, showOptions) {
@@ -439,11 +491,14 @@ function retryingConnect(serverGetter, worldName) {
 	var currentServer = serverGetter(false);
 	const tryConnect = (tryN) => {
 		if (tryN >= (currentServer.maxRetries || 3)) {
-			currentServer = serverGetter(true);
-			tryN = 0;
+			var ncs = serverGetter(true);
+			if (ncs != currentServer) {
+				currentServer = ncs;
+				tryN = 0;
+			}
 		}
 		eventSys.once(e.net.connecting, () => {
-			console.debug(`Trying '${currentServer.title}' (${currentServer.url})...`)
+			console.debug(`Trying '${currentServer.title}'...`)
 			statusMsg(true, `Connecting to '${currentServer.title}'...`);
 			showLoadScr(true, false);
 		});
@@ -989,7 +1044,8 @@ eventSys.on(e.net.world.joining, name => {
 
 eventSys.on(e.net.world.join, world => {
 	showLoadScr(false, false);
-	showWorldUI(true);
+	showWorldUI(!options.noUi);
+	renderer.showGrid(!options.noUi);
 	sounds.play(sounds.launch);
 	misc.world = new World(world);
 	eventSys.emit(e.misc.worldInitialized);
@@ -1054,6 +1110,7 @@ window.addEventListener("load", () => {
 	elements.paletteColors = document.getElementById("palette-colors");
 	elements.paletteCreate = document.getElementById("palette-create");
 	elements.paletteInput = document.getElementById("palette-input");
+	elements.paletteBg = document.getElementById("palette-bg");
 
 	elements.animCanvas = document.getElementById("animations");
 
@@ -1064,9 +1121,12 @@ window.addEventListener("load", () => {
 
 	elements.soundToggle = document.getElementById("no-sound");
 
-	document.getElementById("help-button").addEventListener("click", function () {
+	elements.helpButton = document.getElementById("help-button");
+
+	elements.helpButton.addEventListener("click", function () {
 		document.getElementById("help").className = "";
 	});
+
 	document.getElementById("help-close").addEventListener("click", function () {
 		document.getElementById("help").className = "hidden";
 	});
@@ -1086,6 +1146,10 @@ PublicAPI.chat = {
 	send: (msg) => net.protocol && net.protocol.sendMessage(msg),
 	clear: clearChat,
 	local: receiveMessage,
+	get onDevMsg() { return misc.devRecvReader; },
+	set onDevMsg(fn) { misc.devRecvReader = fn; },
+	get postFormatRecvModifier() { return misc.chatPostFormatRecvModifier; },
+	set postFormatRecvModifier(fn) { misc.chatPostFormatRecvModifier = fn; },
 	get recvModifier() { return misc.chatRecvModifier; },
 	set recvModifier(fn) { misc.chatRecvModifier = fn; },
 	get sendModifier() { return misc.chatSendModifier; },
@@ -1097,3 +1161,4 @@ PublicAPI.poke = () => {
 		net.protocol.lastSentX = Infinity;
 	}
 };
+PublicAPI.muted = [];

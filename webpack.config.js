@@ -3,6 +3,8 @@ const path = require('path');
 const webpack = require('webpack');
 const HtmlWebpackPlugin =  require('html-webpack-plugin');
 const ScriptExtHtmlWebpackPlugin = require('script-ext-html-webpack-plugin');
+const CopyWebpackPlugin = require('copy-webpack-plugin');
+
 /*const ExtractTextPlugin = require('extract-text-webpack-plugin');*/
 
 const srcDir = path.resolve(__dirname, 'src');
@@ -17,7 +19,10 @@ const config = {
 		publicPath: '/'
 	},
 	devServer: {
-		contentBase: path.resolve(__dirname, 'dist')
+		contentBase: false,
+		compress: true,
+		historyApiFallback: true,
+		open: false
 	},
 	module: {
 		rules: [{
@@ -70,8 +75,7 @@ const config = {
 			use: [{
 				loader: 'css-loader',
 				options: {
-					root: '..',
-					minimize: true,
+					/*root: '..',*/
 					importLoaders: 1
 				}
 			},{
@@ -83,6 +87,7 @@ const config = {
 		}]
 	},
 	plugins: [
+		new CopyWebpackPlugin([{from: 'static'}]),
 		/*new webpack.optimize.CommonsChunkPlugin({
 			name: 'libs',
 			filename: 'libs.js',
@@ -106,14 +111,16 @@ const config = {
 module.exports = async env => {
 	env = env || {};
 	if (!env.release) {
+		config.mode = "development";
 		config.devtool = "source-map";
 		config.output.publicPath = '/';
 	} else {
+		config.mode = "production";
 		config.output.filename = '[name].[hash].js';
 		console.log(`Cleaning build dir: '${config.output.path}'`);
 		await fs.remove(config.output.path);
 	}
-	
+
 	config.plugins.push(new webpack.DefinePlugin({
 		'PRODUCTION_BUILD': JSON.stringify(!!env.release)
 	}));

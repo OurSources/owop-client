@@ -851,6 +851,11 @@ eventSys.once(e.misc.toolsRendered, () => {
 				var s = tool.extra.start;
 				var e = tool.extra.end;
 				const isInside = () => get.rx() >= s[0] && get.rx() < e[0] && get.ry() >= s[1] && get.ry() < e[1];
+				const isChunkSolid = chunk => {
+					var lastClr = chunk.get(0, 0);
+					return chunk.forEach((x, y, clr) => clr === lastClr);
+				};
+
 				if (mouse.buttons === 1 && !tool.extra.end) {
 					tool.extra.start = [get.x(), get.y()];
 					tool.extra.clicking = true;
@@ -898,6 +903,9 @@ eventSys.once(e.misc.toolsRendered, () => {
 							for (var j = y; j < y + h; j++) {
 								var chunk = misc.world.getChunkAt(i, j);
 								if (chunk && !chunk.locked) {
+									if (keysDown[17] && isChunkSolid(chunk)) {
+										continue;
+									}
 									net.protocol.protectChunk(i, j, 1);
 								}
 							}
@@ -914,6 +922,9 @@ eventSys.once(e.misc.toolsRendered, () => {
 						for (var j = y; j < y + h; j++) {
 							var chunk = misc.world.getChunkAt(i, j);
 							if (chunk && chunk.locked) {
+								if (keysDown[17] && !isChunkSolid(chunk)) {
+									continue;
+								}
 								net.protocol.protectChunk(i, j, 0);
 							}
 						}
