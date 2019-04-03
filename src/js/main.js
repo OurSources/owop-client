@@ -371,11 +371,20 @@ function updateXYDisplay(x, y) {
 
 function updatePlayerCount() {
 	var text = ' cursor' + (misc.playerCount !== 1 ? 's online' : ' online');
+	var countStr = '' + misc.playerCount;
 	if (misc.world && 'maxCount' in misc.world) {
-		text = '/' + misc.world.maxCount + text;
+		countStr += '/' + misc.world.maxCount;
 	}
 
-	elements.playerCountDisplay.innerHTML = misc.playerCount + text;
+	var final = countStr + text;
+	elements.playerCountDisplay.innerHTML = final;
+
+	var title = 'World of Pixels';
+	if (misc.world) {
+		title = '(' + final + '/' + misc.world.name + ') ' + title;
+	}
+
+	document.title = title;
 }
 /*
 function openServerSelector() {
