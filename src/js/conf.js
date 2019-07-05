@@ -30,7 +30,8 @@ export const EVENTS = {
 		logoMakeRoom: ++evtId,
 		worldInitialized: ++evtId,
 		windowAdded: ++evtId,
-		captchaToken: ++evtId
+		captchaToken: ++evtId,
+		loadingCaptcha: ++evtId
 	},
 	renderer: {
 		addChunk: ++evtId,

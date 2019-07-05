@@ -20,6 +20,7 @@ function loadCaptcha(onload) {
 	            delete window.callback;
             	onload();
         	};
+        	eventSys.emit(e.misc.loadingCaptcha);
 			loadScript("https://www.google.com/recaptcha/api.js?onload=callback&render=explicit");
 		}
 	} else {
@@ -32,7 +33,7 @@ function requestVerification() {
 			centered: true
 	}, wdow => {
 		var id = grecaptcha.render(wdow.addObj(mkHTML("div", {
-			style: "margin: -4px;" /* NOTE: not setting cssText */
+			id: "captchawdow"
 		})), {
 			theme: "light",
 			sitekey: SITEKEY,

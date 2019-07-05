@@ -508,7 +508,7 @@ button:focus {
 	vertical-align: bottom;
 }
 #chat-input {
-	flex: 0;
+	flex: 0 1 auto;
 	height: 16px;
 	color: #FFF;
 	pointer-events: all;
@@ -527,4 +527,8 @@ button:focus {
 
 #chat-input::placeholder {
 	color: #BBB;
+}
+
+#captchawdow {
+	margin: -4px;
 }

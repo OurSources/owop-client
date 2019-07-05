@@ -381,7 +381,7 @@ function updatePlayerCount() {
 
 	var title = 'World of Pixels';
 	if (misc.world) {
-		title = '(' + final + '/' + misc.world.name + ') ' + title;
+		title = '(' + countStr + '/' + misc.world.name + ') ' + title;
 	}
 
 	document.title = title;
@@ -952,6 +952,7 @@ function connect() {
 }
 
 eventSys.once(e.loaded, () => statusMsg(true, "Initializing..."));
+eventSys.once(e.misc.loadingCaptcha, () => statusMsg(true, "Trying to load captcha..."));
 eventSys.once(e.misc.logoMakeRoom, () => {
 	statusMsg(false, null);
 	logoMakeRoom();
@@ -1000,6 +1001,7 @@ eventSys.on(e.net.world.setId, id => {
 	// Automatic login
 	let desiredRank = misc.localStorage.adminlogin ? RANK.ADMIN : misc.localStorage.modlogin ? RANK.MODERATOR : net.protocol.worldName in misc.worldPasswords ? RANK.USER : RANK.NONE;
 	if (desiredRank > RANK.NONE) {
+		var mightBeMod = false;
 		let onWrong = function () {
 			console.log("WRONG");
 			eventSys.removeListener(e.net.sec.rank, onCorrect);
@@ -1014,7 +1016,7 @@ eventSys.on(e.net.world.setId, id => {
 			retryingConnect(() => net.currentServer, net.protocol.worldName)
 		};
 		let onCorrect = function (newrank) {
-			if (newrank == desiredRank) {
+			if (newrank == desiredRank || (mightBeMod && newrank == RANK.MODERATOR)) {
 				setTimeout(() => {
 					/* Ugly fix for wrong password on worlds without one */
 					eventSys.removeListener(e.net.disconnected, onWrong);
@@ -1032,6 +1034,7 @@ eventSys.on(e.net.world.setId, id => {
 			msg = "/modlogin " + misc.localStorage.modlogin;
 		} else if (desiredRank == RANK.USER) {
 			msg = "/pass " + misc.worldPasswords[net.protocol.worldName];
+			mightBeMod = true;
 		}
 		net.protocol.sendMessage(msg);
 	} else {
