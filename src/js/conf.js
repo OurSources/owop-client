@@ -126,7 +126,8 @@ export const options = propertyDefaults(userOptions, {
 	fool: shouldFool,
 	backgroundUrl: null,
 	/* Bug only affects Windows users with an old Intel graphics card driver */
-	chunkBugWorkaround: false // navigator.userAgent.indexOf('Windows NT') !== -1
+	chunkBugWorkaround: false, // navigator.userAgent.indexOf('Windows NT') !== -1
+	hexCoords: false
 });
 
 if (options.chunkBugWorkaround) {

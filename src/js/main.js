@@ -363,7 +363,11 @@ function showPlayerList(bool) {
 function updateXYDisplay(x, y) {
 	if (misc.lastXYDisplay[0] !== x || misc.lastXYDisplay[1] !== y) {
 		misc.lastXYDisplay = [x, y];
-		elements.xyDisplay.innerHTML = "X: " + x + ", Y: " + y;
+		if(!options.hexCoords) {
+			elements.xyDisplay.innerHTML = "X: " + x + ", Y: " + y;
+		} else {
+			elements.xyDisplay.innerHTML = "X: 0x" + x.toString(16) + ", Y: 0x" + y.toString(16);
+		}
 		return true;
 	}
 	return false;
@@ -888,6 +892,11 @@ function init() {
 		options.enableSounds = !elements.soundToggle.checked;
 	});
 	options.enableSounds = !elements.soundToggle.checked;
+	
+	elements.hexToggle.addEventListener('change', e => {
+		options.hexCoords = elements.hexToggle.checked;
+	});
+	options.hexCoords = elements.hexToggle.checked;
 
 	// Some cool custom css
 	console.log("%c" +
@@ -1132,6 +1141,7 @@ window.addEventListener("load", () => {
 	elements.chatInput = document.getElementById("chat-input");
 
 	elements.soundToggle = document.getElementById("no-sound");
+	elements.hexToggle = document.getElementById("hex-coords");
 
 	elements.helpButton = document.getElementById("help-button");
 
