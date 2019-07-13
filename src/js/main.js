@@ -591,10 +591,10 @@ function init() {
 	var historyIndex = 0;
 	chatinput.addEventListener("keydown", event => {
 		event.stopPropagation();
-		if (historyIndex === 0) {
+		var keyCode = event.which || event.keyCode;
+		if (historyIndex === 0 || keyCode == 13 && !event.shiftKey) {
 			chatHistory[0] = chatinput.value;
 		}
-		var keyCode = event.which || event.keyCode;
 		switch (keyCode) {
 			case 27:
 				closeChat();
