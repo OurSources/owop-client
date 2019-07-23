@@ -54,7 +54,7 @@ export const OldProtocol = {
 		10: 'copy'
 	},
 	misc: {
-		worldVerification: 4321,
+		worldVerification: 25565,
 		chatVerification: String.fromCharCode(10),
 		tokenVerification: 'CaptchA'
 	},

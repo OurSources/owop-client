@@ -366,7 +366,8 @@ function updateXYDisplay(x, y) {
 		if(!options.hexCoords) {
 			elements.xyDisplay.innerHTML = "X: " + x + ", Y: " + y;
 		} else {
-			elements.xyDisplay.innerHTML = "X: 0x" + x.toString(16) + ", Y: 0x" + y.toString(16);
+			var hexify = i => `${(i < 0 ? '-' : '')}0x${Math.abs(i).toString(16)}`;
+			elements.xyDisplay.innerHTML = `X: ${hexify(x)}, Y: ${hexify(y)}`;
 		}
 		return true;
 	}
@@ -892,7 +893,7 @@ function init() {
 		options.enableSounds = !elements.soundToggle.checked;
 	});
 	options.enableSounds = !elements.soundToggle.checked;
-	
+
 	elements.hexToggle.addEventListener('change', e => {
 		options.hexCoords = elements.hexToggle.checked;
 	});
