@@ -496,7 +496,7 @@ function inGameDisconnected() {
 	elements.chatInput.style.display = "";
 }
 
-function retryingConnect(serverGetter, worldName) {
+function retryingConnect(serverGetter, worldName, token) {
 	if (misc.connecting && !net.isConnected()) { /* We're already connected/trying to connect */
 		return;
 	}
@@ -515,7 +515,7 @@ function retryingConnect(serverGetter, worldName) {
 			statusMsg(true, `Connecting to '${currentServer.title}'...`);
 			showLoadScr(true, false);
 		});
-		net.connect(currentServer, worldName);
+		net.connect(currentServer, worldName, token);
 		const disconnected = () => {
 			++tryN;
 			statusMsg(true, `Couldn't connect to server, retrying... (${tryN})`);
