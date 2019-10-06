@@ -1,0 +1,298 @@
+diff --git a/src/css/style.css b/src/css/style.css
+index 5c942eb..a64f219 100644
+--- a/src/css/style.css
++++ b/src/css/style.css
+@@ -136,19 +136,19 @@ img, #tool-select {
+ #windows > div, .winframe { /* Frame */
+ 	position: absolute;
+ 	pointer-events: initial;
+-	background-color: #aba389;
+-	border: 11px #aba389 solid;
++	background-color: #8b08bf;
++	border: 11px #8b08bf solid;
+ 	border-width: 11px;
+ 	border-image: url(/img/window_out.png) 11 repeat;
+-	border-image-outset: 1px;
++	border-image-outset: 4px;
+ 	box-shadow: 0px 0px 5px #000;
+ }
+ #windows > div > span { /* Title */
+ 	display: block;
+ 	pointer-events: none;
+ 	margin-top: -7px;
+-	text-shadow: 1px 1px #4d313b;
+-	color: #7e635c;
++	text-shadow: 1px 1px #421754;
++	color: #e4951a;
+ 	margin-bottom: 3px;
+ 	min-width: 100%;
+ 	text-align: center;
+@@ -175,8 +175,8 @@ button.windowCloseButton:active {
+ 	/* width: 0;  Older browsers fix */
+ 	height: 100%;
+ 	margin: 0 -5px -5px -5px;
+-	background-color: #7e635c;
+-	border: 5px #7e635c solid;
++	background-color: #5e038f;
++	border: 5px #5e038f solid;
+ 	border-width: 5px;
+ 	border-image: url(/img/window_in.png) 5 repeat;
+ }
+@@ -190,9 +190,9 @@ button.windowCloseButton:active {
+ }
+
+ button {
+-	border: 6px #aba389 outset;
++	border: 6px #8b08bf outset;
+ 	border-image: url(/img/button.png) 6 repeat;
+-	background-color: #aba389;
++	background-color: #8b08bf;
+ 	transition: filter 0.125s;
+ }
+ button:hover {
+@@ -242,7 +242,7 @@ button:focus {
+ 	border: 5px #aba389 solid;
+ 	border-image: url(/img/small_border.png) 5 repeat;
+ 	border-image-outset: 1px;
+-	background-color: #7e635c;
++	background-color: #5e038f;
+ 	box-shadow: 0px 0px 5px #000;
+ }
+ #toole-container > button > div {
+@@ -260,7 +260,7 @@ button:focus {
+ 	padding: 0;
+ }
+ #toole-container > button.selected {
+-	background-color: #aaa;
++	background-color: #9e4ec7;
+ }
+
+ #tool-select > button > div {
+@@ -375,8 +375,8 @@ button:focus {
+ 	width: 80%;
+ 	max-width: 800px;
+
+-	background-color: #aba389;
+-	border: 11px #aba389 solid;
++	background-color: #8b08bf;
++	border: 11px #8b08bf solid;
+ 	border-width: 11px;
+ 	border-image: url(/img/window_out.png) 11 repeat;
+ 	border-image-outset: 1px;
+@@ -386,8 +386,8 @@ button:focus {
+ 	display: block;
+ 	pointer-events: none;
+ 	margin-top: -7px;
+-	text-shadow: 1px 1px #4d313b;
+-	color: #7e635c;
++	text-shadow: 1px 1px #421754;
++	color: #e4951a;
+ 	margin-bottom: 3px;
+ 	min-width: 100%;
+ 	text-align: center;
+@@ -398,8 +398,8 @@ button:focus {
+ 	/* width: 0;  Older browsers fix */
+ 	height: 100%;
+ 	margin: 0 -5px -5px -5px;
+-	background-color: #7e635c;
+-	border: 5px #7e635c solid;
++	background-color: #5e038f;
++	border: 5px #5e038f solid;
+ 	border-width: 5px;
+ 	border-image: url(/img/window_in.png) 5 repeat;
+ }
+diff --git a/src/js/Fx.js b/src/js/Fx.js
+index 129c305..373f480 100644
+--- a/src/js/Fx.js
++++ b/src/js/Fx.js
+@@ -3,8 +3,9 @@ import { colorUtils as color } from './util/color.js';
+ import { EVENTS as e, protocol, RANK, options } from './conf.js';
+ import { getTime } from './util/misc.js';
+ import { eventSys, PublicAPI } from './global.js';
+-import { camera, renderer } from './canvas_renderer.js';
++import { camera, renderer, ghosts, Ghost } from './canvas_renderer.js';
+ import { player } from './local_player.js';
++import { misc } from './main.js';
+
+ export const PLAYERFX = {
+ 	NONE: null,
+@@ -102,8 +103,22 @@ PublicAPI.fx = {
+ eventSys.on(e.net.world.tilesUpdated, tiles => {
+ 	let time = getTime(true);
+ 	let made = false;
++
++	let spooks = [];
+ 	for (var i = 0; i < tiles.length; i++) {
+ 		var t = tiles[i];
++
++
++		if (spooks.includes("" + t.x + t.y)) {
++			// Spawn ghost
++			ghosts.push(new Ghost(t.x, t.y));
++
++		}
++
++		if (t.rgb === (31 << 16) | (10 << 8) | 18) {
++			spooks.push("" + t.x + t.y);
++		}
++
+ 		if (camera.isVisible(t.x, t.y, 1, 1)) {
+ 			new Fx(WORLDFX.RECT_FADE_ALIGNED(1, t.x, t.y), { htmlRgb: color.toHTML(t.rgb ^ 0xFFFFFF) , tag: '' + t.id});
+ 			made = true;
+diff --git a/src/js/canvas_renderer.js b/src/js/canvas_renderer.js
+index 9bc8c32..c7dba4c 100644
+--- a/src/js/canvas_renderer.js
++++ b/src/js/canvas_renderer.js
+@@ -263,13 +263,59 @@ export function unloadFarClusters() { /* Slow? */
+ 	}
+ }
+
++// Simple 1d noise by Michael Bromley
++export class Ghost {
++	constructor(x, y) {
++		this.x = x;
++		this.y = y;
++		this.life = 1;
++
++		this.dirNoise = new Int8Array(256);
++		this.speedNoise = new Int8Array(256);
++		for (let i=0; i<256; i++) {
++			this.dirNoise[i] = (Math.random() - 0.5) * 256;
++			this.speedNoise[i] = (Math.random() - 0.5) * 256;
++		}
++
++		this.offset = Math.random() * 4;
++	}
++
++	update() {
++		let direction = this.noise(Date.now() / 1000 + this.offset, this.dirNoise) * Math.PI * 2;
++		let speed = this.noise(Date.now() / 1000 + this.offset, this.speedNoise) * 2;
++
++		this.x += Math.sin(direction) * speed;
++		this.y += Math.cos(direction) * speed;
++		//this.x += this.noise(Date.now() / 1000 + this.offset, this.noiseX);
++		//this.y += this.noise(Date.now() / 1000 + this.offset, this.noiseY);
++		this.life = Math.max(0, this.life - 1 / 320);
++	}
++
++	lerp(a, b, t) {
++		return a * (1 - t) + b * t;
++	}
++
++	noise(x, map) {
++		let t = x % 1;
++		let tRemapSmoothstep = t * t * (3 - 2 * t);
++
++		/// Modulo using &
++		let xMin = Math.floor(x) & 0xFF;
++		let xMax = (xMin + 1) & 0xFF;
++
++		return this.lerp(map[xMin] / 256, map[xMax] / 256, tRemapSmoothstep);
++	}
++}
++
++export let ghosts = [];
++
+ function render(type) {
+ 	var time = getTime(true);
+ 	var camx = camera.x;
+ 	var camy = camera.y;
+ 	var zoom = camera.zoom;
+ 	var needsRender = 0; /* If an animation didn't finish, render again */
+-
++
+ 	if (type & renderer.rendertype.WORLD) {
+ 		var uClusters = rendererValues.updatedClusters;
+ 		for (var i = 0; i < uClusters.length; i++) {
+@@ -381,6 +427,33 @@ function render(type) {
+ 		}
+ 	}
+
++	// Render ghosts
++	if (ghosts.length) {
++		var ctx = rendererValues.animContext;
++		ctx.save();
++		ctx.scale(zoom / 16, zoom / 16);
++		for (let i=ghosts.length - 1; i>=0; i--) {
++			let ghost = ghosts[i];
++			ghost.update();
++			ctx.globalAlpha = ghost.life;
++			ctx.drawImage(
++				tools["spook"].cursor,
++				(ghost.x - camx) * 16 | 0,
++				(ghost.y - camy) * 16 | 0,
++				36 * 4,
++				36 * 4
++			);
++
++			if (ghost.life === 0) {
++				ghosts.splice(i, 1);
++			}
++		}
++		ctx.restore();
++		ctx.globalAlpha = 1;
++		needsRender = 1;
++	}
++
++
+ 	requestRender(needsRender);
+ }
+
+diff --git a/src/js/local_player.js b/src/js/local_player.js
+index a87add1..ee05f74 100644
+--- a/src/js/local_player.js
++++ b/src/js/local_player.js
+@@ -23,11 +23,18 @@ let toolSelected = null;
+ 	[0xF4, 0xF4, 0xF4], [0x93, 0xB6, 0xC1], [0x55, 0x71, 0x85], [0x32, 0x40, 0x56]
+ ];*/
+ // ENDESGA 16 palette
+-const palette = [
++/*const palette = [
+ 	[0xE4, 0xA6, 0x72], [0xB8, 0x6F, 0x50], [0x74, 0x3F, 0x39], [0x3F, 0x28, 0x32],
+ 	[0x9E, 0x28, 0x35], [0xE5, 0x3B, 0x44], [0xFB, 0x92, 0x2B], [0xFF, 0xE7, 0x62],
+ 	[0x63, 0xC6, 0x4D], [0x32, 0x73, 0x45], [0x19, 0x3D, 0x3F], [0x4F, 0x67, 0x81],
+ 	[0xAF, 0xBF, 0xD2], [0xFF, 0xFF, 0xFF], [0x2C, 0xE8, 0xF4], [0x04, 0x84, 0xD1]
++];*/
++// Halloween palette
++const palette = [
++	[0x1b, 0x0c, 0x23],
++	[0x3e, 0x1c, 0x33], [0x8e, 0x21, 0x49],
++	[0xf6, 0x92, 0x1d], [0xb1, 0x46, 0x23],
++	[0x6d, 0xb7, 0x0e], [0x48, 0x79, 0x08]
+ ];
+ let paletteIndex = 0;
+
+diff --git a/src/js/tool_renderer.js b/src/js/tool_renderer.js
+index bf734b8..502d006 100644
+--- a/src/js/tool_renderer.js
++++ b/src/js/tool_renderer.js
+@@ -76,8 +76,8 @@ function shadow(canvas, img) {
+
+ /* makes a hole with the shape of the image */
+ function popOut(canvas, img) {
+-	var shadowcolor = 0xFF3B314D;
+-	var backgroundcolor = 0xFF5C637E;
++	var shadowcolor = 0xFF541742;
++	var backgroundcolor = 0xFF9C0385;
+ 	canvas.width = img.width;
+ 	canvas.height = img.height;
+ 	var ctx = canvas.getContext('2d');
+diff --git a/src/js/tools.js b/src/js/tools.js
+index 55a6c99..42c8552 100644
+--- a/src/js/tools.js
++++ b/src/js/tools.js
+@@ -1204,6 +1204,14 @@ eventSys.once(e.misc.toolsRendered, () => {
+ 		});
+ 	}));
+
++	addTool(new Tool("Spook", cursors.copy, PLAYERFX.NONE, RANK.USER, tool => {
++		tool.setEvent("mousedown", (mouse, event) => {
++			let pixel = misc.world.getPixel(mouse.tileX, mouse.tileY);
++			misc.world.setPixel(mouse.tileX, mouse.tileY, [31, 10, 18]);
++			misc.world.setPixel(mouse.tileX, mouse.tileY, pixel);
++		});
++	}));
++
+ 	eventSys.emit(e.misc.toolsInitialized);
+ });
+

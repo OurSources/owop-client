@@ -9,7 +9,7 @@ import unloadedPat from '../img/unloaded.png';
 export let protocol = null;
 
 /* The raw event ID numbers should NOT be used, instead import the EVENTS object in your file. */
-let evtId = 6666666; /* no */
+let evtId = 0;
 
 export const RANK = {
 	NONE: 0,
@@ -127,7 +127,8 @@ export const options = propertyDefaults(userOptions, {
 	backgroundUrl: null,
 	/* Bug only affects Windows users with an old Intel graphics card driver */
 	chunkBugWorkaround: false, // navigator.userAgent.indexOf('Windows NT') !== -1
-	hexCoords: false
+	hexCoords: false,
+	showProtectionOutlines: true
 });
 
 if (options.chunkBugWorkaround) {

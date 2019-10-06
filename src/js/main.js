@@ -739,6 +739,11 @@ function init() {
 					renderer.showGrid(!renderer.gridShown);
 					break;
 
+				case 72: /* H */
+					options.showProtectionOutlines = !options.showProtectionOutlines;
+					renderer.render(renderer.rendertype.FX);
+					break;
+
 				case 112: /* F1 */
 					showWorldUI(!misc.guiShown);
 					event.preventDefault();

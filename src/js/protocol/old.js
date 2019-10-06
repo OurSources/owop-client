@@ -109,6 +109,7 @@ class OldProtocolImpl extends Protocol {
 		this.players = {};
 		this.chunksLoading = {}; /* duplicate */
 		this.waitingForChunks = 0;
+		this.pendingEdits = {};
 		this.id = null;
 
 		var params = OldProtocol.chatBucket;
@@ -218,6 +219,13 @@ class OldProtocolImpl extends Protocol {
 						rgb: bbgr,
 						id: bid
 					});
+					
+					var edkey = `${bpx},${bpy}`;
+					var edtmoid = this.pendingEdits[edkey];
+					if (edtmoid) {
+						clearTimeout(edtmoid);
+						delete this.pendingEdits[edkey];
+					}
 				}
 				if (updated) {
 					eventSys.emit(e.net.world.tilesUpdated, updates);
@@ -353,7 +361,7 @@ class OldProtocolImpl extends Protocol {
 		return this.waitingForChunks === 0;
 	}
 
-	updatePixel(x, y, rgb) {
+	updatePixel(x, y, rgb, undocb) {
 		var distx = Math.trunc(x / OldProtocol.chunkSize) - Math.trunc(this.lastSentX / (OldProtocol.chunkSize * 16)); distx *= distx;
 		var disty = Math.trunc(y / OldProtocol.chunkSize) - Math.trunc(this.lastSentY / (OldProtocol.chunkSize * 16)); disty *= disty;
 		var dist = Math.sqrt(distx + disty);
@@ -366,6 +374,7 @@ class OldProtocolImpl extends Protocol {
 			dv.setUint8(9, rgb[1]);
 			dv.setUint8(10, rgb[2]);
 			this.ws.send(array);
+			this.pendingEdits[`${x},${y}`] = setTimeout(undocb, 2000);
 			return true;
 		}
 		return false;

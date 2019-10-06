@@ -289,8 +289,18 @@ function render(type) {
 		var background = rendererValues.worldBackground;
 		var allChunksLoaded = misc.world.allChunksLoaded();
 
+		var bggx = -(camx * zoom) % (16 * zoom);
+		var bggy = -(camy * zoom) % (16 * zoom);
+
 		if (!allChunksLoaded) {
-			ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+			if (rendererValues.unloadedPattern == null) {
+				ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+			} else {
+				ctx.translate(bggx, bggy);
+				ctx.fillStyle = rendererValues.unloadedPattern;
+				ctx.fillRect(-bggx, -bggy, ctx.canvas.width, ctx.canvas.height);
+				ctx.translate(-bggx, -bggy);
+			}
 		}
 
 		ctx.lineWidth = 2.5 / 16 * zoom;
@@ -318,7 +328,7 @@ function render(type) {
 
 		ctx.scale(1 / zoom, 1 / zoom); /* probably faster than ctx.save(), ctx.restore() */
 
-		if (background != null) {
+		/*if (background != null) {
 			var newscale = zoom / options.defaultZoom;
 			var oldscale = options.defaultZoom / zoom;
 			var gx = -(camx * zoom) % (background.width * newscale);
@@ -333,29 +343,20 @@ function render(type) {
 			ctx.scale(oldscale, oldscale);
 
 			ctx.translate(-gx, -gy);
-		}
-
-		var gx = -(camx * zoom) % (16 * zoom);
-		var gy = -(camy * zoom) % (16 * zoom);
-		ctx.translate(gx, gy);
+		}*/
 
 		if (rendererValues.gridShown && rendererValues.gridPattern) {
+			ctx.translate(bggx, bggy);
 			ctx.fillStyle = rendererValues.gridPattern;
-			if (!allChunksLoaded) {
+			/*if (!allChunksLoaded) {
 				ctx.globalCompositeOperation = "source-atop";
-			}
-			ctx.fillRect(-gx, -gy, ctx.canvas.width, ctx.canvas.height);
+			}*/
+			ctx.fillRect(-bggx, -bggy, ctx.canvas.width, ctx.canvas.height);
+			ctx.translate(-bggx, -bggy);
 		}
 
-		if (rendererValues.unloadedPattern != null && (!allChunksLoaded || background != null)) {
-			ctx.fillStyle = rendererValues.unloadedPattern;
-			ctx.globalCompositeOperation = "destination-over";
-			ctx.fillRect(-gx, -gy, ctx.canvas.width, ctx.canvas.height);
-		}
 
-		ctx.translate(-gx, -gy);
-
-		ctx.globalCompositeOperation = "source-over";
+		//ctx.globalCompositeOperation = "source-over";
 
 		for (var i = 0; i < activeFx.length; i++) {
 			switch (activeFx[i].render(ctx, time)) {
