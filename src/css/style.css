@@ -137,19 +137,19 @@ img, #tool-select {
 #windows > div, .winframe { /* Frame */
 	position: absolute;
 	pointer-events: initial;
-	background-color: #aba389;
-	border: 11px #aba389 solid;
+	background-color: #8b08bf;
+	border: 11px #8b08bf solid;
 	border-width: 11px;
 	border-image: url(../img/window_out.png) 11 repeat;
-	border-image-outset: 1px;
+	border-image-outset: 4px;
 	box-shadow: 0px 0px 5px #000;
 }
 #windows > div > span { /* Title */
 	display: block;
 	pointer-events: none;
 	margin-top: -7px;
-	text-shadow: 1px 1px #4d313b;
-	color: #7e635c;
+	text-shadow: 1px 1px #421754;
+	color: #e4951a;
 	margin-bottom: 3px;
 	min-width: 100%;
 	text-align: center;
@@ -176,24 +176,24 @@ button.windowCloseButton:active {
 	/* width: 0;  Older browsers fix */
 	height: 100%;
 	margin: 0 -5px -5px -5px;
-	background-color: #7e635c;
-	border: 5px #7e635c solid;
+	background-color: #5e038f;
+	border: 5px #5e038f solid;
 	border-width: 5px;
 	border-image: url(../img/window_in.png) 5 repeat;
 }
 #windows > div > div > input {
-	border: 6px #7e635c solid;
+	border: 6px #8b08bf outset;
 	border-image: url(../img/small_border.png) 6 repeat;
-	border-image-outset: 1px;
+	background-color: #8b08bf;
 }
 #windows > div > div > * {
 	box-sizing: border-box;
 }
 
 button {
-	border: 6px #aba389 outset;
+	border: 6px #8b08bf outset;
 	border-image: url(../img/button.png) 6 repeat;
-	background-color: #aba389;
+	background-color: #8b08bf;
 	transition: filter 0.125s;
 }
 button:hover {
@@ -243,7 +243,7 @@ button:focus {
 	border: 5px #aba389 solid;
 	border-image: url(../img/small_border.png) 5 repeat;
 	border-image-outset: 1px;
-	background-color: #7e635c;
+	background-color: #5e038f;
 	box-shadow: 0px 0px 5px #000;
 }
 #toole-container > button > div {
@@ -261,7 +261,7 @@ button:focus {
 	padding: 0;
 }
 #toole-container > button.selected {
-	background-color: #aaa;
+	background-color: #9e4ec7;
 }
 
 #tool-select > button > div {
@@ -376,8 +376,8 @@ button:focus {
 	width: 80%;
 	max-width: 800px;
 
-	background-color: #aba389;
-	border: 11px #aba389 solid;
+	background-color: #8b08bf;
+	border: 11px #8b08bf solid;
 	border-width: 11px;
 	border-image: url(../img/window_out.png) 11 repeat;
 	border-image-outset: 1px;
@@ -387,8 +387,8 @@ button:focus {
 	display: block;
 	pointer-events: none;
 	margin-top: -7px;
-	text-shadow: 1px 1px #4d313b;
-	color: #7e635c;
+	text-shadow: 1px 1px #421754;
+	color: #e4951a;
 	margin-bottom: 3px;
 	min-width: 100%;
 	text-align: center;
@@ -399,8 +399,8 @@ button:focus {
 	/* width: 0;  Older browsers fix */
 	height: 100%;
 	margin: 0 -5px -5px -5px;
-	background-color: #7e635c;
-	border: 5px #7e635c solid;
+	background-color: #5e038f;
+	border: 5px #5e038f solid;
 	border-width: 5px;
 	border-image: url(../img/window_in.png) 5 repeat;
 }
