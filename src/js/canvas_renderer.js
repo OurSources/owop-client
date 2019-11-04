@@ -263,6 +263,52 @@ export function unloadFarClusters() { /* Slow? */
 	}
 }
 
+// Simple 1d noise by Michael Bromley
+export class Ghost {
+	constructor(x, y) {
+		this.x = x;
+		this.y = y;
+		this.life = 1;
+
+		this.dirNoise = new Int8Array(256);
+		this.speedNoise = new Int8Array(256);
+		for (let i=0; i<256; i++) {
+			this.dirNoise[i] = (Math.random() - 0.5) * 256;
+			this.speedNoise[i] = (Math.random() - 0.5) * 256;
+		}
+
+		this.offset = Math.random() * 4;
+	}
+
+	update() {
+		let direction = this.noise(Date.now() / 1000 + this.offset, this.dirNoise) * Math.PI * 2;
+		let speed = this.noise(Date.now() / 1000 + this.offset, this.speedNoise) * 2;
+
+		this.x += Math.sin(direction) * speed;
+		this.y += Math.cos(direction) * speed;
+		//this.x += this.noise(Date.now() / 1000 + this.offset, this.noiseX);
+		//this.y += this.noise(Date.now() / 1000 + this.offset, this.noiseY);
+		this.life = Math.max(0, this.life - 1 / 320);
+	}
+
+	lerp(a, b, t) {
+		return a * (1 - t) + b * t;
+	}
+
+	noise(x, map) {
+		let t = x % 1;
+		let tRemapSmoothstep = t * t * (3 - 2 * t);
+
+		/// Modulo using &
+		let xMin = Math.floor(x) & 0xFF;
+		let xMax = (xMin + 1) & 0xFF;
+
+		return this.lerp(map[xMin] / 256, map[xMax] / 256, tRemapSmoothstep);
+	}
+}
+
+export let ghosts = [];
+
 
 function render(type) {
 	var time = getTime(true);
@@ -381,6 +427,32 @@ function render(type) {
 				needsRender |= renderer.rendertype.FX;
 			}
 		}
+	}
+	
+	// Render ghosts
+	if (ghosts.length) {
+		var ctx = rendererValues.animContext;
+		ctx.save();
+		ctx.scale(zoom / 16, zoom / 16);
+		for (let i=ghosts.length - 1; i>=0; i--) {
+			let ghost = ghosts[i];
+			ghost.update();
+			ctx.globalAlpha = ghost.life;
+			ctx.drawImage(
+				tools["spook"].cursor,
+				(ghost.x - camx) * 16 | 0,
+				(ghost.y - camy) * 16 | 0,
+				36 * 4,
+				36 * 4
+			);
+
+			if (ghost.life === 0) {
+				ghosts.splice(i, 1);
+			}
+		}
+		ctx.restore();
+		ctx.globalAlpha = 1;
+		needsRender = 1;
 	}
 
 
