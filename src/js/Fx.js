@@ -104,19 +104,8 @@ eventSys.on(e.net.world.tilesUpdated, tiles => {
 	let time = getTime(true);
 	let made = false;
 
-	let spooks = [];
 	for (var i = 0; i < tiles.length; i++) {
 		var t = tiles[i];
-		
-		if (spooks.includes("" + t.x + t.y)) {
-			// Spawn ghost
-			ghosts.push(new Ghost(t.x, t.y));
-
-		}
-
-		if (t.rgb === (31 << 16) | (10 << 8) | 18) {
-			spooks.push("" + t.x + t.y);
-		}
 
 		if (camera.isVisible(t.x, t.y, 1, 1)) {
 			new Fx(WORLDFX.RECT_FADE_ALIGNED(1, t.x, t.y), { htmlRgb: color.toHTML(t.rgb ^ 0xFFFFFF) , tag: '' + t.id});

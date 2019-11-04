@@ -1227,7 +1227,7 @@ eventSys.once(e.misc.toolsRendered, () => {
 					if (tool.extra.sendQueue.length) {
 						throw new Error("Wait until pasting finishes, or cancel with right click!");
 					}
-
+					
 					paint(mouse.tileX, mouse.tileY);
 				}
 			} else if (mouse.buttons & 0b10) {
@@ -1434,14 +1434,6 @@ eventSys.once(e.misc.toolsRendered, () => {
 				};
 				player.tool = "paste";
 			}
-		});
-	}));
-
-	addTool(new Tool("Spook", cursors.ghost, PLAYERFX.NONE, RANK.USER, tool => {
-		tool.setEvent("mousedown", (mouse, event) => {
-			let pixel = misc.world.getPixel(mouse.tileX, mouse.tileY);
-			misc.world.setPixel(mouse.tileX, mouse.tileY, [31, 10, 18]);
-			misc.world.setPixel(mouse.tileX, mouse.tileY, pixel);
 		});
 	}));
 
