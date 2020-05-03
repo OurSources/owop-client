@@ -157,7 +157,7 @@ class Tool {
 	}
 }
 
-PublicAPI.tool = {
+PublicAPI.tools = {
 	class: Tool,
 	addToolObject: addTool,
 	updateToolbar,

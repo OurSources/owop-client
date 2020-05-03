@@ -9,7 +9,7 @@ import unloadedPat from '../img/unloaded.png';
 export let protocol = null;
 
 /* The raw event ID numbers should NOT be used, instead import the EVENTS object in your file. */
-let evtId = 6666666; /* no */
+let evtId = 0; /* yes */
 
 export const RANK = {
 	NONE: 0,
