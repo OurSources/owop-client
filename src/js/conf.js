@@ -18,7 +18,12 @@ export const RANK = {
 	ADMIN: 3
 };
 
-PublicAPI.RANK = RANK;
+PublicAPI.RANK = {
+	NONE: 0,
+	USER: 1,
+	MODERATOR: 2,
+	ADMIN: 3
+};
 
 export const EVENTS = {
 	loaded: ++evtId,
@@ -78,7 +83,9 @@ export const PUBLIC_EVENTS = {
 	init: EVENTS.init,
 	tick: EVENTS.tick,
 	toolsInitialized: EVENTS.misc.toolsInitialized,
-	allChunksLoaded: EVENTS.net.chunk.allLoaded
+	allChunksLoaded: EVENTS.net.chunk.allLoaded,
+	camMoved: EVENTS.camera.moved,
+	camZoomed: EVENTS.camera.zoom
 };
 
 PublicAPI.events = PUBLIC_EVENTS;
@@ -128,7 +135,8 @@ export const options = propertyDefaults(userOptions, {
 	/* Bug only affects Windows users with an old Intel graphics card driver */
 	chunkBugWorkaround: false, // navigator.userAgent.indexOf('Windows NT') !== -1
 	hexCoords: false,
-	showProtectionOutlines: true
+	showProtectionOutlines: true,
+	showPlayers: true
 });
 
 if (options.chunkBugWorkaround) {

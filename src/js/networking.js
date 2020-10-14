@@ -1,6 +1,6 @@
 'use strict';
 import { EVENTS as e, protocol } from './conf.js';
-import { eventSys, PublicAPI } from './global.js';
+import { eventSys, PublicAPI, AnnoyingAPI as aa } from './global.js';
 
 export const net = {
 	currentServer: null,
@@ -17,7 +17,7 @@ function isConnected() {
 
 function connect(server, worldName) {
 	eventSys.emit(e.net.connecting, server);
-	net.connection = new WebSocket(server.url);
+	net.connection = new aa.ws(server.url);
 	net.connection.binaryType = "arraybuffer";
 	net.currentServer = server;
 	net.protocol = new server.proto.class(net.connection, worldName);

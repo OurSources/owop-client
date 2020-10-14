@@ -121,6 +121,7 @@ class OldProtocolImpl extends Protocol {
 		this.clet = null;
 
 		this.joinFunc = () => {
+			this.placeBucket.lastCheck = Date.now();
 			this.placeBucket.allowance = 0;
 			//this.chatBucket.allowance = 0;
 			this.interval = setInterval(() => this.sendUpdates(), 1000 / OldProtocol.netUpdateSpeed);
@@ -136,6 +137,10 @@ class OldProtocolImpl extends Protocol {
 		eventSys.once(e.net.world.join, this.joinFunc);
 		eventSys.on(e.net.sec.rank, rankChanged);
 	}
+
+    errorHandler(err) {
+		super.errorHandler(err);
+    }
 
 	closeHandler() {
 		super.closeHandler();
@@ -219,7 +224,7 @@ class OldProtocolImpl extends Protocol {
 						rgb: bbgr,
 						id: bid
 					});
-					
+
 					var edkey = `${bpx},${bpy}`;
 					var edtmoid = this.pendingEdits[edkey];
 					if (edtmoid) {
@@ -313,7 +318,9 @@ class OldProtocolImpl extends Protocol {
 			case oc.setPQuota:
 				let rate = dv.getUint16(1, true);
 				let per = dv.getUint16(3, true);
+				let oallownc = this.placeBucket.allowance;
 				this.placeBucket = new Bucket(rate, per);
+				this.placeBucket.allowance = oallownc;
 				break;
 
 			case oc.chunkProtected:

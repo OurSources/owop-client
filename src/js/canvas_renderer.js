@@ -375,10 +375,13 @@ function render(type) {
 			ctx.font = fontsize + "px sans-serif";
 			rendererValues.currentFontSize = fontsize;
 		}
-		for (var p in players) {
-			var player = players[p];
-			if (!renderPlayer(player, fontsize)) {
-				needsRender |= renderer.rendertype.FX;
+
+		if (options.showPlayers) {
+			for (var p in players) {
+				var player = players[p];
+				if (!renderPlayer(player, fontsize)) {
+					needsRender |= renderer.rendertype.FX;
+				}
 			}
 		}
 	}
