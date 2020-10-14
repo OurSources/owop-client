@@ -486,9 +486,10 @@ button:focus {
 	color: #ffb735;
 }
 #chat-messages .emote {
-	width: 16px;
-	height: 16px;
-	vertical-align: bottom
+    	max-width: 1.375em;
+   	max-height: 1.375em;
+    	vertical-align: bottom;
+    	image-rendering: auto;
 }
 
 #chat-messages.active > li {
