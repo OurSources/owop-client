@@ -231,6 +231,7 @@ export function drawText(ctx, str, x, y, centered){
 }
 
 function isVisible(x, y, w, h) {
+	if(document.visibilityState === "hidden") return;
 	var cx    = camera.x;
 	var cy    = camera.y;
 	var czoom = camera.zoom;
