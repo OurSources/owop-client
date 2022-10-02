@@ -112,6 +112,7 @@ function popOut(canvas, img) {
 }
 
 function load(oncomplete) {
+	cursors.set.crossOrigin="anonymous";
 	cursors.set.onload = function() {
 		var set = cursors.set;
 		var slotcanvas = document.createElement('canvas');

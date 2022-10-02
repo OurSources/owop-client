@@ -235,7 +235,8 @@ function receiveMessage(text) {
 		if (!isAdmin) {
 			text = escapeHTML(text).replace(/\&\#x2F;/g, "/");
 		}
-		text = text.replace(/(?:&lt;|<):(.+?):([0-9]+)(?:&gt;|>)/g, '<img class="emote" title="$1" src="https://cdn.discordapp.com/emojis/$2.png?v=1">');
+		text = text.replace(/(?:&lt;|<)a:(.+?):([0-9]{8,32})(?:&gt;|>)/g, '<img class="emote" src="https://cdn.discordapp.com/emojis/$2.gif?v=1">'); // animated
+		text = text.replace(/(?:&lt;|<):(.+?):([0-9]{8,32})(?:&gt;|>)/g,  '<img class="emote" src="https://cdn.discordapp.com/emojis/$2.png?v=1">'); // static
 		text = misc.chatPostFormatRecvModifier(text);
 		span.innerHTML = anchorme(text, {
 			attributes: [
@@ -347,11 +348,11 @@ function showDevChat(bool) {
 export function revealSecrets(bool) {
 	if (bool) {
 		PublicAPI.net = net;
-		window.WebSocket = aa.ws;
+		//window.WebSocket = aa.ws;
 	} else {
 		delete PublicAPI.net;
 		//delete PublicAPI.tool;
-		window.WebSocket = wsTroll;
+		//window.WebSocket = wsTroll;
 	}
 }
 

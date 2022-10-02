@@ -359,7 +359,7 @@ button:focus {
 #help-button {
 	position: absolute;
 	bottom: 0;
-	right: 0;
+	left: 0;
 	padding: 0;
 	margin: 16px;
 }
@@ -425,7 +425,7 @@ button:focus {
 
 #chat, #dev-chat {
 	position: absolute;
-	left: 0;
+	right: 0;
 	bottom: 0;
 	min-width: 20%;
 	max-width: 450px;
@@ -440,8 +440,8 @@ button:focus {
 	animation-fill-mode: forwards;
 }
 #dev-chat {
-	right: 0;
-	left: initial;
+	left: 0;
+	right: initial;
 }
 #chat.active, #dev-chat.active {
 	background-color: rgba(0, 0, 0, 0.8);
