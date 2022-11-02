@@ -1445,14 +1445,6 @@ eventSys.once(e.misc.toolsRendered, () => {
 		});
 	}));
 
-	addTool(new Tool("Spook", cursors.ghost, PLAYERFX.NONE, RANK.USER, tool => {
-		tool.setEvent("mousedown", (mouse, event) => {
-			let pixel = misc.world.getPixel(mouse.tileX, mouse.tileY);
-			misc.world.setPixel(mouse.tileX, mouse.tileY, [31, 10, 18]);
-			misc.world.setPixel(mouse.tileX, mouse.tileY, pixel);
-		});
-	}));
-
 	eventSys.emit(e.misc.toolsInitialized);
 });
 

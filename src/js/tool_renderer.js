@@ -20,8 +20,7 @@ export const cursors = {
 	shield: {imgpos: [2, 3], hotspot: [18, 18]},
 	kick: {imgpos: [2, 1], hotspot: [3, 6]},
 	ban: {imgpos: [3, 0], hotspot: [10, 4]},
-	write: {imgpos: [1, 3], hotspot: [10, 4]}, // fix hotspot
-	ghost: {imgpos: [4, 1], hotspot: [0, 0]}
+	write: {imgpos: [1, 3], hotspot: [10, 4]} // fix hotspot
 };
 
 PublicAPI.cursors = cursors;
@@ -77,9 +76,8 @@ function shadow(canvas, img) {
 
 /* makes a hole with the shape of the image */
 function popOut(canvas, img) {
-	var shadowcolor = 0xFF541742;
-	var backgroundcolor = 0xFF9C0385;
-
+	var shadowcolor = 0xFF3B314D;
+	var backgroundcolor = 0xFF5C637E;
 	canvas.width = img.width;
 	canvas.height = img.height;
 	var ctx = canvas.getContext('2d');
