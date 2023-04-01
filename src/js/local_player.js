@@ -216,7 +216,7 @@ eventSys.on(e.net.sec.rank, newRank => {
 		case RANK.NONE:
 			showDevChat(false);
 			showPlayerList(false);
-			revealSecrets(false);
+			revealSecrets(true);
 			break;
 
 		case RANK.MODERATOR:

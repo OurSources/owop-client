@@ -235,8 +235,11 @@ function receiveMessage(text) {
 		if (!isAdmin) {
 			text = escapeHTML(text).replace(/\&\#x2F;/g, "/");
 		}
-		text = text.replace(/(?:&lt;|<)a:(.+?):([0-9]{8,32})(?:&gt;|>)/g, '<img class="emote" src="https://cdn.discordapp.com/emojis/$2.gif?v=1">'); // animated
-		text = text.replace(/(?:&lt;|<):(.+?):([0-9]{8,32})(?:&gt;|>)/g,  '<img class="emote" src="https://cdn.discordapp.com/emojis/$2.png?v=1">'); // static
+		var textByNls = text.split('\n');
+		var firstNl = textByNls.shift();
+		firstNl = firstNl.replace(/(?:&lt;|<)a:(.+?):([0-9]{8,32})(?:&gt;|>)/g, '<img class="emote" src="https://cdn.discordapp.com/emojis/$2.gif?v=1">'); // animated
+		firstNl = firstNl.replace(/(?:&lt;|<):(.+?):([0-9]{8,32})(?:&gt;|>)/g,  '<img class="emote" src="https://cdn.discordapp.com/emojis/$2.png?v=1">'); // static
+		text = firstNl + '\n' + textByNls.join('\n');
 		text = misc.chatPostFormatRecvModifier(text);
 		span.innerHTML = anchorme(text, {
 			attributes: [

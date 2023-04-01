@@ -99,7 +99,15 @@ if (storageEnabled()) {
 	}
 }
 
-let shouldFool = (d => d.getMonth() == 3 && d.getDate() == 1)(new Date());
+let shouldFool = false; //(d => d.getMonth() == 3 && d.getDate() == 1)(new Date());
+function getDefaultWorld() {
+	try {
+		return shouldFool ? 'aprilfools' : ((navigator.language||navigator.languages[0]||"").startsWith("ru") ? "ru" : "main");
+	} catch (e) {
+		return "main";
+	}
+}
+
 
 export const options = propertyDefaults(userOptions, {
 	serverAddress: [/*{
@@ -119,7 +127,7 @@ export const options = propertyDefaults(userOptions, {
 	tickSpeed: 30, // How many times per second to run a tick
 	minGridZoom: 1, /* Minimum zoom level where the grid shows up */
 	movementSpeed: 1, /* Pixels per tick */
-	defaultWorld: shouldFool ? 'aprilfools' : 'main',
+	defaultWorld: getDefaultWorld(),
 	enableSounds: true,
 	enableIdView: true,
 	defaultZoom: 16,

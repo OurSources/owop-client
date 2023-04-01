@@ -19,7 +19,7 @@ export const cursors = {
 	wand: {imgpos: [3, 3], hotspot: [0, 0]},
 	shield: {imgpos: [2, 3], hotspot: [18, 18]},
 	kick: {imgpos: [2, 1], hotspot: [3, 6]},
-	ban: {imgpos: [3, 0], hotspot: [10, 4]},
+	ban: {imgpos: [2, 2], hotspot: [10, 4]},
 	write: {imgpos: [1, 3], hotspot: [10, 4]} // fix hotspot
 };
 
