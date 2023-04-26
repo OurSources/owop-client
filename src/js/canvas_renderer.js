@@ -320,8 +320,8 @@ function render(type) {
 			var cliph = clusterCanvasSize - clipy;
 			clipw = clipw + x < cwidth / zoom ? clipw : cwidth / zoom - x;
 			cliph = cliph + y < cheight / zoom ? cliph : cheight / zoom - y;
-			clipw = (clipw + 1) | 0; /* Math.ceil */
-			cliph = (cliph + 1) | 0;
+			//clipw = (clipw + 1) | 0; /* Math.ceil */
+			//cliph = (cliph + 1) | 0;
 			if (clipw > 0 && cliph > 0) {
 				ctx.drawImage(cluster.canvas, clipx, clipy, clipw, cliph, x, y, clipw, cliph);
 			}
