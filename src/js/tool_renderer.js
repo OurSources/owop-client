@@ -34,22 +34,24 @@ function reduce(canvas) { /* Removes unused space from the image */
 	var xoff = 0;
 	var yoff = 0;
 	for(var y = 0, x, i = 0; y < idat.height; y++) {
-		for(x = idat.width; x--; i += u32dat[y * idat.width + x]);
+		for(x = idat.width; x--; i += u32dat[y * idat.width + x] >> 26);
 		if(i) { break; }
 		yoff++;
+		nh--;
 	}
 	for(var x = 0, y, i = 0; x < idat.width; x++) {
-		for(y = nh; y--; i += u32dat[y * idat.width + x]);
+		for(y = nh; y--; i += u32dat[y * idat.width + x] >> 26);
 		if(i) { break; }
 		xoff++;
+		nw--;
 	}
 	for(var y = idat.height, x, i = 0; y--;) {
-		for(x = idat.width; x--; i += u32dat[y * idat.width + x]);
+		for(x = idat.width; x--; i += u32dat[y * idat.width + x] >> 26);
 		if(i) { break; }
 		nh--;
 	}
 	for(var x = idat.width, y, i = 0; x--;) {
-		for(y = nh; y--; i += u32dat[y * idat.width + x]);
+		for(y = nh; y--; i += u32dat[y * idat.width + x] >> 26);
 		if(i) { break; }
 		nw--;
 	}
