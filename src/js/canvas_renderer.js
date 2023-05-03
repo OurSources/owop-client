@@ -551,8 +551,14 @@ function getCenterPixel() {
 }
 
 function centerCameraTo(x, y) {
-	cameraValues.x = -(window.innerWidth / camera.zoom / 2) + x;
-	cameraValues.y = -(window.innerHeight / camera.zoom / 2) + y;
+	if(typeof(x) == "number" && !isNaN(x)){
+		cameraValues.x = -(window.innerWidth / camera.zoom / 2) + x;
+	}
+	
+	if(typeof(y) == "number" && !isNaN(y)){
+		cameraValues.y = -(window.innerHeight / camera.zoom / 2) + y;
+	}
+	
 	onCameraMove();
 }
 
