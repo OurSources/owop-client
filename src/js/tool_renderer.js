@@ -19,7 +19,7 @@ export const cursors = {
 	wand: {imgpos: [3, 3], hotspot: [0, 0]},
 	shield: {imgpos: [2, 3], hotspot: [18, 18]},
 	kick: {imgpos: [2, 1], hotspot: [3, 6]},
-	ban: {imgpos: [3, 0], hotspot: [10, 4]},
+	ban: {imgpos: [2, 2], hotspot: [10, 4]},
 	write: {imgpos: [1, 3], hotspot: [10, 4]} // fix hotspot
 };
 
@@ -34,22 +34,24 @@ function reduce(canvas) { /* Removes unused space from the image */
 	var xoff = 0;
 	var yoff = 0;
 	for(var y = 0, x, i = 0; y < idat.height; y++) {
-		for(x = idat.width; x--; i += u32dat[y * idat.width + x]);
+		for(x = idat.width; x--; i += u32dat[y * idat.width + x] >> 26);
 		if(i) { break; }
 		yoff++;
+		nh--;
 	}
 	for(var x = 0, y, i = 0; x < idat.width; x++) {
-		for(y = nh; y--; i += u32dat[y * idat.width + x]);
+		for(y = nh; y--; i += u32dat[y * idat.width + x] >> 26);
 		if(i) { break; }
 		xoff++;
+		nw--;
 	}
 	for(var y = idat.height, x, i = 0; y--;) {
-		for(x = idat.width; x--; i += u32dat[y * idat.width + x]);
+		for(x = idat.width; x--; i += u32dat[y * idat.width + x] >> 26);
 		if(i) { break; }
 		nh--;
 	}
 	for(var x = idat.width, y, i = 0; x--;) {
-		for(y = nh; y--; i += u32dat[y * idat.width + x]);
+		for(y = nh; y--; i += u32dat[y * idat.width + x] >> 26);
 		if(i) { break; }
 		nw--;
 	}
@@ -112,6 +114,7 @@ function popOut(canvas, img) {
 }
 
 function load(oncomplete) {
+	cursors.set.crossOrigin="anonymous";
 	cursors.set.onload = function() {
 		var set = cursors.set;
 		var slotcanvas = document.createElement('canvas');

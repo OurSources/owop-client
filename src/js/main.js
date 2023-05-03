@@ -11,7 +11,7 @@ import { CHUNK_SIZE, EVENTS as e, RANK } from './conf.js';
 import { Bucket } from './util/Bucket.js';
 import { escapeHTML, getTime, getCookie, setCookie, cookiesEnabled, storageEnabled, loadScript, eventOnce } from './util/misc.js';
 
-import { eventSys, PublicAPI } from './global.js';
+import { eventSys, PublicAPI, AnnoyingAPI as aa, wsTroll } from './global.js';
 import { options } from './conf.js';
 import { World } from './World.js';
 import { camera, renderer, moveCameraBy } from './canvas_renderer.js';
@@ -222,7 +222,7 @@ function receiveMessage(text) {
 					attributes: [
 						{
 							name: "target",
-							value: "blank"
+							value: "_blank"
 						}
 					]
 				})} [x${++times}]`;
@@ -235,13 +235,17 @@ function receiveMessage(text) {
 		if (!isAdmin) {
 			text = escapeHTML(text).replace(/\&\#x2F;/g, "/");
 		}
-		text = text.replace(/(?:&lt;|<):(.+?):([0-9]+)(?:&gt;|>)/g, '<img class="emote" title="$1" src="https://cdn.discordapp.com/emojis/$2.png?v=1">');
+		var textByNls = text.split('\n');
+		var firstNl = textByNls.shift();
+		firstNl = firstNl.replace(/(?:&lt;|<)a:(.+?):([0-9]{8,32})(?:&gt;|>)/g, '<img class="emote" src="https://cdn.discordapp.com/emojis/$2.gif?v=1">'); // animated
+		firstNl = firstNl.replace(/(?:&lt;|<):(.+?):([0-9]{8,32})(?:&gt;|>)/g,  '<img class="emote" src="https://cdn.discordapp.com/emojis/$2.png?v=1">'); // static
+		text = firstNl + '\n' + textByNls.join('\n');
 		text = misc.chatPostFormatRecvModifier(text);
 		span.innerHTML = anchorme(text, {
 			attributes: [
 				{
 					name: "target",
-					value: "blank"
+					value: "_blank"
 				}
 			]
 		});
@@ -347,8 +351,11 @@ function showDevChat(bool) {
 export function revealSecrets(bool) {
 	if (bool) {
 		PublicAPI.net = net;
+		//window.WebSocket = aa.ws;
 	} else {
 		delete PublicAPI.net;
+		//delete PublicAPI.tool;
+		//window.WebSocket = wsTroll;
 	}
 }
 
@@ -366,7 +373,8 @@ function updateXYDisplay(x, y) {
 		if(!options.hexCoords) {
 			elements.xyDisplay.innerHTML = "X: " + x + ", Y: " + y;
 		} else {
-			elements.xyDisplay.innerHTML = "X: 0x" + x.toString(16) + ", Y: 0x" + y.toString(16);
+			var hexify = i => `${(i < 0 ? '-' : '')}0x${Math.abs(i).toString(16)}`;
+			elements.xyDisplay.innerHTML = `X: ${hexify(x)}, Y: ${hexify(y)}`;
 		}
 		return true;
 	}
@@ -518,7 +526,7 @@ function retryingConnect(serverGetter, worldName, token) {
 		net.connect(currentServer, worldName, token);
 		const disconnected = () => {
 			++tryN;
-			statusMsg(true, `Couldn't connect to server, retrying... (${tryN})`);
+			statusMsg(true, `Couldn't connect to server${tryN >= 5 ? ". Your IP may have been flagged as a proxy (or banned). Proxies are disallowed on OWOP due to bot abuse, sorry. R" : ", r"}etrying... (${tryN})`);
 			setTimeout(tryConnect, Math.min(tryN * 2000, 10000), tryN);
 			eventSys.removeListener(e.net.connected, connected);
 		};
@@ -738,9 +746,19 @@ function init() {
 					renderer.showGrid(!renderer.gridShown);
 					break;
 
+				case 72: /* H */
+					options.showProtectionOutlines = !options.showProtectionOutlines;
+					renderer.render(renderer.rendertype.FX);
+					break;
+
 				case 112: /* F1 */
 					showWorldUI(!misc.guiShown);
 					event.preventDefault();
+					break;
+
+				case 113: /* F2 */
+					options.showPlayers = !options.showPlayers;
+					renderer.render(renderer.rendertype.FX);
 					break;
 
 				case 107:
@@ -892,7 +910,7 @@ function init() {
 		options.enableSounds = !elements.soundToggle.checked;
 	});
 	options.enableSounds = !elements.soundToggle.checked;
-	
+
 	elements.hexToggle.addEventListener('change', e => {
 		options.hexCoords = elements.hexToggle.checked;
 	});
@@ -1156,6 +1174,7 @@ window.addEventListener("load", () => {
 	checkFunctionality(() => eventSys.emit(e.loaded));
 });
 
+
 /* Public API definitions */
 PublicAPI.emit = eventSys.emit.bind(eventSys);
 PublicAPI.on = eventSys.on.bind(eventSys);
@@ -1184,3 +1203,4 @@ PublicAPI.poke = () => {
 	}
 };
 PublicAPI.muted = [];
+

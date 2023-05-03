@@ -9,7 +9,7 @@ import unloadedPat from '../img/unloaded.png';
 export let protocol = null;
 
 /* The raw event ID numbers should NOT be used, instead import the EVENTS object in your file. */
-let evtId = 6666666; /* no */
+let evtId = 0;
 
 export const RANK = {
 	NONE: 0,
@@ -18,7 +18,12 @@ export const RANK = {
 	ADMIN: 3
 };
 
-PublicAPI.RANK = RANK;
+PublicAPI.RANK = {
+	NONE: 0,
+	USER: 1,
+	MODERATOR: 2,
+	ADMIN: 3
+};
 
 export const EVENTS = {
 	loaded: ++evtId,
@@ -78,7 +83,9 @@ export const PUBLIC_EVENTS = {
 	init: EVENTS.init,
 	tick: EVENTS.tick,
 	toolsInitialized: EVENTS.misc.toolsInitialized,
-	allChunksLoaded: EVENTS.net.chunk.allLoaded
+	allChunksLoaded: EVENTS.net.chunk.allLoaded,
+	camMoved: EVENTS.camera.moved,
+	camZoomed: EVENTS.camera.zoom
 };
 
 PublicAPI.events = PUBLIC_EVENTS;
@@ -92,7 +99,15 @@ if (storageEnabled()) {
 	}
 }
 
-let shouldFool = (d => d.getMonth() == 3 && d.getDate() == 1)(new Date());
+let shouldFool = false; //(d => d.getMonth() == 3 && d.getDate() == 1)(new Date());
+function getDefaultWorld() {
+	try {
+		return shouldFool ? 'aprilfools' : ((navigator.language||navigator.languages[0]||"").startsWith("ru") ? "ru" : "main");
+	} catch (e) {
+		return "main";
+	}
+}
+
 
 export const options = propertyDefaults(userOptions, {
 	serverAddress: [/*{
@@ -112,7 +127,7 @@ export const options = propertyDefaults(userOptions, {
 	tickSpeed: 30, // How many times per second to run a tick
 	minGridZoom: 1, /* Minimum zoom level where the grid shows up */
 	movementSpeed: 1, /* Pixels per tick */
-	defaultWorld: shouldFool ? 'aprilfools' : 'main',
+	defaultWorld: getDefaultWorld(),
 	enableSounds: true,
 	enableIdView: true,
 	defaultZoom: 16,
@@ -127,7 +142,9 @@ export const options = propertyDefaults(userOptions, {
 	backgroundUrl: null,
 	/* Bug only affects Windows users with an old Intel graphics card driver */
 	chunkBugWorkaround: false, // navigator.userAgent.indexOf('Windows NT') !== -1
-	hexCoords: false
+	hexCoords: false,
+	showProtectionOutlines: true,
+	showPlayers: true
 });
 
 if (options.chunkBugWorkaround) {

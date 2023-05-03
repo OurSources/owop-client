@@ -56,7 +56,7 @@ export const OldProtocol = {
 		10: 'copy'
 	},
 	misc: {
-		worldVerification: 4321,
+		worldVerification: 25565,
 		chatVerification: String.fromCharCode(10),
 		tokenVerification: 'CaptchA'
 	},
@@ -111,6 +111,7 @@ class OldProtocolImpl extends Protocol {
 		this.players = {};
 		this.chunksLoading = {}; /* duplicate */
 		this.waitingForChunks = 0;
+		this.pendingEdits = {};
 		this.id = null;
 		this.captcha = captcha;
 
@@ -123,6 +124,7 @@ class OldProtocolImpl extends Protocol {
 		this.clet = null;
 
 		this.joinFunc = () => {
+			this.placeBucket.lastCheck = Date.now();
 			this.placeBucket.allowance = 0;
 			//this.chatBucket.allowance = 0;
 			this.interval = setInterval(() => this.sendUpdates(), 1000 / OldProtocol.netUpdateSpeed);
@@ -138,6 +140,10 @@ class OldProtocolImpl extends Protocol {
 		eventSys.once(e.net.world.join, this.joinFunc);
 		eventSys.on(e.net.sec.rank, rankChanged);
 	}
+
+    errorHandler(err) {
+		super.errorHandler(err);
+    }
 
 	closeHandler() {
 		super.closeHandler();
@@ -221,6 +227,13 @@ class OldProtocolImpl extends Protocol {
 						rgb: bbgr,
 						id: bid
 					});
+
+					var edkey = `${bpx},${bpy}`;
+					var edtmoid = this.pendingEdits[edkey];
+					if (edtmoid) {
+						clearTimeout(edtmoid);
+						delete this.pendingEdits[edkey];
+					}
 				}
 				if (updated) {
 					eventSys.emit(e.net.world.tilesUpdated, updates);
@@ -321,7 +334,9 @@ class OldProtocolImpl extends Protocol {
 			case oc.setPQuota:
 				let rate = dv.getUint16(1, true);
 				let per = dv.getUint16(3, true);
+				let oallownc = this.placeBucket.allowance;
 				this.placeBucket = new Bucket(rate, per);
+				this.placeBucket.allowance = oallownc;
 				break;
 
 			case oc.chunkProtected:
@@ -369,7 +384,7 @@ class OldProtocolImpl extends Protocol {
 		return this.waitingForChunks === 0;
 	}
 
-	updatePixel(x, y, rgb) {
+	updatePixel(x, y, rgb, undocb) {
 		var distx = Math.trunc(x / OldProtocol.chunkSize) - Math.trunc(this.lastSentX / (OldProtocol.chunkSize * 16)); distx *= distx;
 		var disty = Math.trunc(y / OldProtocol.chunkSize) - Math.trunc(this.lastSentY / (OldProtocol.chunkSize * 16)); disty *= disty;
 		var dist = Math.sqrt(distx + disty);
@@ -382,6 +397,7 @@ class OldProtocolImpl extends Protocol {
 			dv.setUint8(9, rgb[1]);
 			dv.setUint8(10, rgb[2]);
 			this.ws.send(array);
+			this.pendingEdits[`${x},${y}`] = setTimeout(undocb, 2000);
 			return true;
 		}
 		return false;

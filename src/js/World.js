@@ -78,7 +78,7 @@ export class World {
 		this.pathUpdaterTimeout = -1;
 		this.pathFx = new Fx((fx, ctx, time) => {
 			var retval = 1;
-			if (fx.extra.path) {
+			if (fx.extra.path && !options.noUi) {
 				ctx.strokeStyle = "#525252";
 				var l = ctx.lineWidth;
 				ctx.lineWidth = 3 / camera.zoom;
@@ -90,7 +90,9 @@ export class World {
 					retval = 0;
 				}
 				ctx.globalAlpha = 0.75;
-				ctx.stroke(fx.extra.path);
+				if (options.showProtectionOutlines) {
+					ctx.stroke(fx.extra.path);
+				}
 				ctx.setTransform(1, 0, 0, 1, 0, 0);
 				ctx.lineWidth = l;
 			}
@@ -128,14 +130,14 @@ export class World {
 		eventSys.once(e.net.world.leave, leaveWFunc);
 		eventSys.once(e.net.disconnected, disconnectedFunc);
 	}
-	
+
 	makeLockedChunksPath() {
 		const d = Chunk.dir;
 		var mainPath = new Path2D();
-		
+
 		var vpoints = {};
 		var hpoints = {};
-		
+
 		const addPoint = (fx, fy, tx, ty, points) => {
 			const fkey = `${fx},${fy}`;
 			const tkey = `${tx},${ty}`;
@@ -166,7 +168,7 @@ export class World {
 			if (ln === (d.LEFT | d.DOWN | d.UP | d.RIGHT)) {
 				continue;
 			}
-			
+
 			if (!(ln & d.UP)) {
 				addPoint(chunk.x + 1, chunk.y, chunk.x, chunk.y, hpoints);
 			}
@@ -181,13 +183,13 @@ export class World {
 				addPoint(chunk.x + 1, chunk.y + 1, chunk.x + 1, chunk.y, vpoints);
 			}
 		}
-		
+
 		var polys = 0;
 		var pointobjs = [vpoints, hpoints];
 		for (var p in vpoints) {
 			var a = p.split(',');
 			mainPath.moveTo(a[0] * 16, a[1] * 16);
-			
+
 			delete vpoints[vpoints[p]];
 			delete vpoints[p];
 			p = hpoints[p];
@@ -195,7 +197,7 @@ export class World {
 				var prev = pointobjs[(i + 1) & 1];
 				var next = pointobjs[i & 1];
 				mainPath.lineTo(a[0] * 16, a[1] * 16);
-				
+
 				delete prev[prev[p]];
 				delete prev[p];
 				p = next[p];
@@ -206,7 +208,7 @@ export class World {
 
 		return polys === 0 ? null : mainPath;
 	}
-	
+
 	findNeighborLockedChunks(chunk, newState) {
 		const d = Chunk.dir;
 		const checkSide = (x, y, to, from) => {
@@ -221,12 +223,12 @@ export class World {
 				}
 			}
 		};
-		
+
 		checkSide(0, -1, d.UP, d.DOWN);
 		checkSide(1, 0, d.RIGHT, d.LEFT);
 		checkSide(-1, 0, d.LEFT, d.RIGHT);
 		checkSide(0, 1, d.DOWN, d.UP);
-		
+
 		clearTimeout(this.pathUpdaterTimeout);
 		this.pathUpdaterTimeout = setTimeout(() => {
 			this.pathFx.update({path: this.makeLockedChunksPath()});
@@ -303,7 +305,10 @@ export class World {
 		if (chunk && (!chunk.locked || player.rank >= RANK.MODERATOR)) {
 			var oldPixel = this.getPixel(x, y, chunk);
 			if (!oldPixel || (oldPixel[0] === color[0] && oldPixel[1] === color[1] && oldPixel[2] === color[2])
-			|| !net.protocol.updatePixel(x, y, color)) {
+					|| !net.protocol.updatePixel(x, y, color, () => {
+				chunk.update(x, y, colorUtils.u24_888(oldPixel[0], oldPixel[1], oldPixel[2]));
+				eventSys.emit(e.renderer.updateChunk, chunk);
+			})) {
 				return false;
 			}
 			if (!noUndo) {

@@ -6,7 +6,7 @@ import { elements, mouse, misc, showDevChat, showPlayerList, revealSecrets } fro
 import { colorUtils as color } from './util/color.js';
 import { renderer } from './canvas_renderer.js';
 import { cursors } from './tool_renderer.js';
-import { tools, updateToolbar, updateToolWindow } from './tools.js';
+import { tools, toolsApi, updateToolbar, updateToolWindow } from './tools.js';
 import { Fx, PLAYERFX } from './Fx.js';
 import { net } from './networking.js';
 import { Bucket } from './util/Bucket.js';
@@ -216,7 +216,7 @@ eventSys.on(e.net.sec.rank, newRank => {
 		case RANK.NONE:
 			showDevChat(false);
 			showPlayerList(false);
-			revealSecrets(false);
+			revealSecrets(true);
 			break;
 
 		case RANK.MODERATOR:
@@ -224,6 +224,7 @@ eventSys.on(e.net.sec.rank, newRank => {
 			showDevChat(true);
 			showPlayerList(true);
 			revealSecrets(true);
+			//PublicAPI.tools = toolsApi; /* this is what lazyness does to you */
 			break;
 	}
 	updateToolbar();

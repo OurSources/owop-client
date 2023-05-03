@@ -157,7 +157,7 @@ class Tool {
 	}
 }
 
-PublicAPI.tool = {
+export const toolsApi = PublicAPI.tools = {
 	class: Tool,
 	addToolObject: addTool,
 	updateToolbar,
@@ -1154,6 +1154,10 @@ eventSys.once(e.misc.toolsRendered, () => {
 				var imgX = x - tileX;
 				if (imgY < 0 || imgX < 0 || imgY >= dat.height || imgX >= dat.width) {
 					var currentPixel = misc.world.getPixel(x, y);
+					if (!currentPixel && tool.extra.wreckStuff) {
+						currentPixel = [255, 255, 255];
+					}
+					
 					return currentPixel ? (currentPixel[2] << 16 | currentPixel[1] << 8 | currentPixel[0])
 						: null;
 				}
@@ -1161,7 +1165,11 @@ eventSys.once(e.misc.toolsRendered, () => {
 				var oldPixel = misc.world.getPixel(x, y);
 				var alpha = img >> 24 & 0xFF;
 				if (!oldPixel) {
-					return null;
+					if (tool.extra.wreckStuff) {
+						oldPixel = [255, 255, 255];
+					} else {
+						return null;
+					}
 				}
 				var r = (1 - alpha / 255) * oldPixel[0] + (alpha / 255) * (img       & 0xFF);
 				var g = (1 - alpha / 255) * oldPixel[1] + (alpha / 255) * (img >> 8  & 0xFF);
@@ -1227,7 +1235,7 @@ eventSys.once(e.misc.toolsRendered, () => {
 					if (tool.extra.sendQueue.length) {
 						throw new Error("Wait until pasting finishes, or cancel with right click!");
 					}
-					
+
 					paint(mouse.tileX, mouse.tileY);
 				}
 			} else if (mouse.buttons & 0b10) {
