@@ -10,6 +10,8 @@ import { colorUtils as color } from './../util/color.js';
 import { player, shouldUpdate, networkRankVerification } from './../local_player.js';
 import { camera } from './../canvas_renderer.js';
 import { mouse, elements } from './../main.js';
+import { options } from './../conf.js';
+import { retryingConnect } from './../main.js';
 
 export const captchaState = {
 	CA_WAITING: 0,
@@ -99,7 +101,7 @@ function stoi(string, max) {
 }
 
 class OldProtocolImpl extends Protocol {
-	constructor(ws, worldName) {
+	constructor(ws, worldName, captcha) {
 		super(ws);
 		super.hookEvents(this);
 		this.lastSentX = 0;
@@ -111,6 +113,7 @@ class OldProtocolImpl extends Protocol {
 		this.waitingForChunks = 0;
 		this.pendingEdits = {};
 		this.id = null;
+		this.captcha = captcha;
 
 		var params = OldProtocol.chatBucket;
 		this.chatBucket = new Bucket(params[0], params[1]);
@@ -302,11 +305,24 @@ class OldProtocolImpl extends Protocol {
 			case oc.captcha: // Captcha
 				switch (dv.getUint8(1)) {
 					case captchaState.CA_WAITING:
-						loadAndRequestCaptcha();
-						eventSys.once(e.misc.captchaToken, token => {
-							let message = OldProtocol.misc.tokenVerification + token;
+						// the ws sometimes closes while doing the captcha, showing
+						// the reconnect screen afterwards, making the user redo it
+						if(this.captcha) {
+							let message = OldProtocol.misc.tokenVerification + this.captcha;
 							this.ws.send(message);
-						});
+						} else {
+							loadAndRequestCaptcha();
+							eventSys.once(e.misc.captchaToken, token => {
+								let message = OldProtocol.misc.tokenVerification + token;
+								if(this.ws.readyState != WebSocket.OPEN) {
+									setTimeout(function() {
+										retryingConnect(() => options.serverAddress[0], this.worldName, token);
+									}, 125);
+								} else {
+									this.ws.send(message);
+								}
+							});
+						}
 						break;
 
 					case captchaState.CA_OK:

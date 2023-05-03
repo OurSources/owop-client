@@ -504,7 +504,7 @@ function inGameDisconnected() {
 	elements.chatInput.style.display = "";
 }
 
-function retryingConnect(serverGetter, worldName) {
+function retryingConnect(serverGetter, worldName, token) {
 	if (misc.connecting && !net.isConnected()) { /* We're already connected/trying to connect */
 		return;
 	}
@@ -523,7 +523,7 @@ function retryingConnect(serverGetter, worldName) {
 			statusMsg(true, `Connecting to '${currentServer.title}'...`);
 			showLoadScr(true, false);
 		});
-		net.connect(currentServer, worldName);
+		net.connect(currentServer, worldName, token);
 		const disconnected = () => {
 			++tryN;
 			statusMsg(true, `Couldn't connect to server${tryN >= 5 ? ". Your IP may have been flagged as a proxy (or banned). Proxies are disallowed on OWOP due to bot abuse, sorry. R" : ", r"}etrying... (${tryN})`);
