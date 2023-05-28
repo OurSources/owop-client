@@ -10,7 +10,6 @@ import { colorUtils as color } from './../util/color.js';
 import { player, shouldUpdate, networkRankVerification } from './../local_player.js';
 import { camera } from './../canvas_renderer.js';
 import { mouse, elements } from './../main.js';
-import { options } from './../conf.js';
 import { retryingConnect } from './../main.js';
 
 export const captchaState = {
@@ -73,7 +72,8 @@ export const OldProtocol = {
 			captcha: 5,
 			setPQuota: 6,
 			chunkProtected: 7,
-			maxCount: 8
+			maxCount: 8,
+			donUntil: 9
 		}
 	}
 };
@@ -119,6 +119,8 @@ class OldProtocolImpl extends Protocol {
 		this.chatBucket = new Bucket(params[0], params[1]);
 		params = OldProtocol.placeBucket[player.rank];
 		this.placeBucket = new Bucket(params[0], params[1]);
+		this.placeBucketMult = 1;
+		this.donUntilTs = 0;
 
 		this.interval = null;
 		this.clet = null;
@@ -136,6 +138,7 @@ class OldProtocolImpl extends Protocol {
 		};
 		this.leaveFunc = () => {
 			eventSys.removeListener(e.net.sec.rank, rankChanged);
+			eventSys.emit(e.net.donUntil, 0, 1);
 		};
 		eventSys.once(e.net.world.join, this.joinFunc);
 		eventSys.on(e.net.sec.rank, rankChanged);
@@ -335,8 +338,11 @@ class OldProtocolImpl extends Protocol {
 				let rate = dv.getUint16(1, true);
 				let per = dv.getUint16(3, true);
 				let oallownc = this.placeBucket.allowance;
+				let pmult = dv.byteLength >= 6 ? dv.getUint8(5) / 10 : 1;
 				this.placeBucket = new Bucket(rate, per);
 				this.placeBucket.allowance = oallownc;
+				this.placeBucketMult = pmult;
+				eventSys.emit(e.net.donUntil, this.donUntilTs, this.placeBucketMult);
 				break;
 
 			case oc.chunkProtected:
@@ -348,6 +354,11 @@ class OldProtocolImpl extends Protocol {
 
 			case oc.maxCount:
 				eventSys.emit(e.net.maxCount, dv.getUint16(1, true));
+				break;
+
+			case oc.donUntil:
+				this.donUntilTs = dv.getUint32(5, true) * Math.pow(2, 32) + dv.getUint32(1, true);
+				eventSys.emit(e.net.donUntil, this.donUntilTs, this.placeBucketMult);
 				break;
 		}
 	}

@@ -74,7 +74,8 @@ export const EVENTS = {
 		sec: {
 			rank: ++evtId
 		},
-		maxCount: ++evtId
+		maxCount: ++evtId,
+		donUntil: ++evtId
 	}
 };
 
