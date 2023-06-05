@@ -70,7 +70,7 @@ button.winframe:active {
 	border-image: inherit;
 }
 
-.whitetext, #xy-display, #chat, #dev-chat, #playercount-display {
+.whitetext, #xy-display, #chat, #dev-chat, #playercount-display, #topright-displays > * {
 	color: #FFF;
 	font: 16px pixel-op, sans-serif;
 	text-shadow: -1px 0 #000, 0 1px #000, 1px 0 #000, 0 -1px #000;
@@ -220,20 +220,39 @@ button:focus {
 	top: 0;
 	left: 0;
 }
-#xy-display, #playercount-display, #palette {
+#xy-display, #palette {
 	position: absolute;
+}
+#xy-display, #playercount-display, #palette, #topright-displays > * {
 	pointer-events: none;
 	transform: translateY(-100%);
 	transition: transform 0.75s;
+}
+#topright-displays {
+	position: absolute;
+	pointer-events: none;
 }
 #xy-display {
 	padding-left: 2px;
 	left: -4px;
 	top: -4px;
 }
-#playercount-display {
+#topright-displays {
 	right: -4px;
 	top: -4px;
+}
+
+#topright-displays > * {
+	display: inline-block;
+	min-height: 8px;
+}
+
+#topright-displays:not(.hideui) #dinfo-display[data-pm]:not([data-pm="1"]) {
+	transform: initial;
+}
+
+#dinfo-display::after {
+	content: '' attr(data-pm) 'x boost for ' attr(data-tmo) '!';
 }
 
 #toole-container {
@@ -407,12 +426,12 @@ button:focus {
 #help > .content > .links {
 	text-align: center;
 }
-#help > .content > .links > a {
+#help > .content > .links > * {
 	display: inline-block;
 	vertical-align: middle;
 	width: 76px;
 }
-#help > .content > .links > a > img {
+#help > .content > .links > * img {
 	width: 100%;
 }
 #help.hidden {

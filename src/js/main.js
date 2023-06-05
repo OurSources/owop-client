@@ -82,7 +82,8 @@ export const misc = {
 	cookiesEnabled: cookiesEnabled(),
 	storageEnabled: storageEnabled(),
 	showEUCookieNag: !options.noUi && cookiesEnabled() && getCookie("nagAccepted") !== "true",
-	usingFirefox: navigator.userAgent.indexOf("Firefox") !== -1
+	usingFirefox: navigator.userAgent.indexOf("Firefox") !== -1,
+	donTimer: 0
 };
 
 export const sounds = {
@@ -465,6 +466,7 @@ function showWorldUI(bool) {
 	elements.chatInput.style.display = "initial";
 	elements.paletteBg.style.visibility = bool ? "" : "hidden";
 	elements.helpButton.style.visibility = bool ? "" : "hidden";
+	elements.topRightDisplays.classList[bool ? 'remove' : 'add']('hideui');
 }
 
 function showLoadScr(bool, showOptions) {
@@ -504,7 +506,7 @@ function inGameDisconnected() {
 	elements.chatInput.style.display = "";
 }
 
-function retryingConnect(serverGetter, worldName) {
+export function retryingConnect(serverGetter, worldName, token) {
 	if (misc.connecting && !net.isConnected()) { /* We're already connected/trying to connect */
 		return;
 	}
@@ -523,7 +525,7 @@ function retryingConnect(serverGetter, worldName) {
 			statusMsg(true, `Connecting to '${currentServer.title}'...`);
 			showLoadScr(true, false);
 		});
-		net.connect(currentServer, worldName);
+		net.connect(currentServer, worldName, token);
 		const disconnected = () => {
 			++tryN;
 			statusMsg(true, `Couldn't connect to server${tryN >= 5 ? ". Your IP may have been flagged as a proxy (or banned). Proxies are disallowed on OWOP due to bot abuse, sorry. R" : ", r"}etrying... (${tryN})`);
@@ -1011,6 +1013,29 @@ eventSys.on(e.net.playerCount, count => {
 	updatePlayerCount();
 });
 
+eventSys.on(e.net.donUntil, (ts, pmult) => {
+	const updTimer = () => {
+		const now = Date.now();
+
+		const secs = Math.floor(Math.max(0, ts - now) / 1000);
+		const mins = Math.floor(secs / 60);
+		const hours = Math.floor(mins / 60);
+		let tmer = (hours > 0 ? hours + ':' : '')
+			+ ((mins % 60) < 10 ? '0' : '') + (mins % 60) + ':'
+			+ ((secs % 60) < 10 ? '0' : '') + (secs % 60);
+		elements.dInfoDisplay.setAttribute("data-tmo", tmer);
+
+	};
+
+	clearInterval(misc.donTimer);
+	elements.dInfoDisplay.setAttribute("data-pm", ''+pmult);
+	elements.dInfoDisplay.setAttribute("data-ts", ''+ts);
+	updTimer();
+	if (ts > Date.now()) {
+		misc.donTimer = setInterval(updTimer, 1000);
+	}
+});
+
 eventSys.on(e.net.chat, receiveMessage);
 eventSys.on(e.net.devChat, receiveDevMessage);
 
@@ -1144,6 +1169,8 @@ window.addEventListener("load", () => {
 	elements.devChatMessages = document.getElementById("dev-chat-messages");
 	elements.chatMessages = document.getElementById("chat-messages");
 	elements.playerCountDisplay = document.getElementById("playercount-display");
+	elements.topRightDisplays = document.getElementById("topright-displays");
+	elements.dInfoDisplay = document.getElementById("dinfo-display");
 
 	elements.palette = document.getElementById("palette");
 	elements.paletteColors = document.getElementById("palette-colors");
@@ -1163,8 +1190,21 @@ window.addEventListener("load", () => {
 
 	elements.helpButton = document.getElementById("help-button");
 
+	var donateBtn = document.getElementById("donate-button");
 	elements.helpButton.addEventListener("click", function () {
 		document.getElementById("help").className = "";
+		donateBtn.innerHTML = "";
+
+		window.PayPal.Donation.Button({
+			env:'production',
+			hosted_button_id:'HLLU832GVG824',
+			custom: 'g=owop&w=' + (misc.world ? encodeURIComponent(misc.world.name) : 'main') + '&i=' + (net.protocol ? net.protocol.id : 0),
+			image: {
+				src:donateBtn.getAttribute("data-isrc"),
+				alt:'Donate with PayPal button',
+				title:'PayPal - The safer, easier way to pay online!',
+			}
+		}).render('#donate-button');
 	});
 
 	document.getElementById("help-close").addEventListener("click", function () {
@@ -1203,4 +1243,3 @@ PublicAPI.poke = () => {
 	}
 };
 PublicAPI.muted = [];
-

@@ -8,6 +8,7 @@
 		<meta name="keywords" content="pixel, game, draw, online, cursors, canvas, world">
 
 		<!--<script async src="https://arc.io/widget.min.js#VVmYw2Lc"></script>-->
+		<script src="https://www.paypalobjects.com/donate/sdk/donate-sdk.js" charset="UTF-8" defer></script>
 		<style><%=require('./css/style.css')%></style>
 	</head>
 	<body>
@@ -37,7 +38,10 @@
 		</div>
 		<div id="palette-bg"></div>
 		<span id="xy-display"></span>
-		<span id="playercount-display"></span>
+		<span id="topright-displays">
+			<span id="dinfo-display" class="framed" data-pm="1"></span>
+			<span id="playercount-display"></span>
+		</span>
 		<div id="windows" class="pixelated"></div>
 		<div id="palette">
 			<div id="palette-create">
@@ -62,7 +66,7 @@
 					<a target="_blank" href="https://owop.me/discord"><img src="<%=require('./img/discord.png')%>" /></a>
 					<a target="_blank" href="https://reddit.com/r/OurWorldOfPixels"><img src="<%=require('./img/reddit.png')%>" /></a>
 					<a target="_blank" href="https://www.facebook.com/OurWorldOfPixels/"><img src="<%=require('./img/facebook.png')%>" /></a>
-					<a target="_blank" href="https://www.paypal.me/InfraRaven"><img src="<%=require('./img/donate.png')%>" /></a>
+					<span id="donate-button" data-isrc="<%=require('./img/donate.png')%>"></span>
 				</div>
 				<hr />
 				Type /help for a list of all commands
