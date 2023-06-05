@@ -305,7 +305,7 @@ function tick() {
 	}
 	if (offX !== 0 || offY !== 0) {
 		moveCameraBy(offX, offY);
-		updateMouse(null, 'mousemove', mouse.x, mouse.y);
+		updateMouse({}, 'mousemove', mouse.x, mouse.y); 
 	}
 
 	eventSys.emit(e.tick, tickNum);
