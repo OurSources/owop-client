@@ -396,10 +396,10 @@ class OldProtocolImpl extends Protocol {
 	}
 
 	updatePixel(x, y, rgb, undocb) {
-		var distx = Math.trunc(x / OldProtocol.chunkSize) - Math.trunc(this.lastSentX / (OldProtocol.chunkSize * 16)); distx *= distx;
-		var disty = Math.trunc(y / OldProtocol.chunkSize) - Math.trunc(this.lastSentY / (OldProtocol.chunkSize * 16)); disty *= disty;
+		var distx = Math.floor(x / OldProtocol.chunkSize) - Math.floor(this.lastSentX / (OldProtocol.chunkSize * 16)); distx *= distx;
+		var disty = Math.floor(y / OldProtocol.chunkSize) - Math.floor(this.lastSentY / (OldProtocol.chunkSize * 16)); disty *= disty;
 		var dist = Math.sqrt(distx + disty);
-		if (this.isConnected() && (dist < 3 || player.rank == RANK.ADMIN) && this.placeBucket.canSpend(1)) {
+		if (this.isConnected() && (dist < 4 || player.rank == RANK.ADMIN) && this.placeBucket.canSpend(1)) {
 			var array = new ArrayBuffer(11);
 			var dv = new DataView(array);
 			dv.setInt32(0,  x, true);
