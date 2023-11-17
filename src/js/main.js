@@ -703,8 +703,28 @@ function init() {
 					player.tool = "move";
 					break;
 
-				case 90: /* Ctrl + Z */
-					if (!event.ctrlKey || !misc.world) {
+				case 83: /* S */
+				case 69: /* E */
+					player.tool = "select";
+					break;
+
+				case 87: /* W */
+				case 76: /* L */
+					player.tool = "wand";
+					break;
+
+				case 66: /* B */
+					player.tool = "fill";
+					break;
+
+				case 90: /* Ctrl + Z or just Z */
+					if (!misc.world) {
+						if (!event.ctrlKey) {
+							player.tool = "zoom";
+						}
+						break;
+					}
+					if (!event.ctrlKey) {
 						break;
 					}
 					misc.world.undo(event.shiftKey);
