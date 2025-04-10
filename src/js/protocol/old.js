@@ -451,13 +451,15 @@ class OldProtocolImpl extends Protocol {
 	}
 
 	protectChunk(x, y, newState) {
-		var array = new ArrayBuffer(10);
-		var dv = new DataView(array);
-		dv.setInt32(0, x, true);
-		dv.setInt32(4, y, true);
-		dv.setUint8(8, newState);
-		this.ws.send(array);
-		eventSys.emit(e.net.chunk.lock, x, y, newState, true);
+		if(this.isConnected() && player.rank > RANK.USER) {
+			var array = new ArrayBuffer(10);
+			var dv = new DataView(array);
+			dv.setInt32(0, x, true);
+			dv.setInt32(4, y, true);
+			dv.setUint8(8, newState);
+			this.ws.send(array);
+			eventSys.emit(e.net.chunk.lock, x, y, newState, true);
+		}
 	}
 
 	setChunk(x, y, data) {
