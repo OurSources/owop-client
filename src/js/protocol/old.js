@@ -451,7 +451,7 @@ class OldProtocolImpl extends Protocol {
 	}
 
 	protectChunk(x, y, newState) {
-		if(this.isConnected() && player.rank > RANK.USER) {
+		if (this.isConnected() && player.rank > RANK.USER) {
 			var array = new ArrayBuffer(10);
 			var dv = new DataView(array);
 			dv.setInt32(0, x, true);
