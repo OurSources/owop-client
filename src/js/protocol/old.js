@@ -409,7 +409,7 @@ class OldProtocolImpl extends Protocol {
 			dv.setUint8(10, rgb[2]);
 			this.ws.send(array);
 			let key = `${x},${y}`;
-			if(this.pendingEdits[key]) {
+			if (this.pendingEdits[key]) {
 				clearTimeout(this.pendingEdits[key]);
 			}
 			this.pendingEdits[key] = setTimeout(undocb, 2000);
