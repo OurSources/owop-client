@@ -1,4 +1,5 @@
-package-lock.json
+#package-lock.json
+result
 node_modules
 node_modules_linux
 dist
