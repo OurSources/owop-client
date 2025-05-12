@@ -109,12 +109,15 @@ function getDefaultWorld() {
 	}
 }
 
-var shittyHardcodedBool = true;
+// var shittyHardcodedBool = false;
 
 function getServerUrl(){
-	if(shittyHardcodedBool) return "https://1366130123597942795.discordsays.com/.proxy/ws";
+	// if(shittyHardcodedBool) return "https://1366130123597942795.discordsays.com/.proxy/ws";
+	if(location.href.includes("discordsays.com")){
+		return "wss://1366130123597942795.discordsays.com/.proxy/ws";
+	}
 	let url = location.href.replace("http", "ws");
-	if(!url.includes("discordsays.com")){
+	if(url.includes("localhost")){
 		url = url.replace(/:(\d+)/, ":13374");
 	}
 	console.log(url);
