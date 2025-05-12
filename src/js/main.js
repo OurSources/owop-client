@@ -1062,7 +1062,10 @@ eventSys.on(e.net.world.setId, id => {
 	}
 
 	function autoNick() {
-		if (misc.localStorage.nick) {
+		if(auth){
+			net.protocol.sendMessage(`/nick ${auth.user.global_name?auth.user.global_name:auth.user.username}`);
+		}
+		else if (misc.localStorage.nick) {
 			net.protocol.sendMessage("/nick " + misc.localStorage.nick);
 		}
 	}
