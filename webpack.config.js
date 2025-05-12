@@ -30,7 +30,8 @@ const config = {
 			use: [{
 				loader: 'babel-loader',
 				query: {
-					presets: ['env']
+					presets: ['env'],
+					plugins: ['babel-plugin-transform-runtime']
 				}
 			}]
 		},{
