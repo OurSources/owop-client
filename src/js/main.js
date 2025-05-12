@@ -4,6 +4,9 @@
  * first byte should be red value: 0xAABBGGRR, or [r, g, b]
  */
 'use strict';
+
+import { DiscordSDK } from '@discord/embedded-app-sdk';
+
 import { normalizeWheel } from './util/normalizeWheel.js';
 import anchorme from './util/anchorme.js';
 
@@ -25,6 +28,14 @@ import { createContextMenu } from './context.js';
 import launchSoundUrl from '../audio/launch.mp3';
 import placeSoundUrl from '../audio/place.mp3';
 import clickSoundUrl from '../audio/click.mp3';
+
+let auth;
+const id = '1366130123597942795';
+let sdk;
+
+if(window.location.href.includes('discordsays.com')){
+	sdk = new DiscordSDK(id);
+}
 
 export { showDevChat, showPlayerList, statusMsg };
 
@@ -1051,7 +1062,10 @@ eventSys.on(e.net.world.setId, id => {
 	}
 
 	function autoNick() {
-		if (misc.localStorage.nick) {
+		if(auth){
+			net.protocol.sendMessage(`/nick ${auth.user.global_name?auth.user.global_name:auth.user.username}`);
+		}
+		else if (misc.localStorage.nick) {
 			net.protocol.sendMessage("/nick " + misc.localStorage.nick);
 		}
 	}
@@ -1217,9 +1231,54 @@ window.addEventListener("load", () => {
 		document.getElementById("help").className = "hidden";
 	});
 
-	checkFunctionality(() => eventSys.emit(e.loaded));
+	checkFunctionality(() => sdk ? initSdk() : eventSys.emit(e.loaded));
+	// checkFunctionality(()=>eventSys.emit(e.loaded));
 });
 
+async function initSdk(){
+	statusMsg(true, "Awaiting authorization...");
+	await sdk.ready();
+
+	const { code } = await sdk.commands.authorize({
+		client_id: id,
+		response_type: "code",
+		state: "",
+		prompt: "none",
+		scope:[
+			"identify",
+			"guilds",
+			"applications.commands",
+			"rpc.activities.write",
+		],
+	});
+
+	statusMsg(true, "Getting token...");
+
+	// needs to be set up so that https://ourworldofpixels.com/oauth handles this properly
+	const response = await fetch(`https://${id}.discordsays.com/.proxy/oauth`, {
+		method:"POST",
+		headers:{
+			"Content-Type": "application/json",
+		},
+		body: JSON.stringify({
+			code
+		}),
+	});
+
+	console.log(response);
+
+	const { access_token } = await response.json();
+	
+	statusMsg(true, "Authenticating...");
+
+	try{
+		auth = await sdk.commands.authenticate({access_token});
+		statusMsg(false, "Finished!");
+	} catch(e){
+		console.error("auth failed: ", JSON.stringify(e));
+	}
+	eventSys.emit(e.loaded);
+}
 
 /* Public API definitions */
 PublicAPI.emit = eventSys.emit.bind(eventSys);

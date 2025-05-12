@@ -109,6 +109,20 @@ function getDefaultWorld() {
 	}
 }
 
+// var shittyHardcodedBool = false;
+
+function getServerUrl(){
+	// if(shittyHardcodedBool) return "https://1366130123597942795.discordsays.com/.proxy/ws";
+	if(location.href.includes("discordsays.com")){
+		return "wss://1366130123597942795.discordsays.com/.proxy/ws";
+	}
+	let url = location.href.replace("http", "ws");
+	if(url.includes("localhost")){
+		url = url.replace(/:(\d+)/, ":13374");
+	}
+	console.log(url);
+	return url;
+}
 
 export const options = propertyDefaults(userOptions, {
 	serverAddress: [/*{
@@ -121,7 +135,7 @@ export const options = propertyDefaults(userOptions, {
 		default: true,
 		title: 'Official server',
 		proto: 'old',
-		url: location.href.replace("http", "ws")
+		url: getServerUrl()
 	}], // The server address that websockets connect to
 	fallbackFps: 30, // Fps used if requestAnimationFrame is not supported
 	maxChatBuffer: 256, // How many chat messages to retain in the chatbox
