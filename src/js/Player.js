@@ -1,7 +1,7 @@
 'use strict';
 import { Lerp } from './util/Lerp.js';
 import { colorUtils as color } from './util/color.js';
-import { misc, playerList, playerListTable } from './main.js';
+import { misc, playerList, playerListTable, playerListWindow } from './main.js';
 import { Fx, PLAYERFX } from './Fx.js';
 import { tools } from './tools.js';
 
@@ -28,6 +28,7 @@ export class Player {
 		playerListEntry.innerHTML = "<td>" + this.id + "</td><td>" + Math.floor(x / 16) + "</td><td>" + Math.floor(y / 16) + "</td>";
 		playerList[this.id] = playerListEntry;
 		playerListTable.appendChild(playerListEntry);
+		playerListWindow.container.updateDisplay();
 	}
 	
 	get tileX() {
@@ -68,6 +69,7 @@ export class Player {
 
 		playerList[this.id].childNodes[1].innerHTML = Math.floor(x / 16);
 		playerList[this.id].childNodes[2].innerHTML = Math.floor(y / 16);
+		playerListWindow.container.updateDisplay();
     }
 
     disconnect() {
@@ -75,5 +77,6 @@ export class Player {
 
 		playerListTable.removeChild(playerList[this.id]);
 		delete playerList[this.id];
+		playerListWindow.container.updateDisplay();
     }
 }

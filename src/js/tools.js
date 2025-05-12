@@ -50,6 +50,7 @@ export function updateToolbar(win = toolsWindow) {
 			var mask = document.createElement("div");
 			setTooltip(element, tool.name + " tool");
 			element.id = "tool-" + name;
+			mask.style.pointerEvents = "none";
 			element.addEventListener("click", toolButtonClick(name));
 			if (tool === player.tool) {
 				mask.style.backgroundImage = "url(" + cursors.slotset + ")";

@@ -12,7 +12,7 @@ import anchorme from './util/anchorme.js';
 
 import { CHUNK_SIZE, EVENTS as e, RANK } from './conf.js';
 import { Bucket } from './util/Bucket.js';
-import { escapeHTML, getTime, getCookie, setCookie, cookiesEnabled, storageEnabled, loadScript, eventOnce } from './util/misc.js';
+import { escapeHTML, getTime, getCookie, setCookie, cookiesEnabled, storageEnabled, loadScript, eventOnce, initializeTooltips, KeyCode } from './util/misc.js';
 
 import { eventSys, PublicAPI, AnnoyingAPI as aa, wsTroll } from './global.js';
 import { options } from './conf.js';
@@ -112,6 +112,7 @@ sounds.place.src = placeSoundUrl;
 sounds.click = new Audio();
 sounds.click.src = clickSoundUrl;
 
+let plWidth = 0;
 export var playerList = {};
 export var playerListTable = document.createElement("table");
 export var playerListWindow = new GUIWindow('Players', {closeable: true}, wdow => {
@@ -121,6 +122,16 @@ export var playerListWindow = new GUIWindow('Players', {closeable: true}, wdow =
 	wdow.container.appendChild(playerListTable);
 	wdow.container.id = "player-list";
 }).move(window.innerWidth - 240, 32);
+playerListWindow.container.updateDisplay = function(){
+	let diff = playerListWindow.container.parentElement.offsetWidth - plWidth
+	if(diff!==0){
+		playerListWindow.move(playerListWindow.x - diff, playerListWindow.y);
+		plWidth = playerListWindow.container.parentElement.offsetWidth;
+	}
+}
+window.addEventListener("resize", ()=>{
+	playerListWindow.move(window.innerWidth-elements.paletteBg.getBoundingClientRect().width-playerListWindow.container.parentElement.offsetWidth-16, elements.topRightDisplays.getBoundingClientRect().height+16);
+});
 
 function getNewWorldApi() {
 	var obj = {
@@ -467,17 +478,33 @@ function logoMakeRoom(bool) {
 	elements.loadUl.style.transform = bool ? "translateY(-75%) scale(0.5)" : "";
 }
 
+function dismissNotice() {
+	misc.localStorage.dismissedId=elements.noticeDisplay.noticeId;
+	elements.noticeDisplay.style.transform="translateY(-100%)";
+	elements.noticeDisplay.style.pointerEvents="none";
+	setTimeout(()=>elements.noticeDisplay.style.display="none", 750);
+}
+
 function showWorldUI(bool) {
 	misc.guiShown = bool;
 	elements.xyDisplay.style.transform = bool ? "initial" : "";
+	elements.pBucketDisplay.style.transform = bool ? "initial" : "";
 	elements.playerCountDisplay.style.transform = bool ? "initial" : "";
 	elements.palette.style.transform = bool ? "translateY(-50%)" : "";
 	elements.chat.style.transform = bool ? "initial" : "";
 	elements.chatInput.disabled = !bool;
+	// for(let element of elements.topLeftDisplays.children) element.style.transform = bool ? "initial" : "";
+	// for(let element of elements.topRightDisplays.children) element.style.transform = bool ? "initial" : "";
 	elements.chatInput.style.display = "initial";
-	elements.paletteBg.style.visibility = bool ? "" : "hidden";
-	elements.helpButton.style.visibility = bool ? "" : "hidden";
+	// elements.paletteBg.style.visibility = bool ? "" : "hidden";
+	// elements.helpButton.style.visibility = bool ? "" : "hidden";
 	elements.topRightDisplays.classList[bool ? 'remove' : 'add']('hideui');
+	elements.topLeftDisplays.classList[bool ? 'remove' : 'add']('hideui');
+	elements.helpButton.style.transform = bool ? "" : "translateY(120%) translateX(-120%)";
+	elements.paletteBg.style.transform = bool ? "" : "translateX(100%)";
+	elements.noticeDisplay.style.transform = bool ? 'inherit' : `translateY(-${elements.topLeftDisplays.getBoundingClientRect().height}px)`;
+	elements.pBucketDisplay.textContent = `Place bucket: ${net.protocol.placeBucket.allowance.toFixed(1)} (${net.protocol.placeBucket.rate}/${net.protocol.placeBucket.time}s).`;
+	// elements.paletteBg.classList[bool ? 'remove' : 'add']('hideui');
 }
 
 function showLoadScr(bool, showOptions) {
@@ -585,9 +612,15 @@ function checkFunctionality(callback) {
 	}
 }
 
+function toggleMuteSounds() {
+	options.enableSounds = !elements.soundToggle.checked;
+	eventSys.emit(e.net.chat, options.enableSounds ? "Sounds enabled" : "Sounds disabled");
+}
+
 function init() {
 	var viewport = elements.viewport;
 	var chatinput = elements.chatInput;
+	initializeTooltips();
 
 	if (misc.storageEnabled && misc.localStorage.worldPasswords) {
 		try {
@@ -617,10 +650,10 @@ function init() {
 			chatHistory[0] = chatinput.value;
 		}
 		switch (keyCode) {
-			case 27:
+			case KeyCode.ESCAPE:
 				closeChat();
 				break;
-			case 13:
+			case KeyCode.ENTER:
 				if (!event.shiftKey) {
 					event.preventDefault();
 					var text = chatinput.value;
@@ -653,7 +686,7 @@ function init() {
 					event.stopPropagation();
 				}
 				break;
-			case 38: // Arrow up
+			case KeyCode.ARROW_UP:
 				if (event.shiftKey && historyIndex < chatHistory.length - 1) {
 					historyIndex++;
 					chatinput.value = chatHistory[historyIndex];
@@ -661,7 +694,7 @@ function init() {
 					chatinput.style.height = Math.min(chatinput.scrollHeight - 8, 16 * 4) + "px";
 				}
 				break;
-			case 40: // Arrow Down
+			case KeyCode.ARROW_DOWN:
 				if (event.shiftKey && historyIndex > 0) {
 					historyIndex--;
 					chatinput.value = chatHistory[historyIndex];
@@ -701,24 +734,52 @@ function init() {
 				}
 			}
 			switch (keyCode) {
-				case 80: /* P */
+				case KeyCode.Q:
 					player.tool = "pipette";
 					break;
 
-				case 79: /* O */
+				case KeyCode.D:
 					player.tool = "cursor";
 					break;
 
-				case 77: /* M */
-				case 16: /* Shift */
+				case KeyCode.X:
+				case KeyCode.SHIFT:
 					player.tool = "move";
 					break;
 
-				case 66:
+				case KeyCode.F:
 					player.tool = "fill";
 					break;
 
-				case 90: /* Ctrl + Z */
+				case KeyCode.W:
+					player.tool = "line";
+					break;
+
+				case KeyCode.E:
+					player.tool = "export";
+					break;
+
+				case KeyCode.A:
+					player.tool = "eraser";
+					break;
+
+				case KeyCode.ONE:
+					player.tool = "paste";
+					break;
+
+				case KeyCode.TWO:
+					player.tool = "copy";
+					break;
+
+				case KeyCode.THREE:
+					player.tool = "protect";
+					break;
+
+				case KeyCode.R:
+					player.tool = "area protect";
+					break;
+
+				case KeyCode.Z:
 					if (!event.ctrlKey) {
 						player.tool = "zoom";
 						break;
@@ -728,7 +789,8 @@ function init() {
 					event.preventDefault();
 					break;
 
-				case 70: /* F */
+				case KeyCode.BACKTICK:
+				case KeyCode.TILDE:
 					var parseClr = clr => {
 						var tmp = clr.split(',');
 						var nrgb = null;
@@ -761,32 +823,37 @@ function init() {
 
 					break;
 
-				case 71: /* G */
+				case KeyCode.G:
 					renderer.showGrid(!renderer.gridShown);
 					break;
 
-				case 72: /* H */
+				case KeyCode.H:
 					options.showProtectionOutlines = !options.showProtectionOutlines;
 					renderer.render(renderer.rendertype.FX);
 					break;
 
-				case 112: /* F1 */
+				case KeyCode.M:
+					elements.soundToggle.checked = !elements.soundToggle.checked;
+					toggleMuteSounds();
+					break;
+
+				case KeyCode.F1:
 					showWorldUI(!misc.guiShown);
 					event.preventDefault();
 					break;
 
-				case 113: /* F2 */
+				case KeyCode.F2:
 					options.showPlayers = !options.showPlayers;
 					renderer.render(renderer.rendertype.FX);
 					break;
 
-				case 107:
-				case 187:
+				case KeyCode.PLUS:
+				case KeyCode.NUMPAD_ADD:
 					++camera.zoom;
 					break;
 
-				case 109:
-				case 189:
+				case KeyCode.DASH:
+				case KeyCode.NUMPAD_SUBTRACT:
 					--camera.zoom;
 					break;
 
@@ -807,9 +874,9 @@ function init() {
 					return false;
 				}
 			}
-			if (keyCode == 13) {
+			if (keyCode == KeyCode.ENTER) {
 				elements.chatInput.focus();
-			} else if (keyCode == 16) {
+			} else if (keyCode == KeyCode.SHIFT) {
 				player.tool = "cursor";
 			}
 		}
@@ -926,7 +993,7 @@ function init() {
 	viewport.addEventListener("touchcancel", touchEventNoUpdate('touchcancel'), { passive: true });
 
 	elements.soundToggle.addEventListener('change', e => {
-		options.enableSounds = !elements.soundToggle.checked;
+		toggleMuteSounds();
 	});
 	options.enableSounds = !elements.soundToggle.checked;
 
@@ -1183,12 +1250,19 @@ window.addEventListener("load", () => {
 	elements.status = document.getElementById("status");
 	elements.logo = document.getElementById("logo");
 
+	elements.noticeDisplay = document.getElementById("notice-display");
+	elements.noticeDisplay.noticeId = elements.noticeDisplay.getAttribute("notice-id") || 1;
+	if(misc.localStorage.dismissedId!=elements.noticeDisplay.noticeId) elements.noticeDisplay.addEventListener("click", dismissNotice);
+	else elements.noticeDisplay.style.display="none";
+
 	elements.xyDisplay = document.getElementById("xy-display");
+	elements.pBucketDisplay = document.getElementById("pbucket-display");
 	elements.devChat = document.getElementById("dev-chat");
 	elements.chat = document.getElementById("chat");
 	elements.devChatMessages = document.getElementById("dev-chat-messages");
 	elements.chatMessages = document.getElementById("chat-messages");
 	elements.playerCountDisplay = document.getElementById("playercount-display");
+	elements.topLeftDisplays = document.getElementById("topleft-displays");
 	elements.topRightDisplays = document.getElementById("topright-displays");
 	elements.dInfoDisplay = document.getElementById("dinfo-display");
 
@@ -1232,7 +1306,12 @@ window.addEventListener("load", () => {
 	});
 
 	checkFunctionality(() => sdk ? initSdk() : eventSys.emit(e.loaded));
-	// checkFunctionality(()=>eventSys.emit(e.loaded));
+	
+	setInterval(()=>{
+		let pb = net.protocol.placeBucket;
+		pb.update();
+		elements.pBucketDisplay.textContent = `Place bucket: ${pb.allowance.toFixed(1)} (${pb.rate}/${pb.time}s).`;
+	}, 100);
 });
 
 async function initSdk(){

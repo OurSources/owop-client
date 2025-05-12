@@ -25,4 +25,10 @@ export class Bucket {
 		this.allowance -= count;
 		return true;
 	}
+
+	update(){
+		if(this.infinite) return this.allowance = Infinity;
+		this.allowance +=(Date.now()-this.lastCheck)/1000*(this.rate/this.time);
+		if(this.allowance>this.rate) this.allowance=this.rate;
+	}
 }

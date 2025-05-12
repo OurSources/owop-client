@@ -15,6 +15,50 @@ PublicAPI.util = {
 	loadScript
 };
 
+// table of keycodes for convenience
+export const KeyCode = {
+    // Alphabet
+    A: 65, B: 66, C: 67, D: 68, E: 69, F: 70, G: 71, H: 72, I: 73,
+	J: 74, K: 75, L: 76, M: 77, N: 78, O: 79, P: 80, Q: 81, R: 82,
+	S: 83, T: 84, U: 85, V: 86, W: 87, X: 88, Y: 89, Z: 90,
+
+    // Numbers (Top row)
+	ZERO: 48, ONE: 49, TWO: 50, THREE: 51, FOUR: 52,
+	FIVE: 53, SIX: 54, SEVEN: 55, EIGHT: 56, NINE: 57,
+
+	// Special characters and symbols
+	BACKTICK: 192, TILDE: 192, DASH: 189, UNDERSCORE: 189,
+	EQUALS: 187, PLUS: 187, LEFT_BRACKET: 219, LEFT_CURLY: 219,
+	RIGHT_BRACKET: 221, RIGHT_CURLY: 221, BACKSLASH: 220, PIPE: 220,
+	SEMICOLON: 186, COLON: 186, QUOTE: 222, DOUBLE_QUOTE: 222,
+	COMMA: 188, LESS_THAN: 188, PERIOD: 190, GREATER_THAN: 190,
+	SLASH: 191, QUESTION: 191, EXCLAMATION: 49, AT: 50,
+	HASH: 51, DOLLAR: 52, PERCENT: 53, CARET: 54,
+	AMPERSAND: 55, ASTERISK: 56, LEFT_PAREN: 57, RIGHT_PAREN: 48,
+
+    // Function keys
+	F1: 112, F2: 113, F3: 114, F4: 115, F5: 116, F6: 117,
+	F7: 118, F8: 119, F9: 120, F10: 121, F11: 122, F12: 123,
+
+    // Control keys
+	ENTER: 13, SPACE: 32, ESCAPE: 27, BACKSPACE: 8, TAB: 9,
+	SHIFT: 16, CTRL: 17, ALT: 18, CAPS_LOCK: 20, PAUSE: 19,
+
+    // Navigation keys
+	INSERT: 45, HOME: 36, DELETE: 46, END: 35,
+	PAGE_UP: 33, PAGE_DOWN: 34,
+
+    // Arrow keys
+	ARROW_UP: 38, ARROW_DOWN: 40, ARROW_LEFT: 37, ARROW_RIGHT: 39,
+
+    // Numpad keys
+	NUMPAD_0: 96, NUMPAD_1: 97, NUMPAD_2: 98, NUMPAD_3: 99,
+	NUMPAD_4: 100, NUMPAD_5: 101, NUMPAD_6: 102, NUMPAD_7: 103,
+	NUMPAD_8: 104, NUMPAD_9: 105,
+	NUMPAD_MULTIPLY: 106, NUMPAD_ADD: 107, NUMPAD_SUBTRACT: 109,
+	NUMPAD_DECIMAL: 110, NUMPAD_DIVIDE: 111, NUMPAD_ENTER: 13
+};
+
 let time = Date.now();
 export function getTime(update) {
 	return update ? (time = Date.now()) : time;
@@ -110,55 +154,114 @@ export function eventOnce(element, events, func) {
 	}
 }
 
-export function setTooltip(element, message) {
-	const elementSpacing = 10;
-	var intr = 0;
-	var tip = null;
-	function tooltip() {
-		var epos = element.getBoundingClientRect();
-		var y = epos.top + epos.height / 2;
-		tip = mkHTML('span', {
-			innerHTML: message,
-			className: 'framed tooltip whitetext'
-		});
-		document.body.appendChild(tip);
-		var tpos = tip.getBoundingClientRect();
-		y -= tpos.height / 2;
-		var x = epos.left - tpos.width - elementSpacing;
-		if (x < elementSpacing) {
-			x = epos.right + elementSpacing;
-		}
-		tip.style.transform = `translate(${Math.round(x)}px,${Math.round(y)}px)`;
-		intr = 0;
-	}
-	const mleave = e => {
-		clearTimeout(intr);
-		intr = 0;
-		element.removeEventListener('mouseleave', mleave);
-		element.removeEventListener('click', mleave);
-		element.removeEventListener('DOMNodeRemoved', mleave);
-		if (tip !== null) {
-			tip.remove();
-			tip = null;
-		}
-	};
-	const menter = e => {
-		if (tip === null && intr === 0) {
-			intr = setTimeout(tooltip, 500);
-			element.addEventListener('click', mleave);
-			element.addEventListener('mouseleave', mleave);
-			element.addEventListener('DOMNodeRemoved', mleave);
-		}
-	};
-	/*var observer = new MutationObserver(e => { // Why does this not fire at all?
-		console.log(e, tip, intr);
-		if (e[0].removedNodes && (tip !== null || intr !== 0)) {
-			mleave();
-		}
-	});
-	observer.observe(element, { childList: true, subtree: true });*/
-	element.addEventListener('mouseenter', menter);
+// new tooltip logic
+let lastTooltipText = '';
+
+export function initializeTooltips(){
+	initDOMTooltips();
+	let tooltip = document.createElement('div');
+	tooltip.id = 'tooltip';
+	document.body.appendChild(tooltip);
+	tooltip.style.opacity = '0%';
 }
+
+export function setTooltip(element, message){
+	element.setAttribute('tooltip', message);
+	element.setAttribute('ttApplied', 'true');
+	element.addEventListener('mousemove', e=>{tooltipHover(e);});
+	element.addEventListener('mouseleave', tooltipLeave);
+}
+
+function initDOMTooltips(){
+	let elements = document.querySelectorAll('[tooltip]');
+	for(let element of elements){
+		if(element.getAttribute('ttApplied')=='true') continue;
+		element.addEventListener('mousemove', e=>{tooltipHover(e);});
+		element.addEventListener('mouseleave', tooltipLeave);
+		element.setAttribute('ttApplied', 'true');
+	}
+}
+
+function tooltipHover(e){
+	const tooltip = document.getElementById('tooltip');
+	const tooltipText = e.target.getAttribute('tooltip');
+	if(tooltipText!=lastTooltipText){
+		tooltip.innerHTML = tooltipText;
+		lastTooltipText = tooltipText;
+	}
+	tooltip.style.opacity = '100%';
+	const tipRect = tooltip.getBoundingClientRect();
+	let tipX = e.clientX+20;
+	let tipY = e.clientY+20;
+	if(tipX+tipRect.width>window.innerWidth){
+		tipX=e.clientX-tooltip.offsetWidth-20;
+	}
+
+	if(tipY+tipRect.height>window.innerHeight){
+		tipY=e.clientY-tooltip.offsetHeight-20;
+	}
+
+	if(tipY<0) {
+		tipY = 0;
+	}
+
+	tooltip.style.top = tipY+'px';
+	tooltip.style.left = tipX+'px';
+}
+
+function tooltipLeave(){
+	tooltip.style.opacity = '0%';
+}
+
+// export function setTooltip(element, message) {
+// 	const elementSpacing = 10;
+// 	var intr = 0;
+// 	var tip = null;
+// 	function tooltip() {
+// 		var epos = element.getBoundingClientRect();
+// 		var y = epos.top + epos.height / 2;
+// 		tip = mkHTML('span', {
+// 			innerHTML: message,
+// 			className: 'framed tooltip whitetext'
+// 		});
+// 		document.body.appendChild(tip);
+// 		var tpos = tip.getBoundingClientRect();
+// 		y -= tpos.height / 2;
+// 		var x = epos.left - tpos.width - elementSpacing;
+// 		if (x < elementSpacing) {
+// 			x = epos.right + elementSpacing;
+// 		}
+// 		tip.style.transform = `translate(${Math.round(x)}px,${Math.round(y)}px)`;
+// 		intr = 0;
+// 	}
+// 	const mleave = e => {
+// 		clearTimeout(intr);
+// 		intr = 0;
+// 		element.removeEventListener('mouseleave', mleave);
+// 		element.removeEventListener('click', mleave);
+// 		element.removeEventListener('DOMNodeRemoved', mleave);
+// 		if (tip !== null) {
+// 			tip.remove();
+// 			tip = null;
+// 		}
+// 	};
+// 	const menter = e => {
+// 		if (tip === null && intr === 0) {
+// 			intr = setTimeout(tooltip, 500);
+// 			element.addEventListener('click', mleave);
+// 			element.addEventListener('mouseleave', mleave);
+// 			element.addEventListener('DOMNodeRemoved', mleave);
+// 		}
+// 	};
+// 	/*var observer = new MutationObserver(e => { // Why does this not fire at all?
+// 		console.log(e, tip, intr);
+// 		if (e[0].removedNodes && (tip !== null || intr !== 0)) {
+// 			mleave();
+// 		}
+// 	});
+// 	observer.observe(element, { childList: true, subtree: true });*/
+// 	element.addEventListener('mouseenter', menter);
+// }
 
 /* Waits n frames */
 export function waitFrames(n, cb) {
