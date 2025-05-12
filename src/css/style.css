@@ -47,13 +47,28 @@ hr {
 	align-items: center;
 }
 
-.tooltip {
+/* css for improved tooltips */
+#tooltip {
+	position: absolute;
+	z-index: 100;
+	border: 5px #7e635c solid;
+	border-image: url(../img/small_border.png) 5 repeat;
+	border-image-outset: 1px;
+	/* background-color: #5c0c91; */
+	box-shadow: 0px 0px 5px #000;
+	background-color: #7e635c;
+	color:#fff;
+	text-shadow: -1px 0 #000, 0 1px #000, 1px 0 #000, 0 -1px #000;
+	pointer-events: none;
+}
+
+/* .tooltip {
 	pointer-events: none;
 	position: absolute;
 	top: 0;
 	left: 0;
 	opacity: 0.9;
-}
+} */
 
 .owopdropdown {
 	pointer-events: none!important;
@@ -70,7 +85,7 @@ button.winframe:active {
 	border-image: inherit;
 }
 
-.whitetext, #xy-display, #chat, #dev-chat, #playercount-display, #topright-displays > * {
+.whitetext, #xy-display, #chat, #dev-chat, #playercount-display, #topright-displays, #topleft-displays > * , .generic-display {
 	color: #FFF;
 	font: 16px pixel-op, sans-serif;
 	text-shadow: -1px 0 #000, 0 1px #000, 1px 0 #000, 0 -1px #000;
@@ -132,6 +147,7 @@ img, #tool-select {
 	pointer-events: none;
 	width: 100%;
 	height: 100%;
+	z-index: 6;
 }
 
 #windows > div, .winframe { /* Frame */
@@ -220,7 +236,45 @@ button:focus {
 	top: 0;
 	left: 0;
 }
-#xy-display, #palette {
+
+#palette {
+	position: absolute;
+}
+
+#xy-display, .generic-display{
+	padding-left: 2px;
+}
+
+#playercount-display{
+	padding-right: 2px;
+}
+
+#palette, #topright-displays > *, #topleft-displays > * {
+	pointer-events: none;
+	transform: translateY(-100%);
+	transition: transform 0.75s;
+}
+
+#topleft-displays > *, #topright-displays > * {
+	pointer-events: none;
+	transition: transform 0.75s;
+}
+
+#notice-display {
+	pointer-events: all;
+	cursor:pointer;
+	z-index: 5;
+}
+#notice-display > *{
+	pointer-events: none;
+}
+
+#topright-displays, #topleft-displays {
+	position: absolute;
+	pointer-events: none;
+}
+
+/* #xy-display, #palette {
 	position: absolute;
 }
 #xy-display, #playercount-display, #palette, #topright-displays > * {
@@ -236,13 +290,19 @@ button:focus {
 	padding-left: 2px;
 	left: -4px;
 	top: -4px;
-}
+} */
+
 #topright-displays {
 	right: -4px;
 	top: -4px;
 }
 
-#topright-displays > * {
+#topleft-displays {
+	left: -4px;
+	top: -4px;
+}
+
+#topright-displays > * , #topleft-displays > * {
 	display: inline-block;
 	min-height: 8px;
 }
@@ -286,13 +346,15 @@ button:focus {
 #toole-container {
 	overflow: hidden;
 }
-#playercount-display, #xy-display, #palette-create, #palette, .framed {
+
+#playercount-display, #xy-display, #palette-create, #palette, .framed, #pbucket-display, #rank-display, .generic-display{
 	border: 5px #aba389 solid;
 	border-image: url(../img/small_border.png) 5 repeat;
 	border-image-outset: 1px;
 	background-color: #7e635c;
 	box-shadow: 0px 0px 5px #000;
 }
+
 #toole-container > button > div {
 	/* ugly */
 	position: fixed;
@@ -334,6 +396,7 @@ button:focus {
 	top: 0;
 	right: 0;
 	background-color: rgba(0, 0, 0, 0.3);
+	transition: transform 0.75s;
 	pointer-events: none;
 }
 #palette-create {
@@ -409,6 +472,7 @@ button:focus {
 	left: 0;
 	padding: 0;
 	margin: 16px;
+	transition: transform 0.75s;
 }
 #help-button > img {
 	width: 64px;
