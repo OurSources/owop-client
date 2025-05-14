@@ -29,6 +29,7 @@ export class Bucket {
 	update(){
 		if(this.infinite) return this.allowance = Infinity;
 		this.allowance +=(Date.now()-this.lastCheck)/1000*(this.rate/this.time);
+		this.lastCheck = Date.now();
 		if(this.allowance>this.rate) this.allowance=this.rate;
 	}
 }
