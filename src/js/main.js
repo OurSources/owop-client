@@ -1008,7 +1008,7 @@ function init() {
 		"| | | |___ ___| |_| |  |     |  _|  |  _  |_|_ _ ___| |___ \n" +
 		"| | | | . |  _| | . |  |  |  |  _|  |   __| |_'_| -_| |_ -|\n" +
 		"|_____|___|_| |_|___|  |_____|_|    |__|  |_|_,_|___|_|___|",
-		"font-size: 15px; font-weight: bold;"
+		"font-size: 10px; font-weight: bold;"
 	);
 	console.log("%cWelcome to the developer console!", "font-size: 20px; font-weight: bold; color: #F0F;");
 
@@ -1279,6 +1279,7 @@ window.addEventListener("load", () => {
 
 	elements.chatInput = document.getElementById("chat-input");
 
+	elements.keybindSelection = document.getElementById("keybinddiv");
 	elements.soundToggle = document.getElementById("no-sound");
 	elements.hexToggle = document.getElementById("hex-coords");
 
