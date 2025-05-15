@@ -7,7 +7,7 @@ import { net } from './networking.js';
 import { player } from './local_player.js';
 import { camera, moveCameraTo, moveCameraBy, renderer, drawText } from './canvas_renderer.js';
 import { windowSys, GUIWindow, UtilDialog } from './windowsys.js';
-import { misc, elements, mouse, sounds, keysDown } from './main.js';
+import { misc, elements, mouse, sounds, keysDown, getNewBind } from './main.js';
 import { PLAYERFX } from './Fx.js';
 
 export const tools = {};
@@ -29,6 +29,26 @@ export function updateToolWindow(name) {
 	elements.viewport.style.cursor = "url(" + tool.cursorblob + ") " + tool.offset[0] + " " + tool.offset[1] + ", pointer";
 }
 
+export function updateBindDisplay(){
+	let binddiv = elements.keybindSelection;			
+	binddiv.innerHTML = "";
+	for(const name in tools){
+		if (player.rank >= tools[name].rankRequired){
+			let item = document.createElement("li");
+			//let idiv = document.createElement("div");
+			let tname = document.createTextNode(`${name} - bound to \"${misc.keybinds[name] == undefined ? "unbound" : misc.keybinds[name][1]}\"  `);
+			let but = document.createElement("button");
+			but.textContent = "rebind";
+			but.addEventListener("click", ()=>{
+				getNewBind(name);
+			});
+			item.appendChild(tname);
+			item.appendChild(but);
+			binddiv.appendChild(item);
+		}
+	}
+};
+
 export function updateToolbar(win = toolsWindow) {
 	if (!win) {
 		return;
@@ -43,9 +63,11 @@ export function updateToolbar(win = toolsWindow) {
 	container.innerHTML = "";
 
 	// Add tools to the tool-select menu
+
 	for (const name in tools) {
 		var tool = tools[name];
 		if (player.rank >= tool.rankRequired) {
+
 			var element = document.createElement("button");
 			var mask = document.createElement("div");
 			setTooltip(element, tool.name + " tool");
@@ -63,6 +85,7 @@ export function updateToolbar(win = toolsWindow) {
 			container.appendChild(element);
 		}
 	}
+	updateBindDisplay();
 }
 
 export function showToolsWindow(bool) {

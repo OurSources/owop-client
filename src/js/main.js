@@ -12,6 +12,7 @@ import anchorme from './util/anchorme.js';
 
 import { CHUNK_SIZE, EVENTS as e, RANK } from './conf.js';
 import { Bucket } from './util/Bucket.js';
+import { updateBindDisplay } from './tools.js';
 import { escapeHTML, getTime, getCookie, setCookie, cookiesEnabled, storageEnabled, loadScript, eventOnce, initializeTooltips, KeyCode } from './util/misc.js';
 
 import { eventSys, PublicAPI, AnnoyingAPI as aa, wsTroll } from './global.js';
@@ -94,7 +95,8 @@ export const misc = {
 	storageEnabled: storageEnabled(),
 	showEUCookieNag: !options.noUi && cookiesEnabled() && getCookie("nagAccepted") !== "true",
 	usingFirefox: navigator.userAgent.indexOf("Firefox") !== -1,
-	donTimer: 0
+	donTimer: 0,
+	keybinds: {}
 };
 
 export const sounds = {
@@ -617,15 +619,62 @@ function toggleMuteSounds() {
 	eventSys.emit(e.net.chat, options.enableSounds ? "Sounds enabled" : "Sounds disabled");
 }
 
+export function getNewBind(tname){
+	let listener = (event)=>{
+		event.stopPropagation();
+		let code = event.which || event.keyCode;
+		let name = event.code;
+		if(code == KeyCode.DELETE){
+			delete misc.keybinds[tname];
+			console.log("deleted keybind");
+		} else {
+			misc.keybinds[tname] = [code, name];
+			console.log(`added keybind for ${tname}: ${name} (${code})`);
+		}
+		document.removeEventListener("keydown", listener);
+		updateBindDisplay();
+	}
+	document.addEventListener("keydown", listener);
+	console.log(tname);
+};
+
+function saveKeybinds(){
+	if(misc.storageEnabled){
+		misc.localStorage.keybinds = JSON.stringify(misc.keybinds);
+	};
+};
+
 function init() {
 	var viewport = elements.viewport;
 	var chatinput = elements.chatInput;
 	initializeTooltips();
 
-	if (misc.storageEnabled && misc.localStorage.worldPasswords) {
-		try {
-			misc.worldPasswords = JSON.parse(misc.localStorage.worldPasswords);
-		} catch (e) { }
+	if (misc.storageEnabled) {
+		if(misc.localStorage.worldPasswords){
+			try {
+				misc.worldPasswords = JSON.parse(misc.localStorage.worldPasswords);
+			} catch (e) { }
+		}
+		if(misc.localStorage.keybinds){
+			try {
+				misc.keybinds = JSON.parse(misc.localStorage.keybinds);
+			} catch (e) {};
+		} else {
+			misc.keybinds = { //probably sane defaults
+				"cursor": [KeyCode.O, "o"],
+				"move": [KeyCode.M, "m"],
+				"pipette": [KeyCode.P, "p"],
+				"eraser": [KeyCode.C, "c"],
+				"zoom": [KeyCode.Z, "z"],
+				"export": [KeyCode.E, "e"],
+				"fill": [KeyCode.F, "f"],
+				"line": [KeyCode.L, "l"],
+				"protect": [KeyCode.P, "p"],
+				"area protect": [KeyCode.A, "a"],
+				"paste": [KeyCode.W, "w"],
+				"copy": [KeyCode.Q, "q"]
+			};
+		}
 	}
 
 	misc.lastCleanup = 0;
@@ -733,8 +782,16 @@ function init() {
 					return false;
 				}
 			}
+
+			console.log(misc.keybinds);
+			for(let tname in misc.keybinds){
+				if(misc.keybinds[tname] !== undefined && misc.keybinds[tname][0] == event.keyCode){
+					player.tool = tname;
+				}
+			};
+
 			switch (keyCode) {
-				case KeyCode.Q:
+				/*case KeyCode.Q:
 					player.tool = "pipette";
 					break;
 
@@ -777,14 +834,14 @@ function init() {
 
 				case KeyCode.R:
 					player.tool = "area protect";
-					break;
+					break;*/
+
+				case KeyCode.SHIFT:
+					player.tool = "move";
+					break; //added back here because of the weird little temp move thing
 
 				case KeyCode.Z:
-					if (!event.ctrlKey) {
-						player.tool = "zoom";
-						break;
-					}
-					if (!misc.world) break;
+					if (!misc.world || !event.ctrlKey) break;
 					misc.world.undo(event.shiftKey);
 					event.preventDefault();
 					break;
@@ -832,11 +889,11 @@ function init() {
 					renderer.render(renderer.rendertype.FX);
 					break;
 
-				case KeyCode.M:
+				/*case KeyCode.M:
 					elements.soundToggle.checked = !elements.soundToggle.checked;
 					toggleMuteSounds();
 					break;
-
+				*/ //we dont need this
 				case KeyCode.F1:
 					showWorldUI(!misc.guiShown);
 					event.preventDefault();
