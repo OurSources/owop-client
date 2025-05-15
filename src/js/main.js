@@ -8,7 +8,7 @@
 import { DiscordSDK } from '@discord/embedded-app-sdk';
 
 import { normalizeWheel } from './util/normalizeWheel.js';
-import anchorme from './util/anchorme.js';
+import anchorme from 'anchorme';
 
 import { CHUNK_SIZE, EVENTS as e, RANK } from './conf.js';
 import { Bucket } from './util/Bucket.js';
