@@ -633,6 +633,7 @@ export function getNewBind(tname){
 		}
 		document.removeEventListener("keydown", listener);
 		updateBindDisplay();
+		saveKeybinds();
 	}
 	document.addEventListener("keydown", listener);
 };
