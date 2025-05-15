@@ -635,7 +635,6 @@ export function getNewBind(tname){
 		updateBindDisplay();
 	}
 	document.addEventListener("keydown", listener);
-	console.log(tname);
 };
 
 function saveKeybinds(){
@@ -783,7 +782,6 @@ function init() {
 				}
 			}
 
-			console.log(misc.keybinds);
 			for(let tname in misc.keybinds){
 				if(misc.keybinds[tname] !== undefined && misc.keybinds[tname][0] == event.keyCode){
 					player.tool = tname;
