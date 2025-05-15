@@ -1,6 +1,5 @@
 const express = require('express');
 const path = require('node:path');
-const fetch = require('node-fetch');
 const app = express();
 
 app.use(express.json());
