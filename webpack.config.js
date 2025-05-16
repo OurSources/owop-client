@@ -3,6 +3,7 @@ const path = require('path');
 const webpack = require('webpack');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
+const TerserPlugin = require('terser-webpack-plugin');
 
 /*const ExtractTextPlugin = require('extract-text-webpack-plugin');*/
 
@@ -24,6 +25,23 @@ function genConfig(env) {
 			historyApiFallback: true,
 			open: false,
 			hot: true
+		},
+		optimization: {
+			// keep module & chunk names human-readable
+			moduleIds: 'named',
+			chunkIds: 'named',
+
+			// still minify, but override how Terser mangles names
+			minimize: true,
+			minimizer: [
+				new TerserPlugin({
+					terserOptions: {
+						mangle: false, // don’t shorten variable/function names
+						keep_classnames: true, // preserve class names
+						keep_fnames: true // preserve function names
+					}
+				})
+			]
 		},
 		module: {
 			rules: [{
