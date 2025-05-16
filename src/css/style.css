@@ -644,3 +644,48 @@ button:focus {
 #captchawdow {
 	margin: -4px;
 }
+
+.rainbow-container{
+	position:relative;
+	display:inline-block;
+}
+.rainbow{	
+	background: linear-gradient(to right, #db2a2a, #d16d15, #d4b413, #18fa14, #192abf, #760dd9, #db2a2a);
+	-webkit-background-clip: text;
+	background-clip:text;
+	background-repeat:repeat-x;
+	color:transparent;
+	animation: rainbow_animation 6s linear infinite;
+	background-size: 400% 100%;
+	text-shadow:none;
+	position:relative;
+	z-index:1;
+}
+@keyframes rainbow_animation {
+	0% {
+		background-position: 0 0;
+	}
+	100% {
+		background-position: 132% 0;
+	}
+}
+.rainbow-back{
+	text-shadow: -1px 0 #000, 0 1px #000, 1px 0 #000, 0 -1px #000;
+	color:#000;
+	position:absolute;
+	left:0;
+	z-index:0;
+}
+
+#keybind-settings{
+	display:flex;
+	flex-direction:row;
+}
+
+#keybinddiv{
+	flex-grow:1;
+}
+
+#keybindopts{
+	text-align:right;
+}

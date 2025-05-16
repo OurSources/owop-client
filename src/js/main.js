@@ -13,7 +13,7 @@ import anchorme from 'anchorme';
 import { CHUNK_SIZE, EVENTS as e, RANK } from './conf.js';
 import { Bucket } from './util/Bucket.js';
 import { updateBindDisplay } from './tools.js';
-import { escapeHTML, getTime, getCookie, setCookie, cookiesEnabled, storageEnabled, loadScript, eventOnce, initializeTooltips, KeyCode } from './util/misc.js';
+import { escapeHTML, getTime, getCookie, setCookie, cookiesEnabled, storageEnabled, loadScript, eventOnce, initializeTooltips, KeyCode, KeyName } from './util/misc.js';
 
 import { eventSys, PublicAPI, AnnoyingAPI as aa, wsTroll } from './global.js';
 import { options } from './conf.js';
@@ -131,9 +131,10 @@ playerListWindow.container.updateDisplay = function(){
 		plWidth = playerListWindow.container.parentElement.offsetWidth;
 	}
 }
-window.addEventListener("resize", ()=>{
+function fixPlayerListPos(){
 	playerListWindow.move(window.innerWidth-elements.paletteBg.getBoundingClientRect().width-playerListWindow.container.parentElement.offsetWidth-16, elements.topRightDisplays.getBoundingClientRect().height+16);
-});
+}
+window.addEventListener("resize", ()=>fixPlayerListPos);
 
 function getNewWorldApi() {
 	var obj = {
@@ -619,23 +620,73 @@ function toggleMuteSounds() {
 	eventSys.emit(e.net.chat, options.enableSounds ? "Sounds enabled" : "Sounds disabled");
 }
 
-export function getNewBind(tname){
-	let listener = (event)=>{
+let activeKeybindListener = null;
+let currentKeybindName = null;
+
+export function getNewBind(tname, self){
+	const hc = document.getElementById('help-close');
+	const kbd = document.getElementById('keybind-settings');
+
+	const endBind = ()=>{
+		document.removeEventListener("keydown", listener);
+		hc.removeEventListener("click", endBind);
+		kbd.removeEventListener('click', oncancel);
+		activeKeybindListener = null;
+		currentKeybindName = null;
+		self.textContent = "rebind";
+	}
+
+	if(activeKeybindListener) endBind();
+
+	currentKeybindName = tname;
+
+	const oncancel = (e)=>{
+		if(e.target!==self && e.target.tagName==='BUTTON') endBind();
+	}
+
+	const listener = (event)=>{
 		event.stopPropagation();
 		let code = event.which || event.keyCode;
-		let name = event.code;
+		
+		if(code == KeyCode.ESCAPE) return endBind();
+		
+		// prevent binding to hard-coded keybinds
+		if([KeyCode.SHIFT, KeyCode.BACKTICK, KeyCode.TILDE, KeyCode.G, KeyCode.H, KeyCode.F1, KeyCode.F2,KeyCode.PLUS,
+			KeyCode.NUMPAD_ADD, KeyCode.SUBTRACT, KeyCode.NUMPAD_SUBTRACT, KeyCode.EQUALS, KeyCode.UNDERSCORE].includes(code)){
+				const textElements = document.querySelectorAll('[class^="kb-"]');
+				for(const el of textElements){
+					if(el.classList[0].includes(KeyName[code])){
+						el.style.color='#f00';
+						setTimeout(()=>{
+							el.style.transition='color 0.3s ease-in-out';
+							el.style.color='';
+							setTimeout(()=>{
+								el.style.transition='';
+							},300);
+						},100);
+						break;
+					}
+				}
+				return endBind();
+			}
 		if(code == KeyCode.DELETE){
 			delete misc.keybinds[tname];
 			console.log("deleted keybind");
 		} else {
-			misc.keybinds[tname] = [code, name];
-			console.log(`added keybind for ${tname}: ${name} (${code})`);
+			misc.keybinds[tname] = code;
+			console.log(`added keybind for ${tname}: ${KeyName[code]} (${code})`);
 		}
-		document.removeEventListener("keydown", listener);
+		endBind();
 		updateBindDisplay();
 		saveKeybinds();
 	}
+	
+	activeKeybindListener = listener;
 	document.addEventListener("keydown", listener);
+	hc.addEventListener("click", endBind);
+	kbd.addEventListener('click', oncancel);
+
+	self.textContent = "Listening for input... Press ESC or click again to cancel.";
 };
 
 function saveKeybinds(){
@@ -644,11 +695,53 @@ function saveKeybinds(){
 	};
 };
 
+function loadDefaultBindings(name){
+	switch(name){
+		case "new":
+			misc.keybinds = { //probably sane defaults
+				"cursor": KeyCode.B,
+				"move": KeyCode.V,
+				"pipette": KeyCode.Q,
+				"eraser": KeyCode.S,
+				"zoom": KeyCode.A,
+				"export": KeyCode.E,
+				"fill": KeyCode.F,
+				"line": KeyCode.W,
+				"protect": KeyCode.D,
+				"area protect": KeyCode.R,
+				"paste": KeyCode.X,
+				"copy": KeyCode.C
+			};
+			updateBindDisplay();
+			saveKeybinds();
+			break;
+		case "og":
+		default:
+			misc.keybinds = { //probably sane defaults
+				"cursor": KeyCode.O,
+				"move": KeyCode.M,
+				"pipette": KeyCode.P,
+				"eraser": KeyCode.C,
+				"zoom": KeyCode.Z,
+				"export": KeyCode.E,
+				"fill": KeyCode.F,
+				"line": KeyCode.L,
+				"protect": KeyCode.P,
+				"area protect": KeyCode.A,
+				"paste": KeyCode.W,
+				"copy": KeyCode.Q
+			};
+			updateBindDisplay();
+			saveKeybinds();
+			break;
+	}
+}
+
 function init() {
 	var viewport = elements.viewport;
 	var chatinput = elements.chatInput;
 	initializeTooltips();
-
+	fixPlayerListPos();
 	if (misc.storageEnabled) {
 		if(misc.localStorage.worldPasswords){
 			try {
@@ -660,22 +753,11 @@ function init() {
 				misc.keybinds = JSON.parse(misc.localStorage.keybinds);
 			} catch (e) {};
 		} else {
-			misc.keybinds = { //probably sane defaults
-				"cursor": [KeyCode.O, "o"],
-				"move": [KeyCode.M, "m"],
-				"pipette": [KeyCode.P, "p"],
-				"eraser": [KeyCode.C, "c"],
-				"zoom": [KeyCode.Z, "z"],
-				"export": [KeyCode.E, "e"],
-				"fill": [KeyCode.F, "f"],
-				"line": [KeyCode.L, "l"],
-				"protect": [KeyCode.P, "p"],
-				"area protect": [KeyCode.A, "a"],
-				"paste": [KeyCode.W, "w"],
-				"copy": [KeyCode.Q, "q"]
-			};
+			loadDefaultBindings("og"); // just to please the masses, original defaults are the default
+			console.log("No keybinds found, using original defaults");
 		}
 	}
+	updateBindDisplay();
 
 	misc.lastCleanup = 0;
 
@@ -784,7 +866,7 @@ function init() {
 			}
 
 			for(let tname in misc.keybinds){
-				if(misc.keybinds[tname] !== undefined && misc.keybinds[tname][0] == event.keyCode){
+				if(misc.keybinds[tname] == event.keyCode){
 					player.tool = tname;
 				}
 			};
@@ -892,7 +974,7 @@ function init() {
 					elements.soundToggle.checked = !elements.soundToggle.checked;
 					toggleMuteSounds();
 					break;
-				*/ //we dont need this
+				*/
 				case KeyCode.F1:
 					showWorldUI(!misc.guiShown);
 					event.preventDefault();
@@ -908,7 +990,7 @@ function init() {
 					++camera.zoom;
 					break;
 
-				case KeyCode.DASH:
+				case KeyCode.MINUS:
 				case KeyCode.NUMPAD_SUBTRACT:
 					--camera.zoom;
 					break;
@@ -1340,6 +1422,9 @@ window.addEventListener("load", () => {
 	elements.hexToggle = document.getElementById("hex-coords");
 
 	elements.helpButton = document.getElementById("help-button");
+
+	document.getElementById("kb-og").addEventListener("click", ()=>loadDefaultBindings("og"));
+	document.getElementById("kb-new").addEventListener("click", ()=>loadDefaultBindings("new"));
 
 	var donateBtn = document.getElementById("donate-button");
 	elements.helpButton.addEventListener("click", function () {
