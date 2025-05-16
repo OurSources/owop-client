@@ -47,9 +47,9 @@
 		<span id="topleft-displays" class="hideui">
 			<span id="xy-display"></span>
 			<span id="pbucket-display"></span>
-			<span id="notice-display" class="generic-display" tooltip="Click to dismiss message" style="color:#fff" notice-id="2">
+			<span id="notice-display" class="generic-display" tooltip="Click to dismiss message" style="color:#fff" notice-id="3">
 				<span style="color:#ff0">!!UPDATE!!: </span>
-				<span>Some UI changes have been implemented. Keybinds have also been changed to better accomodate your left hand, be sure to check the help menu.</span>
+				<span>Keybinds have been altered again, and you can now rebind keys in the help menu.</span>
 			</span>
 		</span>
 		<span id="topright-displays">
@@ -88,15 +88,29 @@
 				<hr />
 				Type /help for a list of all commands
 				<ul>
-					<li><b>F1</b> - Hide part of the GUI</li>
-					<li><b>F2</b> - Hide other cursors</li>
-					<li><b>G</b> - Toggle grid</li>
-					<li><b>H</b> - Toggle protection outlines</li>
-					<li><b>`/~</b> - Manually add color</li>
-					<li><b>Shift + Left Click / Middle Click</b> - Move camera</li>
+					<li class="kb-F1"><b>F1</b> - Hide part of the GUI</li>
+					<li class="kb-F2"><b>F2</b> - Hide other cursors</li>
+					<li class="kb-G"><b>G</b> - Toggle grid</li>
+					<li class="kb-H"><b>H</b> - Toggle protection outlines</li>
+					<li class="kb-BACKTICK/TILDE"><b>`/~</b> - Manually add color</li>
+					<li class="kb-SHIFT"><b>Shift + Left Click / Middle Click</b> - Move camera</li>
 					<li><b>Ctrl + Z</b> - Undo pixel (+ Shift = bulk undo)</li>
-					<li><b>Ctrl + Scroll</b> - Change zoom level</li>
-					<div id="keybinddiv"></div>
+					<li class="kb-PLUS/MINUS/NUMPAD_ADD/NUMPAD_SUBTRACT/EQUALS/UNDERSCORE"><b>Ctrl + Scroll</b> - Change zoom level</li>  
+					<hr>
+					<div id="keybind-settings">
+						<div id="keybinddiv"></div>
+						<div id="keybindopts">
+							<div class="kbs-top">
+								Default Key Bindings
+							</div>
+							<hr>
+							<div class="kbs-bottom">
+								<button id="kb-og">Original Defaults</button>
+								<br>
+								<button id="kb-new">New Defaults</button>
+							</div>
+						</div>
+					</div>
 					<!-- <li><b>M</b> - Mute site audio</li>
 					<li><b>D</b> - Cursor tool</li>
 					<li><b>F</b> - Bucket tool</li>

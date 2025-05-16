@@ -1,7 +1,7 @@
 'use strict';
 import { PublicAPI, eventSys } from './global.js';
 import { EVENTS as e, protocol, options, RANK } from './conf.js';
-import { absMod, setTooltip, mkHTML, line } from './util/misc.js';
+import { absMod, setTooltip, mkHTML, line, KeyName } from './util/misc.js';
 import { cursors } from './tool_renderer.js';
 import { net } from './networking.js';
 import { player } from './local_player.js';
@@ -36,11 +36,11 @@ export function updateBindDisplay(){
 		if (player.rank >= tools[name].rankRequired){
 			let item = document.createElement("li");
 			//let idiv = document.createElement("div");
-			let tname = document.createTextNode(`${name} - bound to \"${misc.keybinds[name] == undefined ? "unbound" : misc.keybinds[name][1]}\"  `);
+			let tname = document.createTextNode(`${name} - bound to \"${misc.keybinds[name] == undefined ? "unbound" : KeyName[misc.keybinds[name]]}\"  `);
 			let but = document.createElement("button");
 			but.textContent = "rebind";
 			but.addEventListener("click", ()=>{
-				getNewBind(name);
+				getNewBind(name, but);
 			});
 			item.appendChild(tname);
 			item.appendChild(but);
