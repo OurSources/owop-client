@@ -312,7 +312,7 @@ function clearChat() {
 
 function tick() {
 	var tickNum = ++misc.tick;
-	var speed = Math.max(Math.min(options.movementSpeed, 64), 0);
+	var speed = Math.max(Math.min(options.movementSpeed, 64), 0) / camera.zoom * 16;
 	var offX = 0;
 	var offY = 0;
 	if (keysDown[38]) { // Up
