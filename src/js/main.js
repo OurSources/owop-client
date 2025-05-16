@@ -244,14 +244,7 @@ function receiveMessage(text) {
 			get text() { return realText; },
 			incCount: () => {
 				var times = span.recvTimes || 1;
-				span.innerHTML = `${anchorme(text, {
-					attributes: [
-						{
-							name: "target",
-							value: "_blank"
-						}
-					]
-				})} [x${++times}]`;
+				span.innerHTML = `${anchormeFix(text)} [x${++times}]`;
 				span.recvTimes = times;
 				message.style.animation = 'none'; /* Reset fading anim */
 				message.offsetHeight; /* Reflow */
@@ -267,14 +260,7 @@ function receiveMessage(text) {
 		firstNl = firstNl.replace(/(?:&lt;|<):(.+?):([0-9]{8,32})(?:&gt;|>)/g,  '<img class="emote" src="https://cdn.discordapp.com/emojis/$2.png?v=1">'); // static
 		text = firstNl + '\n' + textByNls.join('\n');
 		text = misc.chatPostFormatRecvModifier(text);
-		span.innerHTML = anchorme(text, {
-			attributes: [
-				{
-					name: "target",
-					value: "_blank"
-				}
-			]
-		});
+		span.innerHTML = anchormeFix(text);
 		message.appendChild(span);
 		scrollChatToBottom(() => {
 			elements.chatMessages.appendChild(message);
@@ -284,6 +270,28 @@ function receiveMessage(text) {
 			}
 		}, true);
 	}
+}
+
+function anchormeFix(html){
+	const container = document.createElement("div");
+	container.innerHTML = html;
+
+	// Walk child nodes and apply Anchorme to TEXT nodes only
+	const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT);
+	let node;
+	while ((node = walker.nextNode())) {
+		const parent = node.parentNode;
+		const temp = document.createElement("span");
+		temp.innerHTML = anchorme(node.textContent, {
+			attributes: [{ name: "target", value: "_blank" }]
+		});
+		while (temp.firstChild) {
+			parent.insertBefore(temp.firstChild, node);
+		}
+		parent.removeChild(node);
+	}
+
+	return container.innerHTML;
 }
 
 function receiveDevMessage(text) {
