@@ -244,7 +244,7 @@ function receiveMessage(text) {
 			get text() { return realText; },
 			incCount: () => {
 				var times = span.recvTimes || 1;
-				span.innerHTML = `${anchormeFix(text)} [x${++times}]`;
+				span.innerHTML = `${anchormeFix(text, isAdmin)} [x${++times}]`;
 				span.recvTimes = times;
 				message.style.animation = 'none'; /* Reset fading anim */
 				message.offsetHeight; /* Reflow */
@@ -260,7 +260,7 @@ function receiveMessage(text) {
 		firstNl = firstNl.replace(/(?:&lt;|<):(.+?):([0-9]{8,32})(?:&gt;|>)/g,  '<img class="emote" src="https://cdn.discordapp.com/emojis/$2.png?v=1">'); // static
 		text = firstNl + '\n' + textByNls.join('\n');
 		text = misc.chatPostFormatRecvModifier(text);
-		span.innerHTML = anchormeFix(text);
+		span.innerHTML = anchormeFix(text, isAdmin);
 		message.appendChild(span);
 		scrollChatToBottom(() => {
 			elements.chatMessages.appendChild(message);
@@ -272,30 +272,34 @@ function receiveMessage(text) {
 	}
 }
 
-function anchormeFix(escapedHTML) {
+function anchormeFix(html, allowHtml = false) {
 	const container = document.createElement("div");
 
-	// Don't use innerHTML — instead, treat as a text node
-	const temp = document.createElement("div");
-	temp.innerHTML = escapedHTML;
+	// Step 1: Escape HTML if user is not trusted
+	container.innerHTML = allowHtml ? html : escapeHTML(html);
 
-	const walker = document.createTreeWalker(temp, NodeFilter.SHOW_TEXT);
+	// Step 2: Walk visible text nodes only
+	const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT);
 	let node;
+
 	while ((node = walker.nextNode())) {
-		const parent = node.parentNode;
-		const htmlFragment = anchorme(escapeHTML(node.textContent), {
+		if (!node.nodeValue.trim()) continue;
+
+		const anchorHtml = anchorme(node.nodeValue, {
 			attributes: [{ name: "target", value: "_blank" }]
 		});
-		const wrapper = document.createElement("span");
-		wrapper.innerHTML = htmlFragment;
 
-		while (wrapper.firstChild) {
-			parent.insertBefore(wrapper.firstChild, node);
+		if (anchorHtml !== node.nodeValue) {
+			const temp = document.createElement("span");
+			temp.innerHTML = anchorHtml;
+
+			while (temp.firstChild) {
+				node.parentNode.insertBefore(temp.firstChild, node);
+			}
+			node.parentNode.removeChild(node);
 		}
-		parent.removeChild(node);
 	}
 
-	container.innerHTML = temp.innerHTML;
 	return container.innerHTML;
 }
 
@@ -1463,6 +1467,7 @@ window.addEventListener("load", () => {
 	checkFunctionality(() => sdk ? initSdk() : eventSys.emit(e.loaded));
 	
 	setInterval(()=>{
+		if(!net.protocol) return;
 		let pb = net.protocol.placeBucket;
 		pb.update();
 		elements.pBucketDisplay.textContent = `Place bucket: ${pb.allowance.toFixed(1)} (${pb.rate}/${pb.time}s).`;
