@@ -272,25 +272,30 @@ function receiveMessage(text) {
 	}
 }
 
-function anchormeFix(html){
+function anchormeFix(escapedHTML) {
 	const container = document.createElement("div");
-	container.innerHTML = html;
 
-	// Walk child nodes and apply Anchorme to TEXT nodes only
-	const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT);
+	// Don't use innerHTML — instead, treat as a text node
+	const temp = document.createElement("div");
+	temp.innerHTML = escapedHTML;
+
+	const walker = document.createTreeWalker(temp, NodeFilter.SHOW_TEXT);
 	let node;
 	while ((node = walker.nextNode())) {
 		const parent = node.parentNode;
-		const temp = document.createElement("span");
-		temp.innerHTML = anchorme(node.textContent, {
+		const htmlFragment = anchorme(escapeHTML(node.textContent), {
 			attributes: [{ name: "target", value: "_blank" }]
 		});
-		while (temp.firstChild) {
-			parent.insertBefore(temp.firstChild, node);
+		const wrapper = document.createElement("span");
+		wrapper.innerHTML = htmlFragment;
+
+		while (wrapper.firstChild) {
+			parent.insertBefore(wrapper.firstChild, node);
 		}
 		parent.removeChild(node);
 	}
 
+	container.innerHTML = temp.innerHTML;
 	return container.innerHTML;
 }
 
