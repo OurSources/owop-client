@@ -51,7 +51,7 @@ export const WORLDFX = {
 
 export const activeFx = [];
 
-/*PublicAPI.activeFx = activeFx;*/
+PublicAPI.activeFx = activeFx;
 
 export class Fx {
     constructor(renderFunc, extra) {
