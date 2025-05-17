@@ -8,7 +8,7 @@
 import { DiscordSDK } from '@discord/embedded-app-sdk';
 
 import { normalizeWheel } from './util/normalizeWheel.js';
-import anchorme from 'anchorme';
+import anchorme from './util/anchorme.js';
 
 import { CHUNK_SIZE, EVENTS as e, RANK } from './conf.js';
 import { Bucket } from './util/Bucket.js';
@@ -244,7 +244,14 @@ function receiveMessage(text) {
 			get text() { return realText; },
 			incCount: () => {
 				var times = span.recvTimes || 1;
-				span.innerHTML = `${anchormeFix(text, isAdmin)} [x${++times}]`;
+				span.innerHTML = `${anchorme(text, {
+					attributes: [
+						{
+							name: "target",
+							value: "_blank"
+						}
+					]
+				})} [x${++times}]`;
 				span.recvTimes = times;
 				message.style.animation = 'none'; /* Reset fading anim */
 				message.offsetHeight; /* Reflow */
@@ -260,7 +267,14 @@ function receiveMessage(text) {
 		firstNl = firstNl.replace(/(?:&lt;|<):(.+?):([0-9]{8,32})(?:&gt;|>)/g,  '<img class="emote" src="https://cdn.discordapp.com/emojis/$2.png?v=1">'); // static
 		text = firstNl + '\n' + textByNls.join('\n');
 		text = misc.chatPostFormatRecvModifier(text);
-		span.innerHTML = anchormeFix(text, isAdmin);
+		span.innerHTML = anchorme(text, {
+			attributes: [
+				{
+					name: "target",
+					value: "_blank"
+				}
+			]
+		});
 		message.appendChild(span);
 		scrollChatToBottom(() => {
 			elements.chatMessages.appendChild(message);
@@ -270,37 +284,6 @@ function receiveMessage(text) {
 			}
 		}, true);
 	}
-}
-
-function anchormeFix(html, allowHtml = false) {
-	const container = document.createElement("div");
-
-	// Step 1: Escape HTML if user is not trusted
-	container.innerHTML = allowHtml ? html : escapeHTML(html);
-
-	// Step 2: Walk visible text nodes only
-	const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT);
-	let node;
-
-	while ((node = walker.nextNode())) {
-		if (!node.nodeValue.trim()) continue;
-
-		const anchorHtml = anchorme(node.nodeValue, {
-			attributes: [{ name: "target", value: "_blank" }]
-		});
-
-		if (anchorHtml !== node.nodeValue) {
-			const temp = document.createElement("span");
-			temp.innerHTML = anchorHtml;
-
-			while (temp.firstChild) {
-				node.parentNode.insertBefore(temp.firstChild, node);
-			}
-			node.parentNode.removeChild(node);
-		}
-	}
-
-	return container.innerHTML;
 }
 
 function receiveDevMessage(text) {
@@ -330,7 +313,7 @@ function clearChat() {
 
 function tick() {
 	var tickNum = ++misc.tick;
-	var speed = Math.max(Math.min(options.movementSpeed, 64), 0) / camera.zoom * 16;
+	var speed = Math.max(Math.min(options.movementSpeed, 64), 0);
 	var offX = 0;
 	var offY = 0;
 	if (keysDown[38]) { // Up
@@ -1467,7 +1450,6 @@ window.addEventListener("load", () => {
 	checkFunctionality(() => sdk ? initSdk() : eventSys.emit(e.loaded));
 	
 	setInterval(()=>{
-		if(!net.protocol) return;
 		let pb = net.protocol.placeBucket;
 		pb.update();
 		elements.pBucketDisplay.textContent = `Place bucket: ${pb.allowance.toFixed(1)} (${pb.rate}/${pb.time}s).`;

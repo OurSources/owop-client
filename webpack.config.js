@@ -46,6 +46,7 @@ function genConfig(env) {
 		module: {
 			rules: [{
 				include: path.resolve(srcDir, 'js'),
+				type: 'javascript/auto',
 				use: [{
 					loader: 'babel-loader',
 					options: {
