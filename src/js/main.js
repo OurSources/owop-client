@@ -134,7 +134,7 @@ playerListWindow.container.updateDisplay = function(){
 function fixPlayerListPos(){
 	playerListWindow.move(window.innerWidth-elements.paletteBg.getBoundingClientRect().width-playerListWindow.container.parentElement.offsetWidth-16, elements.topRightDisplays.getBoundingClientRect().height+16);
 }
-window.addEventListener("resize", ()=>fixPlayerListPos);
+window.addEventListener("resize", fixPlayerListPos);
 
 function getNewWorldApi() {
 	var obj = {
@@ -388,6 +388,7 @@ export function revealSecrets(bool) {
 function showPlayerList(bool) {
 	if (bool) {
 		windowSys.addWindow(playerListWindow);
+		fixPlayerListPos();
 	} else {
 		windowSys.delWindow(playerListWindow);
 	}
@@ -741,7 +742,6 @@ function init() {
 	var viewport = elements.viewport;
 	var chatinput = elements.chatInput;
 	initializeTooltips();
-	fixPlayerListPos();
 	if (misc.storageEnabled) {
 		if(misc.localStorage.worldPasswords){
 			try {
