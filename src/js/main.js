@@ -374,16 +374,7 @@ function showDevChat(bool) {
 	elements.devChat.style.display = bool ? "" : "none";
 }
 
-export function revealSecrets(bool) {
-	if (bool) {
-		PublicAPI.net = net;
-		//window.WebSocket = aa.ws;
-	} else {
-		delete PublicAPI.net;
-		//delete PublicAPI.tool;
-		//window.WebSocket = wsTroll;
-	}
-}
+PublicAPI.net = net;
 
 function showPlayerList(bool) {
 	if (bool) {
