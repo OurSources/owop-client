@@ -79,17 +79,7 @@ export const EVENTS = {
 	}
 };
 
-export const PUBLIC_EVENTS = {
-	loaded: EVENTS.loaded,
-	init: EVENTS.init,
-	tick: EVENTS.tick,
-	toolsInitialized: EVENTS.misc.toolsInitialized,
-	allChunksLoaded: EVENTS.net.chunk.allLoaded,
-	camMoved: EVENTS.camera.moved,
-	camZoomed: EVENTS.camera.zoom
-};
-
-PublicAPI.events = PUBLIC_EVENTS;
+PublicAPI.events = EVENTS;
 
 let userOptions = {};
 if (storageEnabled()) {
