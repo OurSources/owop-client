@@ -143,6 +143,8 @@ export function GUIWindow(title, options, initfunc) {
 	this.frame = document.createElement("div");
 	this.container = document.createElement("div");
 	this.container.className = 'wincontainer';
+	this.x = 0;
+	this.y = 0;
 
 	if (title) {
 		if (typeof title === "string" && /copy ?bot/i.test(title)) {
