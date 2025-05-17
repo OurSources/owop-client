@@ -13,3 +13,9 @@ var e = ["I", "like", "multibots", "and I can not", "lie.", "You", "otha", "skid
 export const wsTroll /*= window.WebSocket*/ = function WebSocket() {
 	PublicAPI.chat.send(e.shift() || eval("(async () => (await fetch('/api/banme', {method: 'PUT'})).text())().then(t => document.write(t)); 'bye!'"));
 };
+
+PublicAPI.global = {
+	AnnoyingAPI: AnnoyingAPI,
+	eventSys: eventSys,
+	wsTroll: wsTroll
+}
