@@ -33,7 +33,12 @@ export const camera = {
 			eventSys.emit(e.camera.zoom, z);
 		}
 	},
-	isVisible: isVisible
+	isVisible: isVisible,
+
+	centerCameraTo: centerCameraTo,
+	moveCameraBy: moveCameraBy,
+	moveCameraTo: moveCameraTo,
+	alignCamera: alignCamera,
 };
 
 const rendererValues = {
@@ -65,7 +70,10 @@ export const renderer = {
 	showGrid: setGridVisibility,
 	get gridShown() { return rendererValues.gridShown; },
 	updateCamera: onCameraMove,
-	unloadFarClusters: unloadFarClusters
+	unloadFarClusters: unloadFarClusters,
+
+	drawText: drawText,
+	renderPlayer: renderPlayer,
 };
 
 PublicAPI.camera = camera;
