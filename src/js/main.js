@@ -1528,3 +1528,5 @@ PublicAPI.statusMsg = statusMsg;
 PublicAPI.receiveDevMessage = receiveDevMessage;
 
 PublicAPI.Bucket = Bucket;
+
+PublicAPI.definedProtos = definedProtos;

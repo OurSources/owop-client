@@ -12,7 +12,13 @@ PublicAPI.util = {
 	setTooltip,
 	waitFrames,
 	line,
-	loadScript
+	loadScript,
+	KeyCode,
+	KeyName,
+	setCookie,
+	getCookie,
+	propertyDefaults,
+	htmlToElement,
 };
 
 // table of keycodes for convenience
