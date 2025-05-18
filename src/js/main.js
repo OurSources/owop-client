@@ -1530,3 +1530,5 @@ PublicAPI.receiveDevMessage = receiveDevMessage;
 PublicAPI.Bucket = Bucket;
 
 PublicAPI.definedProtos = definedProtos;
+
+PublicAPI.normalizeWheel = normalizeWheel;
