@@ -161,3 +161,5 @@ PublicAPI.options = options;
 eventSys.on(EVENTS.net.connecting, server => {
 	protocol = server.proto;
 });
+
+PublicAPI.protocol = protocol;
