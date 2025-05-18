@@ -35,7 +35,3 @@ export function createContextMenu(x, y, buttons) {
 
 	document.addEventListener("click", removeMenu);
 }
-
-PublicAPI.context = {
-	createContextMenu: createContextMenu
-}

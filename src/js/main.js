@@ -1532,3 +1532,7 @@ PublicAPI.Bucket = Bucket;
 PublicAPI.definedProtos = definedProtos;
 
 PublicAPI.normalizeWheel = normalizeWheel;
+
+PublicAPI.context = {
+	createContextMenu: createContextMenu
+};
