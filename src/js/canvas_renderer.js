@@ -426,7 +426,7 @@ function renderPlayer(targetPlayer, fontsize) {
 	}
 
 	if (fontsize > 3) {
-		renderPlayerId(ctx, fontsize + toolheight, zoom, cx, cy + toolheight, targetPlayer.id, targetPlayer.clr);
+		renderPlayerId(ctx, fontsize, zoom, cx, cy + toolheight, targetPlayer.id, targetPlayer.clr);
 	}
 
 	ctx.drawImage(tool.cursor, cx, cy, toolwidth, toolheight);
