@@ -55,7 +55,8 @@ const rendererValues = {
 	currentFontSize: -1
 };
 
-/*PublicAPI.rval = rendererValues;*/
+PublicAPI.rendererValues = rendererValues;
+PublicAPI.Lerp = Lerp;
 
 export const renderer = {
 	rendertype: {
