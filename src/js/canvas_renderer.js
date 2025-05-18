@@ -33,7 +33,12 @@ export const camera = {
 			eventSys.emit(e.camera.zoom, z);
 		}
 	},
-	isVisible: isVisible
+	isVisible: isVisible,
+
+	centerCameraTo: centerCameraTo,
+	moveCameraBy: moveCameraBy,
+	moveCameraTo: moveCameraTo,
+	alignCamera: alignCamera,
 };
 
 const rendererValues = {
@@ -50,7 +55,8 @@ const rendererValues = {
 	currentFontSize: -1
 };
 
-/*PublicAPI.rval = rendererValues;*/
+PublicAPI.rendererValues = rendererValues;
+PublicAPI.Lerp = Lerp;
 
 export const renderer = {
 	rendertype: {
@@ -65,7 +71,11 @@ export const renderer = {
 	showGrid: setGridVisibility,
 	get gridShown() { return rendererValues.gridShown; },
 	updateCamera: onCameraMove,
-	unloadFarClusters: unloadFarClusters
+	unloadFarClusters: unloadFarClusters,
+
+	drawText: drawText,
+	renderPlayer: renderPlayer,
+	renderPlayerId: renderPlayerId,
 };
 
 PublicAPI.camera = camera;
@@ -415,25 +425,28 @@ function renderPlayer(targetPlayer, fontsize) {
 		return true;
 	}
 
-
 	if (fontsize > 3) {
-		var idstr = targetPlayer.id;
-		var textw = ctx.measureText(idstr).width + (zoom / 2);
-
-		ctx.globalAlpha = 1;
-		ctx.fillStyle = targetPlayer.clr;
-		ctx.fillRect(cx, cy + toolheight, textw, zoom);
-		ctx.globalAlpha = 0.2;
-		ctx.lineWidth = 3;
-		ctx.strokeStyle = "#000000";
-		ctx.strokeRect(cx, cy + toolheight, textw, zoom);
-		ctx.globalAlpha = 1;
-		drawText(ctx, idstr, cx + zoom / 4, cy + fontsize + toolheight + zoom / 8);
+		renderPlayerId(ctx, fontsize, zoom, cx, cy + toolheight, targetPlayer.id, targetPlayer.clr);
 	}
 
 	ctx.drawImage(tool.cursor, cx, cy, toolwidth, toolheight);
 
 	return x === targetPlayer.endX && y === targetPlayer.endY;
+}
+
+function renderPlayerId(ctx, fontsize, zoom, x, y, id, color) {
+	var idstr = id;
+	var textw = ctx.measureText(idstr).width + (zoom / 2);
+
+	ctx.globalAlpha = 1;
+	ctx.fillStyle = color;
+	ctx.fillRect(x, y, textw, zoom);
+	ctx.globalAlpha = 0.2;
+	ctx.lineWidth = 3;
+	ctx.strokeStyle = "#000000";
+	ctx.strokeRect(x, y, textw, zoom);
+	ctx.globalAlpha = 1;
+	drawText(ctx, idstr, x + zoom / 4, y + fontsize + zoom / 8);
 }
 
 function requestRender(type) {

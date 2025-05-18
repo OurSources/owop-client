@@ -374,16 +374,7 @@ function showDevChat(bool) {
 	elements.devChat.style.display = bool ? "" : "none";
 }
 
-export function revealSecrets(bool) {
-	if (bool) {
-		PublicAPI.net = net;
-		//window.WebSocket = aa.ws;
-	} else {
-		delete PublicAPI.net;
-		//delete PublicAPI.tool;
-		//window.WebSocket = wsTroll;
-	}
-}
+PublicAPI.net = net;
 
 function showPlayerList(bool) {
 	if (bool) {
@@ -1529,3 +1520,19 @@ PublicAPI.poke = () => {
 	}
 };
 PublicAPI.muted = [];
+
+PublicAPI.misc = misc;
+PublicAPI.showDevChat = showDevChat;
+PublicAPI.showPlayerList = showPlayerList;
+PublicAPI.statusMsg = statusMsg;
+PublicAPI.receiveDevMessage = receiveDevMessage;
+
+PublicAPI.Bucket = Bucket;
+
+PublicAPI.definedProtos = definedProtos;
+
+PublicAPI.normalizeWheel = normalizeWheel;
+
+PublicAPI.context = {
+	createContextMenu: createContextMenu
+};
