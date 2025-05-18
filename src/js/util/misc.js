@@ -2,26 +2,6 @@
 import { colorUtils as color } from './color.js';
 import { PublicAPI } from './../global.js';
 
-PublicAPI.util = {
-	getTime,
-	cookiesEnabled,
-	storageEnabled,
-	absMod,
-	escapeHTML,
-	mkHTML,
-	setTooltip,
-	waitFrames,
-	line,
-	loadScript,
-	KeyCode,
-	KeyName,
-	setCookie,
-	getCookie,
-	propertyDefaults,
-	htmlToElement,
-	colorUtils: color
-};
-
 // table of keycodes for convenience
 export const KeyCode = {
     // Alphabet
@@ -369,3 +349,25 @@ export function line(x1, y1, x2, y2, size, plot) {
 		if (e2 <= dx) { err += dx; y1 += sy; }
 	}
 }
+
+PublicAPI.util = {
+	getTime,
+	cookiesEnabled,
+	storageEnabled,
+	absMod,
+	escapeHTML,
+	mkHTML,
+	setTooltip,
+	waitFrames,
+	line,
+	loadScript,
+	setCookie,
+	getCookie,
+	propertyDefaults,
+	htmlToElement,
+	decompress,
+
+	KeyCode,
+	KeyName,
+	colorUtils: color
+};
