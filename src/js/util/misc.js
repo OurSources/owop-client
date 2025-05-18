@@ -19,6 +19,7 @@ PublicAPI.util = {
 	getCookie,
 	propertyDefaults,
 	htmlToElement,
+	colorUtils: color
 };
 
 // table of keycodes for convenience
