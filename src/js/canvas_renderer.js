@@ -426,7 +426,7 @@ function renderPlayer(targetPlayer, fontsize) {
 	}
 
 	if (fontsize > 3) {
-		renderPlayerId(ctx, fontsize, zoom, cx, cy, targetPlayer.id, targetPlayer.clr);
+		renderPlayerId(ctx, fontsize + toolheight, zoom, cx, cy + toolheight, targetPlayer.id, targetPlayer.clr);
 	}
 
 	ctx.drawImage(tool.cursor, cx, cy, toolwidth, toolheight);
@@ -440,13 +440,13 @@ function renderPlayerId(ctx, fontsize, zoom, x, y, id, color) {
 
 	ctx.globalAlpha = 1;
 	ctx.fillStyle = color;
-	ctx.fillRect(x, y + toolheight, textw, zoom);
+	ctx.fillRect(x, y, textw, zoom);
 	ctx.globalAlpha = 0.2;
 	ctx.lineWidth = 3;
 	ctx.strokeStyle = "#000000";
-	ctx.strokeRect(x, y + toolheight, textw, zoom);
+	ctx.strokeRect(x, y, textw, zoom);
 	ctx.globalAlpha = 1;
-	drawText(ctx, idstr, x + zoom / 4, y + fontsize + toolheight + zoom / 8);
+	drawText(ctx, idstr, x + zoom / 4, y + fontsize + zoom / 8);
 }
 
 function requestRender(type) {
