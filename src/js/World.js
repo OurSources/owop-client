@@ -1,6 +1,6 @@
 "use strict";
 import { protocol, EVENTS as e, options, RANK } from './conf.js';
-import { eventSys } from './global.js';
+import { eventSys, PublicAPI } from './global.js';
 import { colorUtils } from './util/color.js';
 import { net } from './networking.js';
 import { camera, isVisible, renderer } from './canvas_renderer.js';
@@ -428,3 +428,5 @@ export class World {
 		}
 	}
 }
+
+PublicAPI.World = World;
