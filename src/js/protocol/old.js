@@ -1,7 +1,7 @@
 'use strict';
 import { Protocol } from './Protocol.js';
 import { EVENTS as e, RANK, options } from './../conf.js';
-import { eventSys } from './../global.js';
+import { eventSys, PublicAPI } from './../global.js';
 import { Chunk } from './../World.js';
 import { Bucket } from './../util/Bucket.js';
 import { decompress } from './../util/misc.js';
@@ -501,3 +501,7 @@ class OldProtocolImpl extends Protocol {
 }
 
 OldProtocol.class = OldProtocolImpl;
+
+PublicAPI.Protocol = OldProtocolImpl;
+PublicAPI.OldProtocol = OldProtocol;
+PublicAPI.captchaState = captchaState;
