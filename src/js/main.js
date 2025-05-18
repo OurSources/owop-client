@@ -1526,3 +1526,5 @@ PublicAPI.showDevChat = showDevChat;
 PublicAPI.showPlayerList = showPlayerList;
 PublicAPI.statusMsg = statusMsg;
 PublicAPI.receiveDevMessage = receiveDevMessage;
+
+PublicAPI.Bucket = Bucket;
