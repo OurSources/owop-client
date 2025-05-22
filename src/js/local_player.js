@@ -197,6 +197,14 @@ function updateClientFx() {
 	renderer.render(renderer.rendertype.FX);
 }
 
+PublicAPI.local_player = {
+	getDefaultTool,
+	networkRankVerification,
+	shouldUpdate,
+	undoHistory,
+	updateClientFx
+};
+
 eventSys.once(e.misc.toolsInitialized, () => {
 	player.tool = getDefaultTool();
 });
