@@ -96,7 +96,8 @@ export const misc = {
 	showEUCookieNag: !options.noUi && cookiesEnabled() && getCookie("nagAccepted") !== "true",
 	usingFirefox: navigator.userAgent.indexOf("Firefox") !== -1,
 	donTimer: 0,
-	keybinds: {}
+	keybinds: {},
+	attemptedPassword: null
 };
 
 export const sounds = {
@@ -123,7 +124,8 @@ export var playerListWindow = new GUIWindow('Players', {closeable: true}, wdow =
 	playerListTable.appendChild(tableHeader);
 	wdow.container.appendChild(playerListTable);
 	wdow.container.id = "player-list";
-}).move(window.innerWidth - 240, 32);
+	plWidth = wdow.container.parentElement.offsetWidth;
+})
 playerListWindow.container.updateDisplay = function(){
 	let diff = playerListWindow.container.parentElement.offsetWidth - plWidth
 	if(diff!==0){
@@ -153,7 +155,184 @@ function getNewWorldApi() {
 	return obj;
 }
 
-function receiveMessage(text) {
+function receiveMessage(rawText){
+	rawText = misc.chatRecvModifier(rawText);
+	if (!rawText) return;
+
+	let addContext = (el, nick, id) => {
+		el.addEventListener('click', function(event){
+			createContextMenu(event.clientX, event.clientY, [
+				["Mute " + nick, function() {
+					PublicAPI.muted.push(id);
+					receiveMessage({
+						sender: 'server',
+						type: 'info',
+						data:{
+							allowHTML: true,
+							message: "<span style=\"color: #ffa71f\">Muted " + id + "</span>"
+						}
+					});
+				}]
+			]);
+			event.stopPropagation();
+		});
+	}
+
+	let message = document.createElement('li');
+
+	let parsedJson = JSON.parse(rawText);
+	let text = parsedJson.data.message;
+	let sender = parsedJson.sender;
+	let type = parsedJson.type;
+	let data = parsedJson.data;
+	if(!data) return;
+
+	// actions
+	if(!!data.action){
+		switch(data.action){
+			case 'invalidatePassword':{
+				if(!misc.storageEnabled) break;
+				let passwordType = data.passwordType;
+				switch(passwordType){
+					case 'adminlogin':
+					case 'modlogin':{
+						delete misc.localStorage[passwordType];
+						misc.attemptedPassword = null;
+						break;
+					}
+					case 'worldpass':
+					default:{
+						delete misc.worldPasswords[net.protocol.worldName];
+						misc.attemptedPassword = null;
+						break;
+					}
+				}
+				saveWorldPasswords();
+				net.protocol.ws.close();
+				break;
+			}
+			case 'savePassword':{
+				if(!misc.storageEnabled) break;
+				let passwordType = data.passwordType;
+				switch(passwordType){
+					case 'adminlogin':
+					case 'modlogin':{
+						misc.localStorage[passwordType] = misc.attemptedPassword;
+						misc.attemptedPassword = null;
+						break;
+					}
+					case 'worldpass':
+					default:{
+						misc.worldPasswords[net.protocol.worldName] = misc.attemptedPassword;
+						misc.attemptedPassword = null;
+						break;
+					}
+				}
+				saveWorldPasswords();
+				break;
+			}
+			case 'updateNick':{
+				if(!misc.storageEnabled) break;
+				if(data.nick!==undefined&&data.nick!==null) misc.localStorage.nick = data.nick;
+				else delete misc.localStorage.nick;
+				break;
+			}
+		}
+	}
+
+	if(!text) return;
+
+	let allowHTML = false;
+	if(sender==='server'){
+		allowHTML = data.allowHTML || false;
+		if(type==='info') message.className = 'serverInfo';
+		if(type==='error') message.className = 'serverError';
+		if(type==='raw') message.className = 'serverRaw';
+		if(type==='whisperSent') {
+			if(PublicAPI.muted.includes(data.senderID)) return;
+			let nick = document.createElement("span");
+			nick.className = 'whisper';
+			nick.innerHTML = escapeHTML(`-> You tell ${data.targetID}: `);
+			addContext(nick, data.nick, data.senderID);
+			message.appendChild(nick);
+		}
+	}
+	else if(sender==='player'){
+		if(type==='whisperReceived') {
+			let nick = document.createElement("span");
+			nick.className = 'whisper';
+			nick.innerHTML = escapeHTML(`-> ${data.senderID} tells you: `);
+			message.appendChild(nick);
+		}
+		if(type==='message') {
+			console.log("blaaaa");
+			if(PublicAPI.muted.includes(data.senderID) && data.rank<RANK.MODERATOR) return;
+			let nick = document.createElement("span");
+			nick.className = 'nick';
+			message.style.display = 'block';
+			if(data.rank>=RANK.ADMIN||data.allowHTML) allowHTML = true;
+
+			if(data.rank===RANK.ADMIN) message.className = 'adminMessage';
+			else if(data.rank===RANK.MODERATOR) message.className = 'modMessage';
+			else if(data.rank===RANK.USER) message.className = 'userMessage';
+			else message.className = 'playerMessage';
+
+			if(!allowHTML) nick.innerHTML = escapeHTML(`${data.nick}: `);
+			else nick.innerHTML = `${data.nick}: `;
+
+			message.appendChild(nick);
+			console.log(nick);
+		}
+	}
+
+	let msg = misc.lastMessage ? misc.lastMessage.text : '';
+	if(msg.endsWith('\n')) msg = msg.slice(0, -1);
+	if(misc.lastMessage) console.log(misc.lastMessage.ignore);
+	if(msg===text && misc.lastMessage && !misc.lastMessage.ignore) misc.lastMessage.incCount();
+	else {
+		var span = document.createElement("span");
+		if(!allowHTML) text = escapeHTML(text).replace(/\&#x2F;/g, '/');
+		misc.lastMessage = {
+			get text() { return text; },
+			incCount: () => {
+				var times = span.recvTimes || 1;
+				span.innerHTML = `${anchorme(text, {
+					attributes: [
+						{
+							name: "target",
+							value: "_blank"
+						}
+					]
+				})} [x${++times}]`;
+				span.recvTimes = times;
+				message.style.animation = 'none'; /* Reset fading anim */
+				message.offsetHeight; /* Reflow */
+				message.style.animation = null;
+			},
+			ignore: type==="whisperReceived"
+		};
+		let textByNls = text.split('\n');
+		let firstNl	= textByNls.shift();
+		firstNl = firstNl.replace(/(?:&lt;|<)a:(.+?):([0-9]{8,32})(?:&gt;|>)/g, '<img class="emote" src="https://cdn.discordapp.com/emojis/$2.gif?v=1">'); // animated
+		firstNl = firstNl.replace(/(?:&lt;|<):(.+?):([0-9]{8,32})(?:&gt;|>)/g, '<img class="emote" src="https://cdn.discordapp.com/emojis/$2.png?v=1">'); // static
+		text = firstNl + '\n' + textByNls.join('\n');
+		text = misc.chatPostFormatRecvModifier(text);
+		span.innerHTML = anchorme(text, {
+			attributes: [{
+				name: 'target',
+				value: '_blank'
+			}]
+		});
+		message.appendChild(span);
+		scrollChatToBottom(()=>{
+			elements.chatMessages.appendChild(message);
+			let children = elements.chatMessages.children;
+			if(children.length>options.maxChatBuffer) children[0].remove();
+		}, true);
+	}
+}
+
+function oldReceiveMessage(text) {
 	console.log(text);
 	text = misc.chatRecvModifier(text);
 	if (!text) {
@@ -165,7 +344,14 @@ function receiveMessage(text) {
 			createContextMenu(event.clientX, event.clientY, [
 				["Mute " + nickname, function() {
 					PublicAPI.muted.push(id);
-					receiveMessage("<span style=\"color: #ffa71f\">Muted " + id + "</span>");
+					receiveMessage({
+						sender: 'server',
+						type: 'info',
+						data:{
+							allowHTML: true,
+							message: `"<span style=\"color: #ffa71f\">Muted " + id + "</span>"`
+						}
+					});
 				}]
 			]);
 			event.stopPropagation();
@@ -222,7 +408,14 @@ function receiveMessage(text) {
 			createContextMenu(event.clientX, event.clientY, [
 				["Mute " + nickname, function() {
 					PublicAPI.muted.push(id);
-					receiveMessage("<span style=\"color: #ffa71f\">Muted " + id + "</span>");
+					receiveMessage({
+						sender: 'server',
+						type: 'info',
+						data:{
+							allowHTML: true,
+							message: "<span style=\"color: #ffa71f\">Muted " + id + "</span>"
+						}
+					});
 				}]
 			]);
 			event.stopPropagation();
@@ -379,6 +572,7 @@ PublicAPI.net = net;
 function showPlayerList(bool) {
 	if (bool) {
 		windowSys.addWindow(playerListWindow);
+		plWidth = playerListWindow.container.parentElement.offsetWidth;
 		fixPlayerListPos();
 	} else {
 		windowSys.delWindow(playerListWindow);
@@ -781,24 +975,28 @@ function init() {
 					var text = chatinput.value;
 					historyIndex = 0;
 					chatHistory.unshift(text);
-					if (misc.storageEnabled) {
-						if (text.startsWith("/adminlogin ")) {
-							misc.localStorage.adminlogin = text.slice(12);
-						} else if (text.startsWith("/modlogin ")) {
-							misc.localStorage.modlogin = text.slice(10);
-						} else if (text.startsWith("/nick")) {
-							var nick = text.slice(6);
-							if (nick.length) {
-								misc.localStorage.nick = nick;
-							} else {
-								delete misc.localStorage.nick;
-							}
-						} else if (text.startsWith("/pass ") && misc.world) {
-							var pass = text.slice(6);
-							misc.worldPasswords[net.protocol.worldName] = pass;
-							saveWorldPasswords();
-						}
+					if(misc.storageEnabled){
+						if(text.startsWith("/adminlogin ")||text.startsWith("/modlogin ")||text.startsWith("/pass "))
+							misc.attemptedPassword = text.split(' ').slice(1).join(' ');
 					}
+					// if (misc.storageEnabled) {
+					// 	if (text.startsWith("/adminlogin ")) {
+					// 		misc.localStorage.adminlogin = text.slice(12);
+					// 	} else if (text.startsWith("/modlogin ")) {
+					// 		misc.localStorage.modlogin = text.slice(10);
+					// 	} else if (text.startsWith("/nick")) {
+					// 		var nick = text.slice(6);
+					// 		if (nick.length) {
+					// 			misc.localStorage.nick = nick;
+					// 		} else {
+					// 			delete misc.localStorage.nick;
+					// 		}
+					// 	} else if (text.startsWith("/pass ") && misc.world) {
+					// 		var pass = text.slice(6);
+					// 		misc.worldPasswords[net.protocol.worldName] = pass;
+					// 		saveWorldPasswords();
+					// 	}
+					// }
 					if (!event.ctrlKey) {
 						text = misc.chatSendModifier(text);
 					}
@@ -1273,14 +1471,14 @@ eventSys.on(e.net.world.setId, id => {
 		let onWrong = function () {
 			console.log("WRONG");
 			eventSys.removeListener(e.net.sec.rank, onCorrect);
-			if (desiredRank == RANK.ADMIN) {
-				delete misc.localStorage.adminlogin;
-			} else if (desiredRank == RANK.MODERATOR) {
-				delete misc.localStorage.modlogin;
-			} else if (desiredRank == RANK.USER) {
-				delete misc.worldPasswords[net.protocol.worldName];
-				saveWorldPasswords();
-			}
+			// if (desiredRank == RANK.ADMIN) {
+			// 	delete misc.localStorage.adminlogin;
+			// } else if (desiredRank == RANK.MODERATOR) {
+			// 	delete misc.localStorage.modlogin;
+			// } else if (desiredRank == RANK.USER) {
+			// 	delete misc.worldPasswords[net.protocol.worldName];
+			// 	saveWorldPasswords();
+			// }
 			retryingConnect(() => net.currentServer, net.protocol.worldName)
 		};
 		let onCorrect = function (newrank) {
@@ -1297,10 +1495,13 @@ eventSys.on(e.net.world.setId, id => {
 		eventSys.on(e.net.sec.rank, onCorrect);
 		var msg;
 		if (desiredRank == RANK.ADMIN) {
-			msg = "/adminlogin " + misc.localStorage.adminlogin;
+			misc.attemptedPassword = misc.localStorage.adminlogin;
+			msg = "/adminlogin " + misc.attemptedPassword;
 		} else if (desiredRank == RANK.MODERATOR) {
+			misc.attemptedPassword = misc.localStorage.modlogin;
 			msg = "/modlogin " + misc.localStorage.modlogin;
 		} else if (desiredRank == RANK.USER) {
+			misc.attemptedPassword = misc.worldPasswords[net.protocol.worldName];
 			msg = "/pass " + misc.worldPasswords[net.protocol.worldName];
 			mightBeMod = true;
 		}
@@ -1441,9 +1642,9 @@ window.addEventListener("load", () => {
 	checkFunctionality(() => sdk ? initSdk() : eventSys.emit(e.loaded));
 	
 	setInterval(()=>{
-		let pb = net.protocol.placeBucket;
-		pb.update();
-		elements.pBucketDisplay.textContent = `Place bucket: ${pb.allowance.toFixed(1)} (${pb.rate}/${pb.time}s).`;
+		let pb = net.protocol?.placeBucket;
+		pb?.update();
+		elements.pBucketDisplay.textContent = `Place bucket: ${pb?.allowance?.toFixed(1)} (${pb?.rate}/${pb?.time}s).`;
 	}, 100);
 });
 

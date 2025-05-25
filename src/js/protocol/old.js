@@ -176,7 +176,13 @@ class OldProtocolImpl extends Protocol {
 				eventSys.emit(e.net.world.join, this.worldName);
 				eventSys.emit(e.net.world.setId, id);
 				eventSys.emit(e.net.playerCount, this.playercount);
-				eventSys.emit(e.net.chat, "[Server] Joined world: \"" + this.worldName + "\", your ID is: " + id + "!");
+				eventSys.emit(e.net.chat, JSON.stringify({
+					sender: 'server',
+					type: 'info',
+					data:{
+						message: "[Server] Joined world: \"" + this.worldName + "\", your ID is: " + id + "!"
+					}
+				}));
 				break;
 
 			case oc.worldUpdate: // Get all cursors, tile updates, disconnects
@@ -448,7 +454,13 @@ class OldProtocolImpl extends Protocol {
 				this.ws.send(str + OldProtocol.misc.chatVerification);
 				return true;
 			} else {
-				eventSys.emit(e.net.chat, "Slow down! You're talking too fast!");
+				eventSys.emit(e.net.chat, JSON.stringify({
+					sender: 'server',
+					type: 'error',
+					data:{
+						message: "Slow down! You're talking too fast!"
+					}
+				}));
 				return false;
 			}
 		}

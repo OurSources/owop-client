@@ -104,12 +104,13 @@ function getDefaultWorld() {
 function getServerUrl(){
 	// if(shittyHardcodedBool) return "https://1366130123597942795.discordsays.com/.proxy/ws";
 	if(location.href.includes("discordsays.com")){
-		return "wss://1366130123597942795.discordsays.com/.proxy/ws";
+		return "wss://1366130123597942795.discordsays.com/.proxy/ws?chat=v2";
 	}
 	let url = location.href.replace("http", "ws");
 	if(url.includes("localhost")){
 		url = url.replace(/:(\d+)/, ":13374");
 	}
+	if(!url.includes("?chat=")) url+="?chat=v2";
 	console.log(url);
 	return url;
 }

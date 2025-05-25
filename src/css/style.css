@@ -578,22 +578,25 @@ button:focus {
 #chat-messages > li a:link { color: #82c9ff; }
 #chat-messages > li a:visited { color: #ab80f9; }
 #chat-messages > li a:hover { color: #76b0dc; }
-#chat-messages > li > .nick {
+#chat-messages > li.playerMessage {
+	color: #999;
+}
+#chat-messages > li.userMessage > .nick {
 	color: #3ab2ff;
 }
-#chat-messages > li.moderator {
+#chat-messages > li.modMessage {
 	color: #86ff41;
 }
-#chat-messages > li.admin {
+#chat-messages > li.adminMessage, #chat-messages > li.serverError, #chat-messages > li.serverRaw {
 	color: #ff4f4f;
 }
 #chat-messages > li.discord > .nick {
 	color: #6cffe7;
 }
-#chat-messages > li.server {
+#chat-messages > li.serverInfo {
 	color: #ff41e4;
 }
-#chat-messages > li.tell, #chat-messages > li > .tell {
+#chat-messages > li.whisper, #chat-messages > li > .whisper {
 	color: #ffb735;
 }
 #chat-messages .emote {
