@@ -497,7 +497,8 @@ function receiveDevMessage(text) {
 }
 
 function scrollChatToBottom(callback, dontScrollIfNotTop = false) {
-	var shouldScroll = !dontScrollIfNotTop || elements.chatMessages.scrollHeight - elements.chatMessages.scrollTop === elements.chatMessages.clientHeight;
+	var shouldScroll = !dontScrollIfNotTop || elements.chatMessages.scrollHeight - elements.chatMessages.scrollTop - elements.chatMessages.clientHeight <= 0.1;
+	console.log(shouldScroll);
 	if (callback)
 		callback(); // add all elements here
 	if (shouldScroll)

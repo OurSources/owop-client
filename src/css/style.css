@@ -593,7 +593,12 @@ button:focus {
 	border-image: url(../img/window_out.png) 11 repeat;
 	border-image-outset: 1px;
 	box-shadow: 0px 0px 5px #000;
+	max-height:96%;
+	display:flex;
+	flex-direction:column;
 }
+
+
 
 #help>.title {
 	display: block;
@@ -608,6 +613,8 @@ button:focus {
 
 #help>.content {
 	overflow: auto;
+	flex-grow: 1;
+	max-height: 100%;
 	min-width: 100%;
 	/* width: 0;  Older browsers fix */
 	height: 100%;

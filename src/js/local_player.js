@@ -242,15 +242,16 @@ eventSys.on(e.net.sec.rank, newRank => {
 });
 
 eventSys.once(e.init, () => {
-	let allowcancel = false;
-	let cancelopen = false;
-	window.addEventListener('mouseup', e=>{
-		if(e.target!==elements.paletteCreate) allowcancel = false;
-		e.stopPropagation();
-		cancelopen = true;
-	});
+	// let allowcancel = false;
+	// let cancelopen = false;
+	// window.addEventListener('mouseup', e=>{
+	// 	if(e.target!==elements.paletteCreate) allowcancel = false;
+	// 	e.stopPropagation();
+	// 	cancelopen = true;
+	// });
 
 	function createColorPicker(){
+		elements.paletteCreate.blur();
 		elements.paletteCreate.style.backgroundImage = `url(${cancelimg})`;
 		elements.paletteCreate.removeEventListener('click', createColorPicker);
 		setTooltip(elements.paletteCreate, "Close picker",true);
@@ -274,6 +275,7 @@ eventSys.once(e.init, () => {
 
 		function closePicker(){
 			picker.selfw.close();
+			elements.paletteCreate.blur();
 		}
 	}
 
