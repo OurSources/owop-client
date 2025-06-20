@@ -1,7 +1,9 @@
 import { GUIWindow, windowSys } from "./windowsys";
+import { waitFrames } from "./util/misc";
 
 export default class ColorPicker {
 	#wasConfirmed = false;
+	#movefunc = null;
 	self = null;
 	selfw = null;
 	container = null;
@@ -27,6 +29,8 @@ export default class ColorPicker {
 		onCancel: null,
 		onClose: null,
 		parentElement: null,
+		closeable: true,
+		draggable: true,
 	};
 	/**
 	  * @constructor
@@ -247,7 +251,21 @@ export default class ColorPicker {
 
 	#init() {
 		// this.self = document.createElement('div');
-		this.selfw = windowSys.addWindow(new GUIWindow("Color Picker", { centerOnce: true, closeable: true }));
+		this.selfw = windowSys.addWindow(new GUIWindow("Color Picker", { centerOnce: !this.options.parentElement, closeable: this.options.closeable }));
+		waitFrames(0, ()=>{
+			if(this.options.parentElement) {
+				if(this.options.anchorPreset === 'left'){
+					this.#movefunc = ()=> {
+						this.selfw.opt.immobile = false;
+						this.selfw.move(this.options.parentElement.getBoundingClientRect().left - this.selfw.frame.offsetWidth - 8, this.options.parentElement.getBoundingClientRect().top);
+						this.selfw.opt.immobile = !this.options.draggable;
+					}
+				}
+				this.#movefunc();
+				window.addEventListener('resize', this.#movefunc);
+			}
+			this.selfw.opt.immobile = !this.options.draggable;
+		});
 		this.self = this.selfw.container;
 		this.container = document.createElement('div');
 		this.canvas = document.createElement('canvas');
@@ -383,6 +401,7 @@ export default class ColorPicker {
 			this.handleListeners(this.sHandle, false);
 			if (!this.#wasConfirmed && this.options.onCancel) this.options.onCancel();
 			if (this.options.onClose) this.options.onClose();
+			if (this.#movefunc) window.removeEventListener('resize', this.#movefunc);
 		}
 	}
 }

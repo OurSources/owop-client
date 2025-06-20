@@ -1707,6 +1707,7 @@ window.addEventListener("load", () => {
 			}
 			savebtn.addEventListener('click', () => submit());
 			input.addEventListener('keydown', (e)=>{
+				e.stopPropagation();
 				let code = e.which || e.keyCode;
 				if (code == KeyCode.ENTER) submit();
 			});

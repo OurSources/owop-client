@@ -257,6 +257,9 @@ eventSys.once(e.init, () => {
 		elements.paletteCreate.addEventListener('click', closePicker);
 		const picker = new ColorPicker({
 			startColor: color.toHTML(color.u24_888(player.selectedColor[0], player.selectedColor[1], player.selectedColor[2])),
+			parentElement: elements.paletteCreate,
+			draggable: false,
+			closeable: false,
 			onClose: ()=>{
 				elements.paletteCreate.style.backgroundImage = `url(${plusimg})`;
 				elements.paletteCreate.removeEventListener('click', closePicker);
