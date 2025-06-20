@@ -2,7 +2,8 @@
 @import url(../css/styled_scrollbar.css);
 @import url(../css/context.css);
 
-html, body {
+html,
+body {
 	font: 16px pixel-op, sans-serif;
 	width: 100%;
 	height: 100%;
@@ -26,7 +27,7 @@ hr {
 }
 
 .hide {
-	display: none!important;
+	display: none !important;
 }
 
 .selectable {
@@ -35,7 +36,8 @@ hr {
 
 .centered {
 	position: absolute;
-	padding-top: 1px; /* fix captcha window not being pixel perfect */
+	padding-top: 1px;
+	/* fix captcha window not being pixel perfect */
 	top: 50%;
 	left: 50%;
 	transform: translate(-50%, -50%);
@@ -57,7 +59,7 @@ hr {
 	/* background-color: #5c0c91; */
 	box-shadow: 0px 0px 5px #000;
 	background-color: #7e635c;
-	color:#fff;
+	color: #fff;
 	text-shadow: -1px 0 #000, 0 1px #000, 1px 0 #000, 0 -1px #000;
 	pointer-events: none;
 }
@@ -71,27 +73,36 @@ hr {
 } */
 
 .owopdropdown {
-	pointer-events: none!important;
-	padding: 0!important;
-	padding-top: 1px!important;
+	pointer-events: none !important;
+	padding: 0 !important;
+	padding-top: 1px !important;
 	top: 0;
 	left: 50%;
 	transform: translateX(-50%);
-	border: none!important;
-	background-color: rgba(0, 0, 0, 0)!important;
+	border: none !important;
+	background-color: rgba(0, 0, 0, 0) !important;
 	transition: transform 0.5s ease-out;
 }
+
 button.winframe:active {
 	border-image: inherit;
 }
 
-.whitetext, #xy-display, #chat, #dev-chat, #playercount-display, #topright-displays, #topleft-displays > * , .generic-display {
+.whitetext,
+#xy-display,
+#chat,
+#dev-chat,
+#playercount-display,
+#topright-displays,
+#topleft-displays>*,
+.generic-display {
 	color: #FFF;
 	font: 16px pixel-op, sans-serif;
 	text-shadow: -1px 0 #000, 0 1px #000, 1px 0 #000, 0 -1px #000;
 }
 
-img, #tool-select {
+img,
+#tool-select {
 	image-rendering: pixelated;
 }
 
@@ -126,7 +137,8 @@ img, #tool-select {
 	transition: transform 1s;
 }
 
-#noscript-msg, #status {
+#noscript-msg,
+#status {
 	font: 16px pixel-op;
 }
 
@@ -139,7 +151,9 @@ img, #tool-select {
 	margin-right: 8px;
 }
 
-#viewport, #windows, #animations {
+#viewport,
+#windows,
+#animations {
 	position: absolute;
 }
 
@@ -150,7 +164,9 @@ img, #tool-select {
 	z-index: 6;
 }
 
-#windows > div, .winframe { /* Frame */
+#windows>div,
+.winframe {
+	/* Frame */
 	position: absolute;
 	pointer-events: initial;
 	background-color: #aba389;
@@ -160,7 +176,9 @@ img, #tool-select {
 	border-image-outset: 1px;
 	box-shadow: 0px 0px 5px #000;
 }
-#windows > div > span { /* Title */
+
+#windows>div>span {
+	/* Title */
 	display: block;
 	pointer-events: none;
 	margin-top: -7px;
@@ -170,7 +188,9 @@ img, #tool-select {
 	min-width: 100%;
 	text-align: center;
 }
-.windowCloseButton { /* Close button */
+
+.windowCloseButton {
+	/* Close button */
 	position: absolute;
 	right: 0;
 	top: -2px;
@@ -182,11 +202,14 @@ img, #tool-select {
 	background-color: #ff7979;
 	border: none;
 }
+
 button.windowCloseButton:active {
 	background-image: url(../img/gui.png);
 	background-position: -48px -41px;
 }
-.wincontainer { /* Item container of windows */
+
+.wincontainer {
+	/* Item container of windows */
 	overflow: auto;
 	min-width: 100%;
 	/* width: 0;  Older browsers fix */
@@ -197,12 +220,18 @@ button.windowCloseButton:active {
 	border-width: 5px;
 	border-image: url(../img/window_in.png) 5 repeat;
 }
-#windows > div > div > input {
+
+#windows>div>div input {
 	border: 6px #7e635c solid;
 	border-image: url(../img/small_border.png) 6 repeat;
 	border-image-outset: 1px;
 }
-#windows > div > div > * {
+
+#windows>div>div input:focus {
+	outline: none;
+}
+
+#windows>div>div>* {
 	box-sizing: border-box;
 }
 
@@ -212,21 +241,24 @@ button {
 	background-color: #aba389;
 	transition: filter 0.125s;
 }
+
 button:hover {
 	filter: brightness(110%);
 	transition: filter 0.125s;
 }
+
 button:active {
 	border-style: inset;
 	border-image: url(../img/button_pressed.png) 6 repeat;
 	filter: brightness(90%);
 	transition: none;
 }
+
 button:focus {
 	outline: none;
 }
 
-#clusters > canvas {
+#clusters>canvas {
 	position: absolute;
 	background-image: url(../img/unloaded.png);
 	background-size: 8px;
@@ -241,35 +273,41 @@ button:focus {
 	position: absolute;
 }
 
-#xy-display, .generic-display{
+#xy-display,
+.generic-display {
 	padding-left: 2px;
 }
 
-#playercount-display{
+#playercount-display {
 	padding-right: 2px;
 }
 
-#palette, #topright-displays > *, #topleft-displays > * {
+#palette,
+#topright-displays>*,
+#topleft-displays>* {
 	pointer-events: none;
 	transform: translateY(-100%);
 	transition: transform 0.75s;
 }
 
-#topleft-displays > *, #topright-displays > * {
+#topleft-displays>*,
+#topright-displays>* {
 	pointer-events: none;
 	transition: transform 0.75s;
 }
 
 #notice-display {
 	pointer-events: all;
-	cursor:pointer;
+	cursor: pointer;
 	z-index: 5;
 }
-#notice-display > *{
+
+#notice-display>* {
 	pointer-events: none;
 }
 
-#topright-displays, #topleft-displays {
+#topright-displays,
+#topleft-displays {
 	position: absolute;
 	pointer-events: none;
 }
@@ -302,7 +340,8 @@ button:focus {
 	top: -4px;
 }
 
-#topright-displays > * , #topleft-displays > * {
+#topright-displays>*,
+#topleft-displays>* {
 	display: inline-block;
 	min-height: 8px;
 }
@@ -339,7 +378,7 @@ button:focus {
 	z-index: 100;
 }
 
-#dinfo-hlp:hover ~ #dinfo-hlp-box {
+#dinfo-hlp:hover~#dinfo-hlp-box {
 	display: block;
 }
 
@@ -347,7 +386,13 @@ button:focus {
 	overflow: hidden;
 }
 
-#playercount-display, #xy-display, #palette-create, #palette, .framed, #pbucket-display, #rank-display, .generic-display{
+#playercount-display,
+#xy-display,
+#palette,
+.framed,
+#pbucket-display,
+#rank-display,
+.generic-display {
 	border: 5px #aba389 solid;
 	border-image: url(../img/small_border.png) 5 repeat;
 	border-image-outset: 1px;
@@ -355,25 +400,37 @@ button:focus {
 	box-shadow: 0px 0px 5px #000;
 }
 
-#toole-container > button > div {
+.generic-display:active {
+	border: 5px #aba389 solid;
+	border-image: url(../img/small_border.png) 5 repeat;
+	border-image-outset: 1px;
+	background-color: #7e635c;
+	box-shadow: 0px 0px 5px #000;
+	-webkit-filter: brightness(90%);
+	filter: brightness(90%);
+}
+
+#toole-container>button>div {
 	/* ugly */
 	position: fixed;
 	margin: -18px -4px;
 	width: 36px;
 	height: 36px;
 }
-#toole-container > button {
+
+#toole-container>button {
 	position: relative;
 	display: inline-block;
 	width: 40px;
 	height: 40px;
 	padding: 0;
 }
-#toole-container > button.selected {
+
+#toole-container>button.selected {
 	background-color: #aaa;
 }
 
-#tool-select > button > div {
+#tool-select>button>div {
 	position: absolute;
 	width: 36px;
 	height: 36px;
@@ -389,6 +446,7 @@ button:focus {
 	height: 40px;
 	box-sizing: border-box;
 }
+
 #palette-bg {
 	position: absolute;
 	height: 100%;
@@ -399,33 +457,66 @@ button:focus {
 	transition: transform 0.75s;
 	pointer-events: none;
 }
-#palette-create {
-	position: absolute;
-	right: 50px;
-	top: 50%;
-	transform: translateY(-50%);
-	width: 24px;
-	height: 24px;
+
+#palette-opts {
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	height: 100%;
+	position:absolute;
+	right:50px;
 	box-sizing: border-box;
+	pointer-events:all;
+}
+
+#palette-create {
 	background-image: url(../img/plus.png);
 	background-repeat: no-repeat;
-	pointer-events: all;
-}
-#palette-input {
 	box-sizing: border-box;
-	width: 100%;
-	height: 100%;
-	position: absolute;
-	opacity: 0;
+	width: 24px;
+	min-height: 24px;
+	margin-bottom: 4px;
 	cursor: pointer;
 }
+
+#palette-load {
+	background-image: url(../img/load.png);
+	background-repeat: no-repeat;
+	box-sizing: border-box;
+	width: 24px;
+	min-height: 24px;
+	cursor: pointer;
+}
+
+#palette-save {
+	background-image: url(../img/save.png);
+	background-repeat: no-repeat;
+	box-sizing: border-box;
+	width: 24px;
+	min-height: 24px;
+	margin-top:4px;
+	cursor: pointer;
+}
+
+#picker-anchor {
+	position:absolute;
+	right:50px;
+	top:-30px;
+}
+
+#color-picker {
+	position:absolute;
+	left:-100%;
+}
+
 #palette-colors {
 	position: absolute;
 	left: -1px;
 	top: -9px;
 	transition: transform 0.2s ease-out;
 }
-#palette-colors > div {
+
+#palette-colors>div {
 	width: 32px;
 	height: 32px;
 	margin: 8px 0;
@@ -439,30 +530,38 @@ button:focus {
 	max-height: 300px;
 	overflow-y: scroll;
 }
-#player-list > table {
+
+#player-list>table {
 	border-collapse: collapse;
 	border: 1px solid #000;
 	color: #fff;
 	text-shadow: -1px 0 #000, 0 1px #000, 1px 0 #000, 0 -1px #000;
 	padding: 2px;
 }
-#player-list > table > tr:nth-child(odd) {
+
+#player-list>table>tr:nth-child(odd) {
 	background-color: rgba(0, 0, 0, 0.1);
 }
-#player-list > table > tr:nth-child(even) {
+
+#player-list>table>tr:nth-child(even) {
 	background-color: rgba(0, 0, 0, 0.3);
 }
-#player-list > table > tr:first-child {
+
+#player-list>table>tr:first-child {
 	text-align: left;
 	background-color: rgba(0, 0, 0, 0.5);
 }
-#player-list td, #player-list th {
+
+#player-list td,
+#player-list th {
 	padding: 2px 6px;
 }
-#player-list > table > tr > td:nth-child(1) {
+
+#player-list>table>tr>td:nth-child(1) {
 	border-right: 1px solid rgba(0, 0, 0, 0.5);
 }
-#player-list > table > tr > td:nth-child(2) {
+
+#player-list>table>tr>td:nth-child(2) {
 	border-right: 1px solid rgba(0, 0, 0, 0.3);
 }
 
@@ -474,7 +573,8 @@ button:focus {
 	margin: 16px;
 	transition: transform 0.75s;
 }
-#help-button > img {
+
+#help-button>img {
 	width: 64px;
 	display: block;
 }
@@ -494,7 +594,8 @@ button:focus {
 	border-image-outset: 1px;
 	box-shadow: 0px 0px 5px #000;
 }
-#help > .title {
+
+#help>.title {
 	display: block;
 	pointer-events: none;
 	margin-top: -7px;
@@ -504,7 +605,8 @@ button:focus {
 	min-width: 100%;
 	text-align: center;
 }
-#help > .content {
+
+#help>.content {
 	overflow: auto;
 	min-width: 100%;
 	/* width: 0;  Older browsers fix */
@@ -515,17 +617,21 @@ button:focus {
 	border-width: 5px;
 	border-image: url(../img/window_in.png) 5 repeat;
 }
-#help > .content > .links {
+
+#help>.content>.links {
 	text-align: center;
 }
-#help > .content > .links > * {
+
+#help>.content>.links>* {
 	display: inline-block;
 	vertical-align: middle;
 	width: 76px;
 }
-#help > .content > .links > * img {
+
+#help>.content>.links>* img {
 	width: 100%;
 }
+
 #help.hidden {
 	display: none;
 }
@@ -534,7 +640,8 @@ button:focus {
 	transform: translateY(100%);
 }
 
-#chat, #dev-chat {
+#chat,
+#dev-chat {
 	position: absolute;
 	right: 0;
 	bottom: 0;
@@ -550,11 +657,14 @@ button:focus {
 	transition: background-color 0.2s, box-shadow 0.2s, transform 0.75s;
 	animation-fill-mode: forwards;
 }
+
 #dev-chat {
 	left: 0;
 	right: initial;
 }
-#chat.active, #dev-chat.active {
+
+#chat.active,
+#dev-chat.active {
 	background-color: rgba(0, 0, 0, 0.8);
 	box-shadow: 0px 0px 5px #000;
 	pointer-events: all;
@@ -562,11 +672,16 @@ button:focus {
 }
 
 @keyframes fade {
-	from { opacity: 1; }
-	to { opacity: 0; }
+	from {
+		opacity: 1;
+	}
+
+	to {
+		opacity: 0;
+	}
 }
 
-#chat-messages > li {
+#chat-messages>li {
 	background-color: rgba(0, 0, 0, 0.8);
 	animation-name: fade;
 	animation-duration: 3s;
@@ -575,44 +690,65 @@ button:focus {
 	transition: background-color 0.2s;
 	white-space: pre-wrap;
 }
-#chat-messages > li a:link { color: #82c9ff; }
-#chat-messages > li a:visited { color: #ab80f9; }
-#chat-messages > li a:hover { color: #76b0dc; }
-#chat-messages > li.playerMessage {
-	color: #999;
-}
-#chat-messages > li.userMessage > .nick {
-	color: #3ab2ff;
-}
-#chat-messages > li.modMessage {
-	color: #86ff41;
-}
-#chat-messages > li.adminMessage, #chat-messages > li.serverError, #chat-messages > li.serverRaw {
-	color: #ff4f4f;
-}
-#chat-messages > li.discord > .nick {
-	color: #6cffe7;
-}
-#chat-messages > li.serverInfo {
-	color: #ff41e4;
-}
-#chat-messages > li.whisper, #chat-messages > li > .whisper {
-	color: #ffb735;
-}
-#chat-messages .emote {
-    	max-width: 1.375em;
-   	max-height: 1.375em;
-    	vertical-align: bottom;
-    	image-rendering: auto;
+
+#chat-messages>li a:link {
+	color: #82c9ff;
 }
 
-#chat-messages.active > li {
+#chat-messages>li a:visited {
+	color: #ab80f9;
+}
+
+#chat-messages>li a:hover {
+	color: #76b0dc;
+}
+
+#chat-messages>li.playerMessage {
+	color: #999;
+}
+
+#chat-messages>li.userMessage>.nick {
+	color: #3ab2ff;
+}
+
+#chat-messages>li.modMessage {
+	color: #86ff41;
+}
+
+#chat-messages>li.adminMessage,
+#chat-messages>li.serverError,
+#chat-messages>li.serverRaw {
+	color: #ff4f4f;
+}
+
+#chat-messages>li.discord>.nick {
+	color: #6cffe7;
+}
+
+#chat-messages>li.serverInfo {
+	color: #ff41e4;
+}
+
+#chat-messages>li.whisper,
+#chat-messages>li>.whisper {
+	color: #ffb735;
+}
+
+#chat-messages .emote {
+	max-width: 1.375em;
+	max-height: 1.375em;
+	vertical-align: bottom;
+	image-rendering: auto;
+}
+
+#chat-messages.active>li {
 	background-color: initial;
 	animation-duration: 0s;
 	animation-direction: reverse;
 }
 
-#chat-messages, #dev-chat-messages {
+#chat-messages,
+#dev-chat-messages {
 	flex: 1;
 	margin: 0;
 	padding: 0;
@@ -622,6 +758,7 @@ button:focus {
 	overflow: inherit;
 	vertical-align: bottom;
 }
+
 #chat-input {
 	flex: 0 1 auto;
 	height: 16px;
@@ -636,6 +773,7 @@ button:focus {
 	overflow-y: scroll;
 	display: none;
 }
+
 #chat-input:focus {
 	outline: none;
 }
@@ -648,47 +786,135 @@ button:focus {
 	margin: -4px;
 }
 
-.rainbow-container{
-	position:relative;
-	display:inline-block;
+.rainbow-container {
+	position: relative;
+	display: inline-block;
 }
-.rainbow{	
+
+.rainbow {
 	background: linear-gradient(to right, #db2a2a, #d16d15, #d4b413, #18fa14, #192abf, #760dd9, #db2a2a);
 	-webkit-background-clip: text;
-	background-clip:text;
-	background-repeat:repeat-x;
-	color:transparent;
+	background-clip: text;
+	background-repeat: repeat-x;
+	color: transparent;
 	animation: rainbow_animation 6s linear infinite;
 	background-size: 400% 100%;
-	text-shadow:none;
-	position:relative;
-	z-index:1;
+	text-shadow: none;
+	position: relative;
+	z-index: 1;
 }
+
 @keyframes rainbow_animation {
 	0% {
 		background-position: 0 0;
 	}
+
 	100% {
 		background-position: 132% 0;
 	}
 }
-.rainbow-back{
+
+.rainbow-back {
 	text-shadow: -1px 0 #000, 0 1px #000, 1px 0 #000, 0 -1px #000;
-	color:#000;
-	position:absolute;
-	left:0;
-	z-index:0;
+	color: #000;
+	position: absolute;
+	left: 0;
+	z-index: 0;
 }
 
-#keybind-settings{
+#keybind-settings {
+	display: flex;
+	flex-direction: row;
+}
+
+#keybinddiv {
+	flex-grow: 1;
+}
+
+#keybindopts {
+	text-align: right;
+}
+
+.color-picker-frame{
+	border: 5px #7e635c solid;
+	border-image: url(../img/small_border.png) 5 repeat;
+	border-image-outset: 1px;
+	box-shadow: 0px 0px 5px #000;
+	padding:5px;
+	position:absolute;
+	background-color:#7e635c;
+	display:flex;
+	align-items:stretch;
+}
+
+.color-picker-container{
+	position:relative;
+	width:200px;
+	height:200px;
 	display:flex;
 	flex-direction:row;
+	align-items: stretch;
+	gap:5px;
 }
 
-#keybinddiv{
-	flex-grow:1;
+.color-picker-canvas{
+	width:100%;
+	height:100%;
 }
 
-#keybindopts{
-	text-align:right;
+.color-picker-slider{
+	width: 10px;
+	height:100%;
+	border-radius: 24px;
+	flex-shrink: 0;
+}
+
+.draggableHandle{
+	width:6px;
+	height:6px;
+	border:2px solid #333;
+	border-radius: 50%;
+	position:absolute;
+	cursor:grab;
+	z-index:5;
+}
+
+.picker-dragging{
+	cursor:grabbing;
+}
+
+.palette-load{
+	display:flex;
+	flex-direction:column;
+	align-items:stretch;
+}
+.palette-load-top{
+	flex: 1;
+}
+.palette-load-bottom{
+	display:flex;
+	flex-direction:column;
+}
+.palette-load-palette-container{
+	display:flex;
+	flex-direction: column;
+	max-width:400px;
+	overflow-y:scroll;
+	align-items: stretch;
+}
+.palette-button-row{
+	display:flex;
+	flex-direction:row;
+	gap:2px;
+}
+.palette-load-selection-container{
+	display:flex;
+	flex-direction:column;
+}
+.palette-load-preview{
+
+}
+.palette-load-button-contianer{
+	display:flex;
+	flex-direction:row;
 }

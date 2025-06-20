@@ -23,6 +23,7 @@ import { net } from './networking.js';
 import { updateClientFx, player } from './local_player.js';
 import { resolveProtocols, definedProtos } from './protocol/all.js';
 import { windowSys, GUIWindow, OWOPDropDown, UtilDialog } from './windowsys.js';
+import { colorUtils } from './util/color.js';
 
 import { createContextMenu } from './context.js';
 
@@ -34,7 +35,7 @@ let auth;
 const id = '1366130123597942795';
 let sdk;
 
-if(window.location.href.includes('discordsays.com')){
+if (window.location.href.includes('discordsays.com')) {
 	sdk = new DiscordSDK(id);
 }
 
@@ -72,7 +73,7 @@ export const misc = {
 	localStorage: storageEnabled() && window.localStorage,
 	_world: null,
 	lastXYDisplay: [-1, -1],
-	devRecvReader: msg => {},
+	devRecvReader: msg => { },
 	chatPostFormatRecvModifier: msg => msg,
 	chatRecvModifier: msg => msg,
 	chatSendModifier: msg => msg,
@@ -97,6 +98,7 @@ export const misc = {
 	usingFirefox: navigator.userAgent.indexOf("Firefox") !== -1,
 	donTimer: 0,
 	keybinds: {},
+	palettes: {},
 	attemptedPassword: null
 };
 
@@ -118,7 +120,7 @@ sounds.click.src = clickSoundUrl;
 let plWidth = 0;
 export var playerList = {};
 export var playerListTable = document.createElement("table");
-export var playerListWindow = new GUIWindow('Players', {closeable: true}, wdow => {
+export var playerListWindow = new GUIWindow('Players', { closeable: true }, wdow => {
 	var tableHeader = document.createElement("tr");
 	tableHeader.innerHTML = "<th>Id</th><th>X</th><th>Y</th>";
 	playerListTable.appendChild(tableHeader);
@@ -126,15 +128,15 @@ export var playerListWindow = new GUIWindow('Players', {closeable: true}, wdow =
 	wdow.container.id = "player-list";
 	plWidth = wdow.container.parentElement.offsetWidth;
 })
-playerListWindow.container.updateDisplay = function(){
+playerListWindow.container.updateDisplay = function () {
 	let diff = playerListWindow.container.parentElement.offsetWidth - plWidth
-	if(diff!==0){
+	if (diff !== 0) {
 		playerListWindow.move(playerListWindow.x - diff, playerListWindow.y);
 		plWidth = playerListWindow.container.parentElement.offsetWidth;
 	}
 }
-function fixPlayerListPos(){
-	playerListWindow.move(window.innerWidth-elements.paletteBg.getBoundingClientRect().width-playerListWindow.container.parentElement.offsetWidth-16, elements.topRightDisplays.getBoundingClientRect().height+16);
+function fixPlayerListPos() {
+	playerListWindow.move(window.innerWidth - elements.paletteBg.getBoundingClientRect().width - playerListWindow.container.parentElement.offsetWidth - 16, elements.topRightDisplays.getBoundingClientRect().height + 16);
 }
 window.addEventListener("resize", fixPlayerListPos);
 
@@ -155,19 +157,19 @@ function getNewWorldApi() {
 	return obj;
 }
 
-function receiveMessage(rawText){
+function receiveMessage(rawText) {
 	rawText = misc.chatRecvModifier(rawText);
 	if (!rawText) return;
 
 	let addContext = (el, nick, id) => {
-		el.addEventListener('click', function(event){
+		el.addEventListener('click', function (event) {
 			createContextMenu(event.clientX, event.clientY, [
-				["Mute " + nick, function() {
+				["Mute " + nick, function () {
 					PublicAPI.muted.push(id);
 					receiveMessage({
 						sender: 'server',
 						type: 'info',
-						data:{
+						data: {
 							allowHTML: true,
 							message: "<span style=\"color: #ffa71f\">Muted " + id + "</span>"
 						}
@@ -185,23 +187,23 @@ function receiveMessage(rawText){
 	let sender = parsedJson.sender;
 	let type = parsedJson.type;
 	let data = parsedJson.data;
-	if(!data) return;
+	if (!data) return;
 
 	// actions
-	if(!!data.action){
-		switch(data.action){
-			case 'invalidatePassword':{
-				if(!misc.storageEnabled) break;
+	if (!!data.action) {
+		switch (data.action) {
+			case 'invalidatePassword': {
+				if (!misc.storageEnabled) break;
 				let passwordType = data.passwordType;
-				switch(passwordType){
+				switch (passwordType) {
 					case 'adminlogin':
-					case 'modlogin':{
+					case 'modlogin': {
 						delete misc.localStorage[passwordType];
 						misc.attemptedPassword = null;
 						break;
 					}
 					case 'worldpass':
-					default:{
+					default: {
 						delete misc.worldPasswords[net.protocol.worldName];
 						misc.attemptedPassword = null;
 						break;
@@ -211,18 +213,18 @@ function receiveMessage(rawText){
 				net.protocol.ws.close();
 				break;
 			}
-			case 'savePassword':{
-				if(!misc.storageEnabled) break;
+			case 'savePassword': {
+				if (!misc.storageEnabled) break;
 				let passwordType = data.passwordType;
-				switch(passwordType){
+				switch (passwordType) {
 					case 'adminlogin':
-					case 'modlogin':{
+					case 'modlogin': {
 						misc.localStorage[passwordType] = misc.attemptedPassword;
 						misc.attemptedPassword = null;
 						break;
 					}
 					case 'worldpass':
-					default:{
+					default: {
 						misc.worldPasswords[net.protocol.worldName] = misc.attemptedPassword;
 						misc.attemptedPassword = null;
 						break;
@@ -231,25 +233,28 @@ function receiveMessage(rawText){
 				saveWorldPasswords();
 				break;
 			}
-			case 'updateNick':{
-				if(!misc.storageEnabled) break;
-				if(data.nick!==undefined&&data.nick!==null) misc.localStorage.nick = data.nick;
+			case 'updateNick': {
+				if (!misc.storageEnabled) break;
+				if (data.nick !== undefined && data.nick !== null) misc.localStorage.nick = data.nick;
 				else delete misc.localStorage.nick;
 				break;
 			}
 		}
 	}
 
-	if(!text) return;
+	if (!text) return;
 
 	let allowHTML = false;
-	if(sender==='server'){
+	if (sender === 'server') {
 		allowHTML = data.allowHTML || false;
-		if(type==='info') message.className = 'serverInfo';
-		if(type==='error') message.className = 'serverError';
-		if(type==='raw') message.className = 'serverRaw';
-		if(type==='whisperSent') {
-			if(PublicAPI.muted.includes(data.senderID)) return;
+		if (type === 'info') message.className = 'serverInfo';
+		if (type === 'error') message.className = 'serverError';
+		if (type === 'raw') {
+			allowHTML = true; // assume HTML is allowed
+			message.className = 'serverRaw';
+		}
+		if (type === 'whisperSent') {
+			if (PublicAPI.muted.includes(data.senderID)) return;
 			let nick = document.createElement("span");
 			nick.className = 'whisper';
 			nick.innerHTML = escapeHTML(`-> You tell ${data.targetID}: `);
@@ -257,27 +262,27 @@ function receiveMessage(rawText){
 			message.appendChild(nick);
 		}
 	}
-	else if(sender==='player'){
-		if(type==='whisperReceived') {
+	else if (sender === 'player') {
+		if (type === 'whisperReceived') {
 			let nick = document.createElement("span");
 			nick.className = 'whisper';
 			nick.innerHTML = escapeHTML(`-> ${data.senderID} tells you: `);
 			message.appendChild(nick);
 		}
-		if(type==='message') {
+		if (type === 'message') {
 			console.log("blaaaa");
-			if(PublicAPI.muted.includes(data.senderID) && data.rank<RANK.MODERATOR) return;
+			if (PublicAPI.muted.includes(data.senderID) && data.rank < RANK.MODERATOR) return;
 			let nick = document.createElement("span");
 			nick.className = 'nick';
 			message.style.display = 'block';
-			if(data.rank>=RANK.ADMIN||data.allowHTML) allowHTML = true;
+			if (data.rank >= RANK.ADMIN || data.allowHTML) allowHTML = true;
 
-			if(data.rank===RANK.ADMIN) message.className = 'adminMessage';
-			else if(data.rank===RANK.MODERATOR) message.className = 'modMessage';
-			else if(data.rank===RANK.USER) message.className = 'userMessage';
+			if (data.rank === RANK.ADMIN) message.className = 'adminMessage';
+			else if (data.rank === RANK.MODERATOR) message.className = 'modMessage';
+			else if (data.rank === RANK.USER) message.className = 'userMessage';
 			else message.className = 'playerMessage';
 
-			if(!allowHTML) nick.innerHTML = escapeHTML(`${data.nick}: `);
+			if (!allowHTML) nick.innerHTML = escapeHTML(`${data.nick}: `);
 			else nick.innerHTML = `${data.nick}: `;
 
 			message.appendChild(nick);
@@ -286,12 +291,12 @@ function receiveMessage(rawText){
 	}
 
 	let msg = misc.lastMessage ? misc.lastMessage.text : '';
-	if(msg.endsWith('\n')) msg = msg.slice(0, -1);
-	if(misc.lastMessage) console.log(misc.lastMessage.ignore);
-	if(msg===text && misc.lastMessage && !misc.lastMessage.ignore) misc.lastMessage.incCount();
+	if (msg.endsWith('\n')) msg = msg.slice(0, -1);
+	if (misc.lastMessage) console.log(misc.lastMessage.ignore);
+	if (msg === text && misc.lastMessage && !misc.lastMessage.ignore) misc.lastMessage.incCount();
 	else {
 		var span = document.createElement("span");
-		if(!allowHTML) text = escapeHTML(text).replace(/\&#x2F;/g, '/');
+		if (!allowHTML) text = escapeHTML(text).replace(/\&#x2F;/g, '/');
 		misc.lastMessage = {
 			get text() { return text; },
 			incCount: () => {
@@ -309,10 +314,10 @@ function receiveMessage(rawText){
 				message.offsetHeight; /* Reflow */
 				message.style.animation = null;
 			},
-			ignore: type==="whisperReceived"
+			ignore: type === "whisperReceived"
 		};
 		let textByNls = text.split('\n');
-		let firstNl	= textByNls.shift();
+		let firstNl = textByNls.shift();
 		firstNl = firstNl.replace(/(?:&lt;|<)a:(.+?):([0-9]{8,32})(?:&gt;|>)/g, '<img class="emote" src="https://cdn.discordapp.com/emojis/$2.gif?v=1">'); // animated
 		firstNl = firstNl.replace(/(?:&lt;|<):(.+?):([0-9]{8,32})(?:&gt;|>)/g, '<img class="emote" src="https://cdn.discordapp.com/emojis/$2.png?v=1">'); // static
 		text = firstNl + '\n' + textByNls.join('\n');
@@ -324,165 +329,165 @@ function receiveMessage(rawText){
 			}]
 		});
 		message.appendChild(span);
-		scrollChatToBottom(()=>{
-			elements.chatMessages.appendChild(message);
-			let children = elements.chatMessages.children;
-			if(children.length>options.maxChatBuffer) children[0].remove();
-		}, true);
-	}
-}
-
-function oldReceiveMessage(text) {
-	console.log(text);
-	text = misc.chatRecvModifier(text);
-	if (!text) {
-		return;
-	}
-
-	var addContext = (elem, nickname, id) => {
-		elem.addEventListener("click", function(event) {
-			createContextMenu(event.clientX, event.clientY, [
-				["Mute " + nickname, function() {
-					PublicAPI.muted.push(id);
-					receiveMessage({
-						sender: 'server',
-						type: 'info',
-						data:{
-							allowHTML: true,
-							message: `"<span style=\"color: #ffa71f\">Muted " + id + "</span>"`
-						}
-					});
-				}]
-			]);
-			event.stopPropagation();
-		});
-	};
-
-	var message = document.createElement("li");
-	var realText = text;
-	var isAdmin = false;
-	if (text.startsWith("[D]")) {
-		message.className = "discord";
-		var nick = document.createElement("span");
-		nick.className = "nick";
-		var nickname = text.split(": ")[0] + ": ";
-		nick.innerHTML = escapeHTML(nickname);
-		message.appendChild(nick);
-		text = text.slice(nickname.length);
-	} else if (text.startsWith("[Server]") || text.startsWith("Server:") || text.startsWith("Nickname set to") || text.startsWith("User: ")) {
-		message.className = "server";
-	} else if (text.startsWith("->")) {
-		var cuttxt = text.slice(3);
-		var id = parseInt(cuttxt);
-		cuttxt = cuttxt.slice(id.toString().length);
-		if (cuttxt.startsWith(" tells you: ")) {
-			if (PublicAPI.muted.includes(id)) {
-				return;
-			}
-
-			var nick = document.createElement("span");
-			nick.className = "tell";
-			nick.innerHTML = escapeHTML(`-> ${id} tells you: `);
-			addContext(nick, id, id);
-			message.appendChild(nick);
-			text = cuttxt.slice(12);
-		} else {
-			message.className = "tell";
-		}
-	} else if (text.startsWith("(M)")) {
-		message.className = "moderator";
-	} else if (isNaN(text.split(": ")[0]) && text.split(": ")[0].charAt(0) != "[") {
-		message.className = "admin";
-		isAdmin = true;
-	} else {
-		var nick = document.createElement("span");
-		nick.className = "nick";
-		var nickname = text.split(": ")[0];
-		var id = nickname.startsWith("[") ? nickname.split(" ")[0].slice(1, -1) : nickname;
-		id = parseInt(id);
-		if (PublicAPI.muted.includes(id)) {
-			return;
-		}
-		nick.innerHTML = escapeHTML(nickname + ": ");
-		nick.addEventListener("click", function(event) {
-			createContextMenu(event.clientX, event.clientY, [
-				["Mute " + nickname, function() {
-					PublicAPI.muted.push(id);
-					receiveMessage({
-						sender: 'server',
-						type: 'info',
-						data:{
-							allowHTML: true,
-							message: "<span style=\"color: #ffa71f\">Muted " + id + "</span>"
-						}
-					});
-				}]
-			]);
-			event.stopPropagation();
-		});
-		message.appendChild(nick);
-		text = text.slice(nickname.length + 2);
-	}
-	var idIndex = text.indexOf(': '); /* This shouldn't be like this, change on proto switch */
-	if (idIndex !== -1) {
-		var ntext = text.substr(0, idIndex);
-		realText = ntext.replace(/\d+/g, '') + text.slice(idIndex + 2);
-	}
-
-	if (misc.lastMessage && misc.lastMessage.text === realText) {
-		misc.lastMessage.incCount();
-	} else {
-		var span = document.createElement("span");
-		misc.lastMessage = {
-			get text() { return realText; },
-			incCount: () => {
-				var times = span.recvTimes || 1;
-				span.innerHTML = `${anchorme(text, {
-					attributes: [
-						{
-							name: "target",
-							value: "_blank"
-						}
-					]
-				})} [x${++times}]`;
-				span.recvTimes = times;
-				message.style.animation = 'none'; /* Reset fading anim */
-				message.offsetHeight; /* Reflow */
-				message.style.animation = null;
-			}
-		};
-		if (!isAdmin) {
-			text = escapeHTML(text).replace(/\&\#x2F;/g, "/");
-		}
-		var textByNls = text.split('\n');
-		var firstNl = textByNls.shift();
-		firstNl = firstNl.replace(/(?:&lt;|<)a:(.+?):([0-9]{8,32})(?:&gt;|>)/g, '<img class="emote" src="https://cdn.discordapp.com/emojis/$2.gif?v=1">'); // animated
-		firstNl = firstNl.replace(/(?:&lt;|<):(.+?):([0-9]{8,32})(?:&gt;|>)/g,  '<img class="emote" src="https://cdn.discordapp.com/emojis/$2.png?v=1">'); // static
-		text = firstNl + '\n' + textByNls.join('\n');
-		text = misc.chatPostFormatRecvModifier(text);
-		span.innerHTML = anchorme(text, {
-			attributes: [
-				{
-					name: "target",
-					value: "_blank"
-				}
-			]
-		});
-		message.appendChild(span);
 		scrollChatToBottom(() => {
 			elements.chatMessages.appendChild(message);
-			var childs = elements.chatMessages.children;
-			if (childs.length > options.maxChatBuffer) {
-				childs[0].remove();
-			}
+			let children = elements.chatMessages.children;
+			if (children.length > options.maxChatBuffer) children[0].remove();
 		}, true);
 	}
 }
 
+// function oldReceiveMessage(text) {
+// 	console.log(text);
+// 	text = misc.chatRecvModifier(text);
+// 	if (!text) {
+// 		return;
+// 	}
+
+// 	var addContext = (elem, nickname, id) => {
+// 		elem.addEventListener("click", function(event) {
+// 			createContextMenu(event.clientX, event.clientY, [
+// 				["Mute " + nickname, function() {
+// 					PublicAPI.muted.push(id);
+// 					receiveMessage({
+// 						sender: 'server',
+// 						type: 'info',
+// 						data:{
+// 							allowHTML: true,
+// 							message: `"<span style=\"color: #ffa71f\">Muted " + id + "</span>"`
+// 						}
+// 					});
+// 				}]
+// 			]);
+// 			event.stopPropagation();
+// 		});
+// 	};
+
+// 	var message = document.createElement("li");
+// 	var realText = text;
+// 	var isAdmin = false;
+// 	if (text.startsWith("[D]")) {
+// 		message.className = "discord";
+// 		var nick = document.createElement("span");
+// 		nick.className = "nick";
+// 		var nickname = text.split(": ")[0] + ": ";
+// 		nick.innerHTML = escapeHTML(nickname);
+// 		message.appendChild(nick);
+// 		text = text.slice(nickname.length);
+// 	} else if (text.startsWith("[Server]") || text.startsWith("Server:") || text.startsWith("Nickname set to") || text.startsWith("User: ")) {
+// 		message.className = "server";
+// 	} else if (text.startsWith("->")) {
+// 		var cuttxt = text.slice(3);
+// 		var id = parseInt(cuttxt);
+// 		cuttxt = cuttxt.slice(id.toString().length);
+// 		if (cuttxt.startsWith(" tells you: ")) {
+// 			if (PublicAPI.muted.includes(id)) {
+// 				return;
+// 			}
+
+// 			var nick = document.createElement("span");
+// 			nick.className = "tell";
+// 			nick.innerHTML = escapeHTML(`-> ${id} tells you: `);
+// 			addContext(nick, id, id);
+// 			message.appendChild(nick);
+// 			text = cuttxt.slice(12);
+// 		} else {
+// 			message.className = "tell";
+// 		}
+// 	} else if (text.startsWith("(M)")) {
+// 		message.className = "moderator";
+// 	} else if (isNaN(text.split(": ")[0]) && text.split(": ")[0].charAt(0) != "[") {
+// 		message.className = "admin";
+// 		isAdmin = true;
+// 	} else {
+// 		var nick = document.createElement("span");
+// 		nick.className = "nick";
+// 		var nickname = text.split(": ")[0];
+// 		var id = nickname.startsWith("[") ? nickname.split(" ")[0].slice(1, -1) : nickname;
+// 		id = parseInt(id);
+// 		if (PublicAPI.muted.includes(id)) {
+// 			return;
+// 		}
+// 		nick.innerHTML = escapeHTML(nickname + ": ");
+// 		nick.addEventListener("click", function(event) {
+// 			createContextMenu(event.clientX, event.clientY, [
+// 				["Mute " + nickname, function() {
+// 					PublicAPI.muted.push(id);
+// 					receiveMessage({
+// 						sender: 'server',
+// 						type: 'info',
+// 						data:{
+// 							allowHTML: true,
+// 							message: "<span style=\"color: #ffa71f\">Muted " + id + "</span>"
+// 						}
+// 					});
+// 				}]
+// 			]);
+// 			event.stopPropagation();
+// 		});
+// 		message.appendChild(nick);
+// 		text = text.slice(nickname.length + 2);
+// 	}
+// 	var idIndex = text.indexOf(': '); /* This shouldn't be like this, change on proto switch */
+// 	if (idIndex !== -1) {
+// 		var ntext = text.substr(0, idIndex);
+// 		realText = ntext.replace(/\d+/g, '') + text.slice(idIndex + 2);
+// 	}
+
+// 	if (misc.lastMessage && misc.lastMessage.text === realText) {
+// 		misc.lastMessage.incCount();
+// 	} else {
+// 		var span = document.createElement("span");
+// 		misc.lastMessage = {
+// 			get text() { return realText; },
+// 			incCount: () => {
+// 				var times = span.recvTimes || 1;
+// 				span.innerHTML = `${anchorme(text, {
+// 					attributes: [
+// 						{
+// 							name: "target",
+// 							value: "_blank"
+// 						}
+// 					]
+// 				})} [x${++times}]`;
+// 				span.recvTimes = times;
+// 				message.style.animation = 'none'; /* Reset fading anim */
+// 				message.offsetHeight; /* Reflow */
+// 				message.style.animation = null;
+// 			}
+// 		};
+// 		if (!isAdmin) {
+// 			text = escapeHTML(text).replace(/\&\#x2F;/g, "/");
+// 		}
+// 		var textByNls = text.split('\n');
+// 		var firstNl = textByNls.shift();
+// 		firstNl = firstNl.replace(/(?:&lt;|<)a:(.+?):([0-9]{8,32})(?:&gt;|>)/g, '<img class="emote" src="https://cdn.discordapp.com/emojis/$2.gif?v=1">'); // animated
+// 		firstNl = firstNl.replace(/(?:&lt;|<):(.+?):([0-9]{8,32})(?:&gt;|>)/g,  '<img class="emote" src="https://cdn.discordapp.com/emojis/$2.png?v=1">'); // static
+// 		text = firstNl + '\n' + textByNls.join('\n');
+// 		text = misc.chatPostFormatRecvModifier(text);
+// 		span.innerHTML = anchorme(text, {
+// 			attributes: [
+// 				{
+// 					name: "target",
+// 					value: "_blank"
+// 				}
+// 			]
+// 		});
+// 		message.appendChild(span);
+// 		scrollChatToBottom(() => {
+// 			elements.chatMessages.appendChild(message);
+// 			var childs = elements.chatMessages.children;
+// 			if (childs.length > options.maxChatBuffer) {
+// 				childs[0].remove();
+// 			}
+// 		}, true);
+// 	}
+// }
+
 function receiveDevMessage(text) {
-    try {
-        misc.devRecvReader(text);
-    } catch(e) {}
+	try {
+		misc.devRecvReader(text);
+	} catch (e) { }
 	var message = document.createElement("li");
 	var span = document.createElement("span");
 	span.innerHTML = text;
@@ -523,7 +528,7 @@ function tick() {
 	}
 	if (offX !== 0 || offY !== 0) {
 		moveCameraBy(offX, offY);
-		updateMouse({}, 'mousemove', mouse.x, mouse.y); 
+		updateMouse({}, 'mousemove', mouse.x, mouse.y);
 	}
 
 	eventSys.emit(e.tick, tickNum);
@@ -582,7 +587,7 @@ function showPlayerList(bool) {
 function updateXYDisplay(x, y) {
 	if (misc.lastXYDisplay[0] !== x || misc.lastXYDisplay[1] !== y) {
 		misc.lastXYDisplay = [x, y];
-		if(!options.hexCoords) {
+		if (!options.hexCoords) {
 			elements.xyDisplay.innerHTML = "X: " + x + ", Y: " + y;
 		} else {
 			var hexify = i => `${(i < 0 ? '-' : '')}0x${Math.abs(i).toString(16)}`;
@@ -668,10 +673,10 @@ function logoMakeRoom(bool) {
 }
 
 function dismissNotice() {
-	misc.localStorage.dismissedId=elements.noticeDisplay.noticeId;
-	elements.noticeDisplay.style.transform="translateY(-100%)";
-	elements.noticeDisplay.style.pointerEvents="none";
-	setTimeout(()=>elements.noticeDisplay.style.display="none", 750);
+	misc.localStorage.dismissedId = elements.noticeDisplay.noticeId;
+	elements.noticeDisplay.style.transform = "translateY(-100%)";
+	elements.noticeDisplay.style.pointerEvents = "none";
+	setTimeout(() => elements.noticeDisplay.style.display = "none", 750);
 }
 
 function showWorldUI(bool) {
@@ -701,11 +706,11 @@ function showLoadScr(bool, showOptions) {
 	if (!bool) {
 		elements.loadScr.style.transform = "translateY(-110%)"; /* +10% for shadow */
 		eventOnce(elements.loadScr, "transitionend webkitTransitionEnd oTransitionEnd msTransitionEnd",
-		() => {
-			if (net.isConnected()) {
-				elements.loadScr.className = "hide";
-			}
-		});
+			() => {
+				if (net.isConnected()) {
+					elements.loadScr.className = "hide";
+				}
+			});
 	} else {
 		elements.loadScr.className = "";
 		elements.loadScr.style.transform = "";
@@ -809,11 +814,11 @@ function toggleMuteSounds() {
 let activeKeybindListener = null;
 let currentKeybindName = null;
 
-export function getNewBind(tname, self){
+export function getNewBind(tname, self) {
 	const hc = document.getElementById('help-close');
 	const kbd = document.getElementById('keybind-settings');
 
-	const endBind = ()=>{
+	const endBind = () => {
 		document.removeEventListener("keydown", listener);
 		hc.removeEventListener("click", endBind);
 		kbd.removeEventListener('click', oncancel);
@@ -822,40 +827,40 @@ export function getNewBind(tname, self){
 		self.textContent = "rebind";
 	}
 
-	if(activeKeybindListener) endBind();
+	if (activeKeybindListener) endBind();
 
 	currentKeybindName = tname;
 
-	const oncancel = (e)=>{
-		if(e.target!==self && e.target.tagName==='BUTTON') endBind();
+	const oncancel = (e) => {
+		if (e.target !== self && e.target.tagName === 'BUTTON') endBind();
 	}
 
-	const listener = (event)=>{
+	const listener = (event) => {
 		event.stopPropagation();
 		let code = event.which || event.keyCode;
-		
-		if(code == KeyCode.ESCAPE) return endBind();
-		
+
+		if (code == KeyCode.ESCAPE) return endBind();
+
 		// prevent binding to hard-coded keybinds
-		if([KeyCode.SHIFT, KeyCode.BACKTICK, KeyCode.TILDE, KeyCode.G, KeyCode.H, KeyCode.F1, KeyCode.F2,KeyCode.PLUS,
-			KeyCode.NUMPAD_ADD, KeyCode.SUBTRACT, KeyCode.NUMPAD_SUBTRACT, KeyCode.EQUALS, KeyCode.UNDERSCORE].includes(code)){
-				const textElements = document.querySelectorAll('[class^="kb-"]');
-				for(const el of textElements){
-					if(el.classList[0].includes(KeyName[code])){
-						el.style.color='#f00';
-						setTimeout(()=>{
-							el.style.transition='color 0.3s ease-in-out';
-							el.style.color='';
-							setTimeout(()=>{
-								el.style.transition='';
-							},300);
-						},100);
-						break;
-					}
+		if ([KeyCode.SHIFT, KeyCode.BACKTICK, KeyCode.TILDE, KeyCode.G, KeyCode.H, KeyCode.F1, KeyCode.F2, KeyCode.PLUS,
+		KeyCode.NUMPAD_ADD, KeyCode.SUBTRACT, KeyCode.NUMPAD_SUBTRACT, KeyCode.EQUALS, KeyCode.UNDERSCORE].includes(code)) {
+			const textElements = document.querySelectorAll('[class^="kb-"]');
+			for (const el of textElements) {
+				if (el.classList[0].includes(KeyName[code])) {
+					el.style.color = '#f00';
+					setTimeout(() => {
+						el.style.transition = 'color 0.3s ease-in-out';
+						el.style.color = '';
+						setTimeout(() => {
+							el.style.transition = '';
+						}, 300);
+					}, 100);
+					break;
 				}
-				return endBind();
 			}
-		if(code == KeyCode.DELETE){
+			return endBind();
+		}
+		if (code == KeyCode.DELETE) {
 			delete misc.keybinds[tname];
 			console.log("deleted keybind");
 		} else {
@@ -866,7 +871,7 @@ export function getNewBind(tname, self){
 		updateBindDisplay();
 		saveKeybinds();
 	}
-	
+
 	activeKeybindListener = listener;
 	document.addEventListener("keydown", listener);
 	hc.addEventListener("click", endBind);
@@ -875,14 +880,14 @@ export function getNewBind(tname, self){
 	self.textContent = "Listening for input... Press ESC or click again to cancel.";
 };
 
-function saveKeybinds(){
-	if(misc.storageEnabled){
+function saveKeybinds() {
+	if (misc.storageEnabled) {
 		misc.localStorage.keybinds = JSON.stringify(misc.keybinds);
 	};
 };
 
-function loadDefaultBindings(name){
-	switch(name){
+function loadDefaultBindings(name) {
+	switch (name) {
 		case "new":
 			misc.keybinds = { //probably sane defaults
 				"cursor": KeyCode.B,
@@ -928,18 +933,23 @@ function init() {
 	var chatinput = elements.chatInput;
 	initializeTooltips();
 	if (misc.storageEnabled) {
-		if(misc.localStorage.worldPasswords){
+		if (misc.localStorage.worldPasswords) {
 			try {
 				misc.worldPasswords = JSON.parse(misc.localStorage.worldPasswords);
 			} catch (e) { }
 		}
-		if(misc.localStorage.keybinds){
+		if (misc.localStorage.keybinds) {
 			try {
 				misc.keybinds = JSON.parse(misc.localStorage.keybinds);
-			} catch (e) {};
+			} catch (e) { };
 		} else {
 			loadDefaultBindings("og"); // just to please the masses, original defaults are the default
 			console.log("No keybinds found, using original defaults");
+		}
+		if (misc.localStorage.palettes) {
+			try {
+				misc.palettes = JSON.parse(misc.localStorage.palettes);
+			} catch (e) { };
 		}
 	}
 	updateBindDisplay();
@@ -975,8 +985,8 @@ function init() {
 					var text = chatinput.value;
 					historyIndex = 0;
 					chatHistory.unshift(text);
-					if(misc.storageEnabled){
-						if(text.startsWith("/adminlogin ")||text.startsWith("/modlogin ")||text.startsWith("/pass "))
+					if (misc.storageEnabled) {
+						if (text.startsWith("/adminlogin ") || text.startsWith("/modlogin ") || text.startsWith("/pass "))
 							misc.attemptedPassword = text.split(' ').slice(1).join(' ');
 					}
 					// if (misc.storageEnabled) {
@@ -1054,8 +1064,8 @@ function init() {
 				}
 			}
 
-			for(let tname in misc.keybinds){
-				if(misc.keybinds[tname] == event.keyCode){
+			for (let tname in misc.keybinds) {
+				if (misc.keybinds[tname] == event.keyCode) {
 					player.tool = tname;
 				}
 			};
@@ -1398,11 +1408,11 @@ eventSys.once(e.misc.logoMakeRoom, () => {
 	logoMakeRoom();
 });
 
-eventSys.once(e.loaded, function() {
+eventSys.once(e.loaded, function () {
 	init();
 	if (misc.showEUCookieNag) {
 		windowSys.addWindow(new UtilDialog('Cookie notice',
-`This box alerts you that we're going to use cookies!
+			`This box alerts you that we're going to use cookies!
 If you don't accept their usage, disable cookies and reload the page.`, false, () => {
 			setCookie('nagAccepted', 'true');
 			misc.showEUCookieNag = false;
@@ -1439,8 +1449,8 @@ eventSys.on(e.net.donUntil, (ts, pmult) => {
 	};
 
 	clearInterval(misc.donTimer);
-	elements.dInfoDisplay.setAttribute("data-pm", ''+pmult);
-	elements.dInfoDisplay.setAttribute("data-ts", ''+ts);
+	elements.dInfoDisplay.setAttribute("data-pm", '' + pmult);
+	elements.dInfoDisplay.setAttribute("data-ts", '' + ts);
 	updTimer();
 	if (ts > Date.now()) {
 		misc.donTimer = setInterval(updTimer, 1000);
@@ -1456,8 +1466,8 @@ eventSys.on(e.net.world.setId, id => {
 	}
 
 	function autoNick() {
-		if(auth){
-			net.protocol.sendMessage(`/nick ${auth.user.global_name?auth.user.global_name:auth.user.username}`);
+		if (auth) {
+			net.protocol.sendMessage(`/nick ${auth.user.global_name ? auth.user.global_name : auth.user.username}`);
 		}
 		else if (misc.localStorage.nick) {
 			net.protocol.sendMessage("/nick " + misc.localStorage.nick);
@@ -1582,8 +1592,8 @@ window.addEventListener("load", () => {
 
 	elements.noticeDisplay = document.getElementById("notice-display");
 	elements.noticeDisplay.noticeId = elements.noticeDisplay.getAttribute("notice-id") || 1;
-	if(misc.localStorage.dismissedId!=elements.noticeDisplay.noticeId) elements.noticeDisplay.addEventListener("click", dismissNotice);
-	else elements.noticeDisplay.style.display="none";
+	if (misc.localStorage.dismissedId != elements.noticeDisplay.noticeId) elements.noticeDisplay.addEventListener("click", dismissNotice);
+	else elements.noticeDisplay.style.display = "none";
 
 	elements.xyDisplay = document.getElementById("xy-display");
 	elements.pBucketDisplay = document.getElementById("pbucket-display");
@@ -1599,7 +1609,12 @@ window.addEventListener("load", () => {
 	elements.palette = document.getElementById("palette");
 	elements.paletteColors = document.getElementById("palette-colors");
 	elements.paletteCreate = document.getElementById("palette-create");
-	elements.paletteInput = document.getElementById("palette-input");
+
+	elements.pickerAnchor = document.getElementById('picker-anchor');
+
+	elements.paletteLoad = document.getElementById("palette-load");
+	elements.paletteSave = document.getElementById("palette-save");
+	elements.paletteOpts = document.getElementById("palette-opts");
 	elements.paletteBg = document.getElementById("palette-bg");
 
 	elements.animCanvas = document.getElementById("animations");
@@ -1615,8 +1630,8 @@ window.addEventListener("load", () => {
 
 	elements.helpButton = document.getElementById("help-button");
 
-	document.getElementById("kb-og").addEventListener("click", ()=>loadDefaultBindings("og"));
-	document.getElementById("kb-new").addEventListener("click", ()=>loadDefaultBindings("new"));
+	document.getElementById("kb-og").addEventListener("click", () => loadDefaultBindings("og"));
+	document.getElementById("kb-new").addEventListener("click", () => loadDefaultBindings("new"));
 
 	var donateBtn = document.getElementById("donate-button");
 	elements.helpButton.addEventListener("click", function () {
@@ -1624,13 +1639,13 @@ window.addEventListener("load", () => {
 		donateBtn.innerHTML = "";
 
 		window.PayPal.Donation.Button({
-			env:'production',
-			hosted_button_id:'HLLU832GVG824',
+			env: 'production',
+			hosted_button_id: 'HLLU832GVG824',
 			custom: 'g=owop&w=' + (misc.world ? encodeURIComponent(misc.world.name) : 'main') + '&i=' + (net.protocol ? net.protocol.id : 0),
 			image: {
-				src:donateBtn.getAttribute("data-isrc"),
-				alt:'Donate with PayPal button',
-				title:'PayPal - The safer, easier way to pay online!',
+				src: donateBtn.getAttribute("data-isrc"),
+				alt: 'Donate with PayPal button',
+				title: 'PayPal - The safer, easier way to pay online!',
 			}
 		}).render('#donate-button');
 	});
@@ -1639,16 +1654,320 @@ window.addEventListener("load", () => {
 		document.getElementById("help").className = "hidden";
 	});
 
+	elements.paletteSave.addEventListener('click', () => {
+		windowSys.addWindow(new GUIWindow('save palette', { centerOnce: true, closeable: true }, (t) => {
+			let top = document.createElement('div');
+			let btm = document.createElement('div');
+			let label = document.createElement('text');
+			let input = document.createElement('input');
+			let savebtn = document.createElement('button');
+			label.innerHTML = 'palette name';
+			label.className = 'whitetext';
+			input.type = 'text';
+			savebtn.innerHTML = 'save';
+			function submit(){
+				if(!input.value||input.value.length<1) return;
+				if (!!misc.palettes[input.value]) {
+					windowSys.addWindow(new GUIWindow('overwrite palette', { centered: true, closeable: false }, (w) => {
+						w.container.classList.add('whitetext');
+						const warning = document.createElement('div');
+						warning.innerText = 'This palette already exists. Overwrite?';
+						const yes = document.createElement('button');
+						const no = document.createElement('button');
+						yes.addEventListener('click', () => {
+							misc.palettes[input.value] = player.palette.map(c => [...c]);
+							savePalettes();
+							w.close();
+							t.close();
+							const p = windowSys.getWindow('load palette');
+							if (p) if (p.regen) p.regen();
+						});
+						no.addEventListener('click', () => {
+							w.close();
+						});
+						yes.innerText = 'Yes';
+						no.innerText = 'No';
+						const btm = document.createElement('div');
+						btm.style.display = 'flex';
+						btm.style.flexDirection = 'row';
+						btm.style.alignItems = 'center';
+						btm.style.justifyContent = 'center';
+						btm.appendChild(yes);
+						btm.appendChild(no);
+						w.container.appendChild(warning);
+						w.container.appendChild(btm);
+					}));
+					return;
+				}
+				misc.palettes[input.value] = player.palette.map(c => [...c]);
+				savePalettes();
+				const w = windowSys.getWindow('load palette');
+				if (w) if (w.regen) w.regen();
+				t.close();
+			}
+			savebtn.addEventListener('click', () => submit());
+			input.addEventListener('keydown', (e)=>{
+				let code = e.which || e.keyCode;
+				if (code == KeyCode.ENTER) submit();
+			});
+			top.appendChild(label);
+			btm.appendChild(input);
+			btm.appendChild(savebtn);
+			t.container.appendChild(top);
+			t.container.appendChild(btm);
+		}));
+	});
+
+	elements.paletteLoad.addEventListener('click', () => {
+		//layout: split into two rows, top larger than bottom, top half has list of palettes, 3 columns per row, bottom half is split into two rows, top row has name of palette selected, bottom has load and delete options
+		let selectedPalette = null;
+		windowSys.addWindow(new GUIWindow('load palette', { centerOnce: true, closeable: true }, (t) => {
+			let top = document.createElement('div');
+			let paletteContainer = document.createElement('div');
+			let btm = document.createElement('div');
+			let selectionContainer = document.createElement('div');
+			let preview = document.createElement('div');
+			let label = document.createElement('text');
+			let btnContainer = document.createElement('div');
+			let loadbtn = document.createElement('button');
+			let deletebtn = document.createElement('button');
+			let clearbtn = document.createElement('button');
+			let resetbtn = document.createElement('button');
+			let pcanvas = document.createElement('canvas');
+			let ctx = pcanvas.getContext('2d');
+
+			t.container.appendChild(top);
+			t.container.appendChild(btm);
+			t.container.classList.add('whitetext');
+			t.container.classList.add('palette-load');
+			top.appendChild(paletteContainer);
+			paletteContainer.classList.add('palette-load-palette-container');
+			top.classList.add('palette-load-top');
+			btm.appendChild(selectionContainer);
+			btm.classList.add('palette-load-bottom');
+			btm.appendChild(btnContainer);
+			selectionContainer.appendChild(label);
+			selectionContainer.appendChild(preview);
+			preview.appendChild(pcanvas);
+			selectionContainer.classList.add('palette-load-selection-container');
+			btnContainer.appendChild(loadbtn);
+			btnContainer.appendChild(deletebtn);
+			btnContainer.appendChild(clearbtn);
+			btnContainer.appendChild(resetbtn);
+			btnContainer.classList.add('palette-load-button-contianer');
+			loadbtn.innerText = 'load';
+			deletebtn.innerText = 'delete';
+			clearbtn.innerText = 'clear';
+			resetbtn.innerText = 'reset';
+
+			function createRow() {
+				let row = document.createElement('div');
+				row.classList.add('palette-button-row');
+				return row;
+			}
+
+			function genRows() {
+				paletteContainer.innerHTML = '';
+				let currentRow = createRow();
+				paletteContainer.appendChild(currentRow);
+				const measure = document.createElement('div');
+				measure.style.visibility = 'hidden';
+				measure.style.position = 'absolute';
+				measure.style.left = '-999999999px';
+				document.body.appendChild(measure);
+				let rw = 0;
+				const mw = 400;
+
+				for (let paletteName of Object.keys(misc.palettes)) {
+					console.log(paletteName);
+					let palette = document.createElement('button');
+					palette.innerText = paletteName;
+
+					measure.appendChild(palette);
+					const bw = palette.offsetWidth + 4;
+					measure.removeChild(palette);
+
+					if (rw + bw > mw) {
+						currentRow = createRow();
+						paletteContainer.appendChild(currentRow);
+						rw = 0;
+					}
+
+					currentRow.appendChild(palette);
+					rw += bw;
+
+					palette.addEventListener('click', () => {
+						selectedPalette = paletteName;
+						updateSelection();
+					});
+				}
+				measure.remove();
+				windowSys.centerWindow(t);
+			}
+
+			loadbtn.addEventListener('click', () => {
+				if (!selectedPalette) return;
+				player.clearPalette();
+				player.palette = misc.palettes[selectedPalette];
+				player.paletteIndex = 0;
+				t.close();
+			});
+
+			deletebtn.addEventListener('click', () => {
+				if (!selectedPalette) return;
+				windowSys.addWindow(new GUIWindow('delete palette', { centered: true, closeable: false }, (w) => {
+					w.container.classList.add('whitetext');
+					w.container.style.textAlign = 'center';
+					const warning = document.createElement('div');
+					warning.innerText = 'Are you sure?';
+					const yes = document.createElement('button');
+					const no = document.createElement('button');
+					yes.addEventListener('click', () => {
+						delete misc.palettes[selectedPalette];
+						savePalettes();
+						selectedPalette = null;
+						updateSelection();
+						w.close();
+						t.regen();
+					});
+					no.addEventListener('click', () => {
+						w.close();
+					});
+					yes.innerText = 'Yes';
+					no.innerText = 'No';
+					const btm = document.createElement('div');
+					btm.style.display = 'flex';
+					btm.style.flexDirection = 'row';
+					btm.style.alignItems = 'center';
+					btm.style.justifyContent = 'center';
+					btm.appendChild(yes);
+					btm.appendChild(no);
+					w.container.appendChild(warning);
+					w.container.appendChild(btm);
+				}));
+			});
+
+			clearbtn.addEventListener('click', () => {
+				windowSys.addWindow(new GUIWindow('clear palette', { centered: true, closeable: false }, (w) => {
+					w.container.classList.add('whitetext');
+					const warning = document.createElement('div');
+					warning.innerText = 'Do you want to clear your current palette?';
+					const yes = document.createElement('button');
+					const no = document.createElement('button');
+					yes.addEventListener('click', () => {
+						player.clearPalette();
+						player.palette = [[0, 0, 0]];
+						player.paletteIndex = 0;
+						w.close();
+					});
+					no.addEventListener('click', () => {
+						w.close();
+					});
+					yes.innerText = 'Yes';
+					no.innerText = 'No';
+					const btm = document.createElement('div');
+					btm.style.display = 'flex';
+					btm.style.flexDirection = 'row';
+					btm.style.alignItems = 'center';
+					btm.style.justifyContent = 'center';
+					btm.appendChild(yes);
+					btm.appendChild(no);
+					w.container.appendChild(warning);
+					w.container.appendChild(btm);
+				}));
+			});
+
+			resetbtn.addEventListener('click', () => {
+				windowSys.addWindow(new GUIWindow('reset palettes', { centered: true, closeable: false }, (w) => {
+					w.container.classList.add('whitetext');
+					w.container.style.textAlign = 'center';
+					const warning = document.createElement('div');
+					warning.innerText = 'Are you sure you want to erase all palettes?';
+					const yes = document.createElement('button');
+					const no = document.createElement('button');
+					yes.addEventListener('click', () => {
+						misc.palettes = {};
+						savePalettes();
+						selectedPalette = null;
+						updateSelection();
+						w.close();
+						t.regen();
+					});
+					no.addEventListener('click', () => {
+						w.close();
+					});
+					yes.innerText = 'Yes';
+					no.innerText = 'No';
+					const btm = document.createElement('div');
+					btm.style.display = 'flex';
+					btm.style.flexDirection = 'row';
+					btm.style.alignItems = 'center';
+					btm.style.justifyContent = 'center';
+					btm.appendChild(yes);
+					btm.appendChild(no);
+					w.container.appendChild(warning);
+					w.container.appendChild(btm);
+				}));
+			});
+
+			function updateSelection() {
+				if (!selectedPalette) {
+					label.innerText = 'No palette selected';
+					preview.style.display = 'none';
+					// btnContainer.style.display = 'none';
+					loadbtn.style.display = 'none';
+					deletebtn.style.display = 'none';
+					windowSys.centerWindow(t);
+					return;
+				}
+				label.innerText = `Selected palette: ${selectedPalette}`;
+				preview.style.display = '';
+				loadbtn.style.display = '';
+				deletebtn.style.display = '';
+				const total = misc.palettes[selectedPalette].length;
+				let pxIndex = 0;
+				let pyIndex = 0;
+				pcanvas.width = 448;
+				pcanvas.height = 224;
+				let tilesize = 16;
+				while (Math.floor(pcanvas.width / tilesize) * Math.floor(pcanvas.height / tilesize) < total && tilesize > 1 && tilesize > 1) tilesize /= 2;
+				// ctx.fillStyle = '#000';
+				// ctx.fillRect(0, 0, pcanvas.width, pcanvas.height);
+				for (let color of misc.palettes[selectedPalette]) {
+					ctx.fillStyle = colorUtils.toHTML(colorUtils.u24_888(color[0], color[1], color[2]));
+					ctx.fillRect(pxIndex * tilesize, pyIndex * tilesize, tilesize, tilesize);
+					pxIndex++;
+					if (pxIndex * tilesize >= pcanvas.width) {
+						pxIndex = 0;
+						pyIndex++;
+					}
+				}
+				windowSys.centerWindow(t);
+			}
+			genRows();
+			updateSelection();
+			t.regen = () => genRows();
+		}));
+	});
+
 	checkFunctionality(() => sdk ? initSdk() : eventSys.emit(e.loaded));
-	
-	setInterval(()=>{
+
+	setInterval(() => {
 		let pb = net.protocol?.placeBucket;
 		pb?.update();
 		elements.pBucketDisplay.textContent = `Place bucket: ${pb?.allowance?.toFixed(1)} (${pb?.rate}/${pb?.time}s).`;
 	}, 100);
 });
 
-async function initSdk(){
+// palettes: {paletteName:[[r,g,b],[r,g,b],...]} (alpha exists, but is ignored since rn everything is just fully opaque lol)
+
+function savePalettes() {
+	if (misc.storageEnabled) {
+		misc.localStorage.palettes = JSON.stringify(misc.palettes);
+	};
+};
+
+async function initSdk() {
 	statusMsg(true, "Awaiting authorization...");
 	await sdk.ready();
 
@@ -1657,7 +1976,7 @@ async function initSdk(){
 		response_type: "code",
 		state: "",
 		prompt: "none",
-		scope:[
+		scope: [
 			"identify",
 			"guilds",
 			"applications.commands",
@@ -1669,8 +1988,8 @@ async function initSdk(){
 
 	// needs to be set up so that https://ourworldofpixels.com/oauth handles this properly
 	const response = await fetch(`https://${id}.discordsays.com/.proxy/oauth`, {
-		method:"POST",
-		headers:{
+		method: "POST",
+		headers: {
 			"Content-Type": "application/json",
 		},
 		body: JSON.stringify({
@@ -1681,13 +2000,13 @@ async function initSdk(){
 	console.log(response);
 
 	const { access_token } = await response.json();
-	
+
 	statusMsg(true, "Authenticating...");
 
-	try{
-		auth = await sdk.commands.authenticate({access_token});
+	try {
+		auth = await sdk.commands.authenticate({ access_token });
 		statusMsg(false, "Finished!");
-	} catch(e){
+	} catch (e) {
 		console.error("auth failed: ", JSON.stringify(e));
 	}
 	eventSys.emit(e.loaded);
@@ -1737,3 +2056,8 @@ PublicAPI.normalizeWheel = normalizeWheel;
 PublicAPI.context = {
 	createContextMenu: createContextMenu
 };
+
+window.addEventListener("mousemove", (e) => {
+	window.clientX = e.clientX;
+	window.clientY = e.clientY;
+});

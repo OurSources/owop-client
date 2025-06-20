@@ -15,7 +15,10 @@ export const windowSys = {
 	addWindow: addWindow,
 	delWindow: delWindow,
 	centerWindow: centerWindow,
-	closeAllWindows: closeAllWindows
+	closeAllWindows: closeAllWindows,
+	getWindow: windowName=>{
+		return windowSys.windows[windowName];
+	}
 };
 
 PublicAPI.windowSys = windowSys;
