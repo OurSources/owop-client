@@ -1,7 +1,7 @@
 { nixpkgs ? import <nixpkgs> {  } }:
 with nixpkgs; buildNpmPackage {
 	name = "owop-old-client";
-	npmDepsHash = "sha256-h63JqnJuEqQvN9tV1jMWMsb5wEHvh/gjdSKXzY6qDaw=";
+	npmDepsHash = "sha256-+vg5KZtkdijlH2VHlO5I9+ikpJpkaYuk+6DZMZUSncc=";
 
 	npmBuildScript = "release";
 	NODE_OPTIONS = "--openssl-legacy-provider";
