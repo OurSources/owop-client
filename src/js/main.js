@@ -250,8 +250,13 @@ function receiveMessage(rawText) {
 		if (type === 'info') message.className = 'serverInfo';
 		if (type === 'error') message.className = 'serverError';
 		if (type === 'raw') {
-			allowHTML = true; // assume HTML is allowed
-			message.className = 'serverRaw';
+			if(data.message.startsWith('[D]')){
+				allowHTML = false;
+				message.className = 'discord';
+			}else{
+				allowHTML = true; // assume HTML is allowed
+				message.className = 'serverRaw';
+			}
 		}
 		if (type === 'whisperSent') {
 			if (PublicAPI.muted.includes(data.senderID)) return;
@@ -280,12 +285,6 @@ function receiveMessage(rawText) {
 			else if (data.rank === RANK.MODERATOR) message.className = 'modMessage';
 			else if (data.rank === RANK.USER) message.className = 'userMessage';
 			else message.className = 'playerMessage';
-
-			if(data.nick.startsWith('[D]')) {
-				message.className = 'discord';
-				allowHTML = false;
-				console.log("hi this should print if the gateway bot spoke");
-			}
 
 			if (!allowHTML) nick.innerHTML = escapeHTML(`${data.nick}: `);
 			else nick.innerHTML = `${data.nick}: `;
