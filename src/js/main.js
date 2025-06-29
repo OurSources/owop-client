@@ -284,6 +284,7 @@ function receiveMessage(rawText) {
 			if(data.nick.startsWith('[D]')) {
 				message.className = 'discord';
 				allowHTML = false;
+				console.log("hi this should print if the gateway bot spoke");
 			}
 
 			if (!allowHTML) nick.innerHTML = escapeHTML(`${data.nick}: `);
