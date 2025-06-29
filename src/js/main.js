@@ -253,6 +253,12 @@ function receiveMessage(rawText) {
 			if(data.message.startsWith('[D]')){
 				allowHTML = false;
 				message.className = 'discord';
+				let nick = document.createElement("span");
+				nick.className = "nick";
+				let nickname = data.message.split(": ")[0] + ": ";
+				nick.innerHTML = escapeHTML(nickname);
+				message.appendChild(nick);
+				text = data.message.slice(nickname.length);
 			}else{
 				allowHTML = true; // assume HTML is allowed
 				message.className = 'serverRaw';
