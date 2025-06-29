@@ -245,6 +245,7 @@ function receiveMessage(rawText) {
 	if (!text) return;
 
 	let allowHTML = false;
+	let adminMessage = false;
 	if (sender === 'server') {
 		allowHTML = data.allowHTML || false;
 		if (type === 'info') message.className = 'serverInfo';
@@ -282,21 +283,23 @@ function receiveMessage(rawText) {
 		}
 		if (type === 'message') {
 			if (PublicAPI.muted.includes(data.senderID) && data.rank < RANK.MODERATOR) return;
-			let nick = document.createElement("span");
-			nick.className = 'nick';
-			message.style.display = 'block';
 			if (data.rank >= RANK.ADMIN || data.allowHTML) allowHTML = true;
 
-			if (data.rank === RANK.ADMIN) message.className = 'adminMessage';
-			else if (data.rank === RANK.MODERATOR) message.className = 'modMessage';
-			else if (data.rank === RANK.USER) message.className = 'userMessage';
-			else message.className = 'playerMessage';
-
-			if (!allowHTML) nick.innerHTML = escapeHTML(`${data.nick}: `);
-			else nick.innerHTML = `${data.nick}: `;
-
-			message.appendChild(nick);
-			console.log(nick);
+			if (data.rank === RANK.ADMIN) {
+				message.className = 'adminMessage';
+				adminMessage = true;
+			} else{
+				if (data.rank === RANK.MODERATOR) message.className = 'modMessage';
+				else if (data.rank === RANK.USER) message.className = 'userMessage';
+				else message.className = 'playerMessage';
+				
+				let nick = document.createElement("span");
+				nick.className = 'nick';
+				message.style.display = 'block';
+				if (!allowHTML) nick.innerHTML = escapeHTML(`${data.nick}: `);
+				else nick.innerHTML = `${data.nick}: `;
+				message.appendChild(nick);
+			}
 		}
 	}
 
@@ -305,6 +308,7 @@ function receiveMessage(rawText) {
 	if (misc.lastMessage) console.log(misc.lastMessage.ignore);
 	if (msg === text && misc.lastMessage && !misc.lastMessage.ignore) misc.lastMessage.incCount();
 	else {
+		if(adminMessage) text = `${data.nick}: ${text}`;
 		var span = document.createElement("span");
 		if (!allowHTML) text = escapeHTML(text).replace(/\&#x2F;/g, '/');
 		misc.lastMessage = {
