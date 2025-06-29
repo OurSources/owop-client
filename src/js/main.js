@@ -270,7 +270,6 @@ function receiveMessage(rawText) {
 			message.appendChild(nick);
 		}
 		if (type === 'message') {
-			console.log("blaaaa");
 			if (PublicAPI.muted.includes(data.senderID) && data.rank < RANK.MODERATOR) return;
 			let nick = document.createElement("span");
 			nick.className = 'nick';
@@ -281,6 +280,11 @@ function receiveMessage(rawText) {
 			else if (data.rank === RANK.MODERATOR) message.className = 'modMessage';
 			else if (data.rank === RANK.USER) message.className = 'userMessage';
 			else message.className = 'playerMessage';
+
+			if(data.nick.startsWith('[D]')) {
+				message.className = 'discord';
+				allowHTML = false;
+			}
 
 			if (!allowHTML) nick.innerHTML = escapeHTML(`${data.nick}: `);
 			else nick.innerHTML = `${data.nick}: `;
