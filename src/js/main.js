@@ -1630,6 +1630,7 @@ window.addEventListener("load", () => {
 	elements.paletteLoad = document.getElementById("palette-load");
 	elements.paletteSave = document.getElementById("palette-save");
 	elements.paletteOpts = document.getElementById("palette-opts");
+	elements.paletteInput = document.getElementById("palette-input");
 	elements.paletteBg = document.getElementById("palette-bg");
 
 	elements.animCanvas = document.getElementById("animations");

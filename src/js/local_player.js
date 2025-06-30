@@ -250,46 +250,46 @@ eventSys.once(e.init, () => {
 	// 	cancelopen = true;
 	// });
 
-	function createColorPicker(){
-		elements.paletteCreate.blur();
-		elements.paletteCreate.style.backgroundImage = `url(${cancelimg})`;
-		elements.paletteCreate.removeEventListener('click', createColorPicker);
-		setTooltip(elements.paletteCreate, "Close picker",true);
-		elements.paletteCreate.addEventListener('click', closePicker);
-		const picker = new ColorPicker({
-			startColor: color.toHTML(color.u24_888(player.selectedColor[0], player.selectedColor[1], player.selectedColor[2])),
-			parentElement: elements.paletteCreate,
-			draggable: false,
-			closeable: false,
-			onClose: ()=>{
-				elements.paletteCreate.style.backgroundImage = `url(${plusimg})`;
-				elements.paletteCreate.removeEventListener('click', closePicker);
-				setTooltip(elements.paletteCreate, "Add color",true);
-				elements.paletteCreate.addEventListener('click', createColorPicker);
-			},
-			onSelect: color => {
-				const {r,g,b} = picker.hslToRgb(color.h, color.s, color.l);
-				addPaletteColor([r,g,b]);
-			}
-		});
+	// function createColorPicker(){
+	// 	elements.paletteCreate.blur();
+	// 	elements.paletteCreate.style.backgroundImage = `url(${cancelimg})`;
+	// 	elements.paletteCreate.removeEventListener('click', createColorPicker);
+	// 	setTooltip(elements.paletteCreate, "Close picker",true);
+	// 	elements.paletteCreate.addEventListener('click', closePicker);
+	// 	const picker = new ColorPicker({
+	// 		startColor: color.toHTML(color.u24_888(player.selectedColor[0], player.selectedColor[1], player.selectedColor[2])),
+	// 		parentElement: elements.paletteCreate,
+	// 		draggable: false,
+	// 		closeable: false,
+	// 		onClose: ()=>{
+	// 			elements.paletteCreate.style.backgroundImage = `url(${plusimg})`;
+	// 			elements.paletteCreate.removeEventListener('click', closePicker);
+	// 			setTooltip(elements.paletteCreate, "Add color",true);
+	// 			elements.paletteCreate.addEventListener('click', createColorPicker);
+	// 		},
+	// 		onSelect: color => {
+	// 			const {r,g,b} = picker.hslToRgb(color.h, color.s, color.l);
+	// 			addPaletteColor([r,g,b]);
+	// 		}
+	// 	});
 
-		function closePicker(){
-			picker.selfw.close();
-			elements.paletteCreate.blur();
-		}
-	}
+	// 	function closePicker(){
+	// 		picker.selfw.close();
+	// 		elements.paletteCreate.blur();
+	// 	}
+	// }
 
-	elements.paletteCreate.addEventListener('click',createColorPicker);
+	// elements.paletteCreate.addEventListener('click',createColorPicker);
 
-	// elements.paletteOpts.onclick = function() {
-	// 	var c = player.selectedColor;
-	// 	this.value = color.toHTML(color.u24_888(c[0], c[1], c[2]));
-	// };
-	// elements.paletteOpts.onchange = function() {
-	// 	var value = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(this.value);
-	// 	addPaletteColor([parseInt(value[1], 16), parseInt(value[2], 16), parseInt(value[3], 16)]);
-	// };
-	// elements.paletteCreate.onclick = () => elements.paletteOpts.click();
-	// setTooltip(elements.paletteCreate, "Add color");
+	elements.paletteInput.onclick = function() {
+		var c = player.selectedColor;
+		this.value = color.toHTML(color.u24_888(c[0], c[1], c[2]));
+	};
+	elements.paletteInput.onchange = function() {
+		var value = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(this.value);
+		addPaletteColor([parseInt(value[1], 16), parseInt(value[2], 16), parseInt(value[3], 16)]);
+	};
+	elements.paletteCreate.onclick = () => elements.paletteInput.click();
+	setTooltip(elements.paletteCreate, "Add color");
 	updatePalette();
 });
