@@ -306,13 +306,13 @@ function receiveMessage(rawText) {
 	let msg = misc.lastMessage ? misc.lastMessage.text : '';
 	if (msg.endsWith('\n')) msg = msg.slice(0, -1);
 	if (misc.lastMessage) console.log(misc.lastMessage.ignore);
-	if (msg === text && misc.lastMessage && !misc.lastMessage.ignore) misc.lastMessage.incCount();
+	if (msg === `${data.nick}: ${text}` && misc.lastMessage && !misc.lastMessage.ignore) misc.lastMessage.incCount();
 	else {
 		if(adminMessage) text = `${data.nick}: ${text}`;
 		var span = document.createElement("span");
 		if (!allowHTML) text = escapeHTML(text).replace(/\&#x2F;/g, '/');
 		misc.lastMessage = {
-			get text() { return text; },
+			get text() { return `${data.nick}: ${text}`; },
 			incCount: () => {
 				var times = span.recvTimes || 1;
 				span.innerHTML = `${anchorme(text, {
