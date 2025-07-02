@@ -512,7 +512,6 @@ function receiveDevMessage(text) {
 
 function scrollChatToBottom(callback, dontScrollIfNotTop = false) {
 	var shouldScroll = !dontScrollIfNotTop || elements.chatMessages.scrollHeight - elements.chatMessages.scrollTop - elements.chatMessages.clientHeight <= 0.1;
-	console.log(shouldScroll);
 	if (callback)
 		callback(); // add all elements here
 	if (shouldScroll)
@@ -2040,7 +2039,15 @@ PublicAPI.world = getNewWorldApi();
 PublicAPI.chat = {
 	send: (msg) => net.protocol && net.protocol.sendMessage(msg),
 	clear: clearChat,
-	local: receiveMessage,
+	receiveMessage: receiveMessage,
+	local: msg => receiveMessage(JSON.stringify({
+        sender: 'server',
+        type: 'info',
+        data: {
+            allowHTML: true,
+            message: msg
+        }
+    })),
 	get onDevMsg() { return misc.devRecvReader; },
 	set onDevMsg(fn) { misc.devRecvReader = fn; },
 	get postFormatRecvModifier() { return misc.chatPostFormatRecvModifier; },
