@@ -131,10 +131,16 @@ img,
 	list-style-type: none;
 	padding: 0;
 	margin: 0;
-	max-width: 50%;
+	max-height: 100vh;
+	max-width: 60%;
 	min-width: 224px;
 	pointer-events: initial;
 	transition: transform 1s;
+}
+
+.uk-notice.framed {
+	max-height: 70vh;
+	overflow-y: auto;
 }
 
 #noscript-msg,

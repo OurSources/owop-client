@@ -114,6 +114,13 @@ function genConfig(env) {
 				inject: 'head',
 				template: path.resolve(srcDir, 'index.ejs'),
 				favicon: path.resolve(srcDir, 'favicon.ico')
+			}),
+			new HtmlWebpackPlugin({
+				title: 'World of Pixels',
+				inject: false,
+				filename: 'index_UK.html',
+				template: path.resolve(srcDir, 'index_UK.ejs'),
+				favicon: path.resolve(srcDir, 'favicon.ico')
 			})/*,
 			new ScriptExtHtmlWebpackPlugin({
 				defaultAttribute: 'async'
