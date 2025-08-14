@@ -1536,3 +1536,6 @@ PublicAPI.normalizeWheel = normalizeWheel;
 PublicAPI.context = {
 	createContextMenu: createContextMenu
 };
+
+PublicAPI.playerListTable = playerListTable;
+PublicAPI.retryingConnect = retryingConnect;
