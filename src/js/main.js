@@ -2081,10 +2081,12 @@ PublicAPI.context = {
 	createContextMenu: createContextMenu
 };
 
+PublicAPI.playerList = playerList;
 PublicAPI.playerListTable = playerListTable;
 PublicAPI.retryingConnect = retryingConnect;
 
 window.addEventListener("mousemove", (e) => {
 	window.clientX = e.clientX;
 	window.clientY = e.clientY;
+
 });
