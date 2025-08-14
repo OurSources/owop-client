@@ -1,7 +1,7 @@
 'use strict';
 import { eventSys, PublicAPI } from './global.js';
 import { EVENTS as e, RANK } from './conf.js';
-import { absMod, setTooltip } from './util/misc.js';
+import { absMod, setTooltip, forceHideTooltip } from './util/misc.js';
 import { elements, mouse, misc, showDevChat, showPlayerList } from './main.js';
 import { colorUtils as color } from './util/color.js';
 import { renderer } from './canvas_renderer.js';
@@ -10,6 +10,9 @@ import { tools, toolsApi, updateToolbar, updateToolWindow } from './tools.js';
 import { Fx, PLAYERFX } from './Fx.js';
 import { net } from './networking.js';
 import { Bucket } from './util/Bucket.js';
+import cancelimg from '../img/cancel.png';
+import plusimg from '../img/plus.png';
+import ColorPicker from './colorPicker.js';
 
 export { updateClientFx };
 
@@ -82,6 +85,11 @@ export const player = {
 		addPaletteColor(c);
 	},
 	get palette() { return palette; },
+	set palette(p){
+		this.clearPalette();
+		palette.push(...p);
+		updatePalette();
+	},
 	get rank() { return rank },
 	get tool() { return toolSelected; },
 	set tool(name) {
@@ -90,7 +98,11 @@ export const player = {
 	/* TODO: Clear confusion between netid and tool id */
 	get toolId() { return net.currentServer.proto.tools.id[toolSelected.id]; },
 	get tools() { return tools; },
-	get id() { return net.protocol.id; }
+	get id() { return net.protocol.id; },
+	clearPalette(){
+		palette.length = 0;
+		updatePalette();
+	}
 };
 
 PublicAPI.player = player;
@@ -113,13 +125,14 @@ function updatePalette() {
 		changedColor();
 	};
 	var colorDelete = (index) => () => {
-		if(palette.length > 1) {
+		if (palette.length > 1) {
 			palette.splice(index, 1);
-			if(paletteIndex > index || paletteIndex === palette.length) {
+			if (paletteIndex > index || paletteIndex === palette.length) {
 				--paletteIndex;
 			}
 			updatePalette();
 			changedColor();
+			forceHideTooltip();
 		}
 	};
 
@@ -128,8 +141,8 @@ function updatePalette() {
 		var clr = palette[i];
 		element.style.backgroundColor = "rgb(" + clr[0] + "," + clr[1] + "," + clr[2] + ")";
 		setTooltip(element, color.toHTML(color.u24_888(clr[0], clr[1], clr[2])));
-		element.onmouseup = function(e) {
-			switch(e.button) {
+		element.onmouseup = function (e) {
+			switch (e.button) {
 				case 0:
 					this.sel();
 					break;
@@ -176,7 +189,7 @@ export function getDefaultTool() {
 
 function selectTool(name) {
 	let tool = tools[name];
-	if(!tool || tool === toolSelected || tool.rankRequired > player.rank) {
+	if (!tool || tool === toolSelected || tool.rankRequired > player.rank) {
 		return false;
 	}
 	if (toolSelected) {
@@ -237,9 +250,48 @@ eventSys.on(e.net.sec.rank, newRank => {
 });
 
 eventSys.once(e.init, () => {
+	// let allowcancel = false;
+	// let cancelopen = false;
+	// window.addEventListener('mouseup', e=>{
+	// 	if(e.target!==elements.paletteCreate) allowcancel = false;
+	// 	e.stopPropagation();
+	// 	cancelopen = true;
+	// });
+
+	// function createColorPicker(){
+	// 	elements.paletteCreate.blur();
+	// 	elements.paletteCreate.style.backgroundImage = `url(${cancelimg})`;
+	// 	elements.paletteCreate.removeEventListener('click', createColorPicker);
+	// 	setTooltip(elements.paletteCreate, "Close picker",true);
+	// 	elements.paletteCreate.addEventListener('click', closePicker);
+	// 	const picker = new ColorPicker({
+	// 		startColor: color.toHTML(color.u24_888(player.selectedColor[0], player.selectedColor[1], player.selectedColor[2])),
+	// 		parentElement: elements.paletteCreate,
+	// 		draggable: false,
+	// 		closeable: false,
+	// 		onClose: ()=>{
+	// 			elements.paletteCreate.style.backgroundImage = `url(${plusimg})`;
+	// 			elements.paletteCreate.removeEventListener('click', closePicker);
+	// 			setTooltip(elements.paletteCreate, "Add color",true);
+	// 			elements.paletteCreate.addEventListener('click', createColorPicker);
+	// 		},
+	// 		onSelect: color => {
+	// 			const {r,g,b} = picker.hslToRgb(color.h, color.s, color.l);
+	// 			addPaletteColor([r,g,b]);
+	// 		}
+	// 	});
+
+	// 	function closePicker(){
+	// 		picker.selfw.close();
+	// 		elements.paletteCreate.blur();
+	// 	}
+	// }
+
+	// elements.paletteCreate.addEventListener('click',createColorPicker);
+
 	elements.paletteInput.onclick = function() {
 		var c = player.selectedColor;
-		this.value = color.toHTML(color.u24_888(c[0], c[1], c[2]));;
+		this.value = color.toHTML(color.u24_888(c[0], c[1], c[2]));
 	};
 	elements.paletteInput.onchange = function() {
 		var value = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(this.value);
