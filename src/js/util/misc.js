@@ -66,6 +66,47 @@ export const KeyName = Object.fromEntries(
 		.map(([name, code]) => [code, name])
 );
 
+export function formatDuration(milliseconds, maxPrecision = 4) {
+	if (milliseconds <= 0) {
+		return "0 seconds";
+	}
+
+	let seconds = Math.ceil(milliseconds / 1000);
+	let minutes = Math.floor(seconds / 60);
+	let hours = Math.floor(seconds / 60 / 60);
+	let days = Math.floor(seconds / 60 / 60 / 24);
+
+	seconds %= 60;
+	minutes %= 60;
+	hours %= 24;
+
+	let prec = 0;
+	const parts = [];
+	const getS = num => num !== 1 ? 's' : '';
+
+	if (days > 0 && prec < maxPrecision) {
+		++prec;
+		parts.push(`${days} day${getS(days)}`);
+	}
+
+	if (hours > 0 && prec < maxPrecision) {
+		++prec;
+		parts.push(`${hours} hour${getS(hours)}`);
+	}
+
+	if (minutes > 0 && prec < maxPrecision) {
+		++prec;
+		parts.push(`${minutes} minute${getS(minutes)}`);
+	}
+
+	if (seconds > 0 && prec < maxPrecision) {
+		++prec;
+		parts.push(`${seconds} second${getS(seconds)}`);
+	}
+
+	return parts.join(" ");
+}
+
 let time = Date.now();
 export function getTime(update) {
 	return update ? (time = Date.now()) : time;

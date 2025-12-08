@@ -10,6 +10,10 @@ with nixpkgs; buildNpmPackage {
 		url = ./.;
 	};
 
+	shellHook = ''
+		npmConfigHook
+	'';
+
 	postInstall = ''
 		mkdir -p $out/share/www/
 		cp -r dist $out/share/www/owop

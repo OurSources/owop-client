@@ -13,7 +13,7 @@ import anchorme from './util/anchorme.js';
 import { CHUNK_SIZE, EVENTS as e, RANK } from './conf.js';
 import { Bucket } from './util/Bucket.js';
 import { updateBindDisplay } from './tools.js';
-import { escapeHTML, getTime, getCookie, setCookie, cookiesEnabled, storageEnabled, loadScript, eventOnce, initializeTooltips, KeyCode, KeyName } from './util/misc.js';
+import { escapeHTML, getTime, getCookie, setCookie, cookiesEnabled, storageEnabled, loadScript, eventOnce, initializeTooltips, KeyCode, KeyName, formatDuration } from './util/misc.js';
 
 import { eventSys, PublicAPI, AnnoyingAPI as aa, wsTroll } from './global.js';
 import { options } from './conf.js';
@@ -24,6 +24,7 @@ import { updateClientFx, player } from './local_player.js';
 import { resolveProtocols, definedProtos } from './protocol/all.js';
 import { windowSys, GUIWindow, OWOPDropDown, UtilDialog } from './windowsys.js';
 import { colorUtils } from './util/color.js';
+import { mkHTML } from './util/misc.js';
 
 import { createContextMenu } from './context.js';
 
@@ -103,10 +104,10 @@ export const misc = {
 };
 
 export const sounds = {
-	play: function (sound) {
+	play: async function (sound) {
 		sound.currentTime = 0;
 		if (options.enableSounds) {
-			sound.play();
+			try { await sound.play(); } catch(e) { console.error(e); }
 		}
 	}
 };
@@ -157,6 +158,260 @@ function getNewWorldApi() {
 	return obj;
 }
 
+function printBanList(data) {
+	console.log(data)
+	function buildTable(pageNum, lastStartKey, curStartKey) {
+		let cont = document.createElement('div');
+		cont.className = 'ban-list-cont';
+
+		let propCont = document.createElement('div');
+		propCont.className = 'ban-list-ctrl';
+
+		for (let pr of ['IP', 'Continent', 'Country', 'ASN']) {
+			let btn = mkHTML("button", {
+				innerHTML: pr,
+				className: "bl-paging",
+				"data-key": '',
+				"data-pg": 1,
+				onclick: function() {
+					if (!net.protocol.sendMessage('/wbanlist ' + pr.toLowerCase())) {
+						return;
+					}
+					btn.classList.add("bl-load");
+					btn.disabled = true;
+				}
+			});
+			if (data.kind.toLowerCase() === pr.toLowerCase()) {
+				btn.classList.add('pushed');
+			}
+			propCont.appendChild(btn);
+		}
+
+		let table = document.createElement('table');
+		table.className = 'ban-list-table';
+
+		let thead = document.createElement('thead');
+		let headerRow = document.createElement('tr');
+		let headerCell1 = document.createElement('th');
+		headerCell1.innerHTML = 'Ban ID';
+		headerCell1.style.textAlign = 'left';
+		let headerCell2 = document.createElement('th');
+		headerCell2.innerHTML = 'Expires';
+		headerCell2.style.textAlign = 'left';
+		let headerCell3 = document.createElement('th');
+		headerCell3.innerHTML = 'Comment';
+		headerCell3.style.textAlign = 'left';
+		let headerCell4 = document.createElement('th');
+		headerCell4.innerHTML = 'Date';
+		headerCell4.style.textAlign = 'left';
+		let headerCell5 = document.createElement('th');
+		headerCell5.innerHTML = 'Actions';
+		headerCell5.style.textAlign = 'left';
+
+		headerRow.appendChild(headerCell1);
+		headerRow.appendChild(headerCell2);
+		headerRow.appendChild(headerCell3);
+		headerRow.appendChild(headerCell4);
+		headerRow.appendChild(headerCell5);
+		thead.appendChild(headerRow);
+		table.appendChild(thead);
+
+		let nextBtn = null;
+		let backBtn = null;
+		let refreshBtn = null;
+
+		let tbody = document.createElement('tbody');
+
+		if (data.result.length === 0) {
+			let row = document.createElement('tr');
+			let cell = document.createElement('td');
+			cell.colSpan = 5;
+			cell.innerText = '(Empty)';
+			row.appendChild(cell);
+			tbody.appendChild(row);
+			row.className = 'ban-list-emptyrow';
+		}
+		const now = Date.now();
+		for (let i = 0; i < data.result.length; i++) {
+			let row = document.createElement('tr');
+			let cell1 = document.createElement('td');
+			let cell2 = document.createElement('td');
+			let cell3 = document.createElement('td');
+			let cell4 = document.createElement('td');
+			let cell5 = document.createElement('td');
+
+			let banHash = data.result[i].hashedValue;
+			cell1.innerText = banHash;
+			let ts = data.result[i].timestamp;
+			let msLeft = ts - now;
+			cell2.innerText = ts === -1 ? "Never" : (msLeft < 0 ? "On next join" : ("In " + formatDuration(msLeft, 2))) ;
+			if (ts !== -1) {
+				cell2.title = new Date(ts).toLocaleString();
+			}
+			cell3.innerText = data.result[i].comment;
+			let creationDateTs = data.result[i].date;
+			cell4.innerText = new Date(creationDateTs).toLocaleString();
+			cell4.title = formatDuration(now - creationDateTs) + " ago";
+			let unbanBtn = mkHTML("button", {
+				innerHTML: "Unban",
+				className: "bl-paging",
+				"data-key": curStartKey||'',
+				"data-pg": pageNum,
+				title: "Remove ban",
+				onclick: function() {
+					// XXX: ratelimit could fuck this up
+					if (!net.protocol.sendMessage('/wunban ' + data.kind + ' ' + banHash)) {
+						return;
+					}
+					unbanBtn.disabled = true;
+					if (!net.protocol.sendMessage('/wbanlist ' + data.kind + ' ' + (curStartKey||''))) {
+						return;
+					}
+					unbanBtn.classList.add("bl-load");
+					nextBtn.disabled = true;
+					backBtn.disabled = true;
+					refreshBtn.disabled = true;
+					unbanBtn.innerHTML = "…";
+				}
+			});
+
+			cell5.appendChild(unbanBtn);
+
+			row.appendChild(cell1);
+			row.appendChild(cell2);
+			row.appendChild(cell3);
+			row.appendChild(cell4);
+			row.appendChild(cell5);
+			tbody.appendChild(row);
+		}
+		table.appendChild(tbody);
+
+		let pagination = document.createElement('div');
+		pagination.className = 'ban-list-ctrl';
+		let nextStartKey = data.result.length > 0 ? data.result[data.result.length - 1].hashedValue : null;
+		backBtn = mkHTML("button", {
+			innerHTML: pageNum === 1 ? "Prev. page" : "Prev. page (" + (pageNum - 1) + ")",
+			className: "bl-paging",
+			"data-key": lastStartKey||'',
+			"data-pg": pageNum - 1,
+			disabled: pageNum === 1,
+			onclick: function() {
+				if (!net.protocol.sendMessage('/wbanlist ' + data.kind + ' ' + (lastStartKey||''))) {
+					return;
+				}
+				backBtn.classList.add("bl-load");
+				nextBtn.disabled = true;
+				backBtn.disabled = true;
+				refreshBtn.disabled = true;
+				backBtn.innerHTML = "Loading...";
+			}
+		});
+		nextBtn = mkHTML("button", {
+			innerHTML: "Next page (" + (pageNum + 1) + ")",
+			className: "bl-paging",
+			"data-key": nextStartKey,
+			"data-pg": pageNum + 1,
+			disabled: data.result.length < 10 || nextStartKey === null,
+			onclick: function() {
+				if (!net.protocol.sendMessage('/wbanlist ' + data.kind + ' ' + nextStartKey)) {
+					return;
+				}
+				nextBtn.classList.add("bl-load");
+				nextBtn.disabled = true;
+				backBtn.disabled = true;
+				refreshBtn.disabled = true;
+				nextBtn.innerHTML = "Loading...";
+			}
+		});
+		refreshBtn = mkHTML("button", {
+			innerHTML: "Refresh",
+			className: "bl-paging",
+			"data-key": curStartKey||'',
+			"data-pg": pageNum,
+			onclick: function() {
+				if (!net.protocol.sendMessage('/wbanlist ' + data.kind + ' ' + (curStartKey||''))) {
+					return;
+				}
+				refreshBtn.classList.add("bl-load");
+				nextBtn.disabled = true;
+				backBtn.disabled = true;
+				refreshBtn.disabled = true;
+				refreshBtn.innerHTML = "Loading...";
+			}
+		});
+		pagination.appendChild(backBtn);
+		pagination.appendChild(refreshBtn);
+		pagination.appendChild(nextBtn);
+
+		cont.appendChild(propCont);
+		cont.appendChild(table);
+		cont.appendChild(pagination);
+		return cont;
+	}
+
+	let winName = 'World Ban List';
+
+	let existingWindow = windowSys.getWindow(winName);
+	if (existingWindow) {
+		let act = existingWindow.container.querySelector(".bl-paging.bl-load");
+		existingWindow.container.innerHTML = '';
+
+		let reset = !act || act["data-key"] !== data.startKey;
+		if (reset) {
+			existingWindow.pageNum = 1;
+			existingWindow.lastKeys = [];
+			existingWindow.curKey = '';
+			let table = buildTable(1, null, '');
+			existingWindow.container.appendChild(table);
+			return;
+		}
+
+		let pageNum = +act["data-pg"];
+		let lastKey = existingWindow.curKey;
+
+		if (pageNum === 1) {
+			existingWindow.lastKeys = [];
+		}
+		else if (pageNum < existingWindow.pageNum) {
+			let lk = existingWindow.lastKeys;
+			lastKey = lk[lk.length - 2];
+			lk.pop();
+		}
+		else if (pageNum > existingWindow.pageNum) {
+			existingWindow.lastKeys.push(lastKey);
+		}
+		else {
+			let lk = existingWindow.lastKeys;
+			lastKey = lk[lk.length - 1];
+		}
+
+		existingWindow.pageNum = pageNum;
+		existingWindow.curKey = data.startKey;
+
+		let table = buildTable(pageNum, lastKey, data.startKey);
+		existingWindow.container.appendChild(table);
+	} else {
+		let banWindow = new GUIWindow(winName, { closeable: true, centerOnce: true }, function(wdow) {
+			let table = buildTable(1, null, '');
+			wdow.container.appendChild(table);
+		});
+
+		banWindow.pageNum = 1;
+		banWindow.lastKeys = [];
+		banWindow.curKey = '';
+
+		windowSys.addWindow(banWindow);
+	}
+}
+
+function showListView(data) {
+	switch (data.cmd) {
+		case 'wbanlist': // world ban list data
+			printBanList(data);
+			return;
+	}
+}
+
 function receiveMessage(rawText) {
 	rawText = misc.chatRecvModifier(rawText);
 	if (!rawText) return;
@@ -183,11 +438,11 @@ function receiveMessage(rawText) {
 	let message = document.createElement('li');
 
 	let parsedJson = JSON.parse(rawText);
-	let text = parsedJson.data.message;
 	let sender = parsedJson.sender;
 	let type = parsedJson.type;
 	let data = parsedJson.data;
 	if (!data) return;
+	let text = data.message;
 
 	// actions
 	if (!!data.action) {
@@ -238,6 +493,10 @@ function receiveMessage(rawText) {
 				if (data.nick !== undefined && data.nick !== null) misc.localStorage.nick = data.nick;
 				else delete misc.localStorage.nick;
 				break;
+			}
+			case 'listview': {
+				showListView(data);
+				return;
 			}
 		}
 	}
@@ -292,7 +551,7 @@ function receiveMessage(rawText) {
 				if (data.rank === RANK.MODERATOR) message.className = 'modMessage';
 				else if (data.rank === RANK.USER) message.className = 'userMessage';
 				else message.className = 'playerMessage';
-				
+
 				let nick = document.createElement("span");
 				nick.className = 'nick';
 				message.style.display = 'block';
@@ -305,7 +564,7 @@ function receiveMessage(rawText) {
 
 	let msg = misc.lastMessage ? misc.lastMessage.text : '';
 	if (msg.endsWith('\n')) msg = msg.slice(0, -1);
-	if (misc.lastMessage) console.log(misc.lastMessage.ignore);
+	//if (misc.lastMessage) console.log(misc.lastMessage.ignore);
 	if (msg === `${data.nick}: ${text}` && misc.lastMessage && !misc.lastMessage.ignore) misc.lastMessage.incCount();
 	else {
 		if(adminMessage) text = `${data.nick}: ${text}`;
@@ -752,11 +1011,68 @@ function inGameDisconnected() {
 	elements.chatInput.style.display = "";
 }
 
+export function askPwBeforeConnect(serverGetter, worldName, token) {
+	if (misc.connecting && !net.isConnected()) { /* We're already connected/trying to connect */
+		return;
+	}
+
+	function proceed(pass, asAdmin) {
+		if (pass !== "") {
+			if (asAdmin) {
+				misc.localStorage['adminlogin'] = pass;
+			} else {
+				let wname = worldName === "" ? options.defaultWorld : worldName;
+				misc.worldPasswords[wname] = pass;
+				saveWorldPasswords();
+			}
+		}
+		retryingConnect(serverGetter, worldName, token);
+	}
+
+	let inputWindow = new GUIWindow("Connect with password", { closeable: true, centerOnce: true }, function(win) {
+		win.inputField = win.addObj(mkHTML("input", {
+			style: "width: 100%; height: 50%;",
+			type: "password",
+			placeholder: "World password",
+			onkeyup: function(e) {
+				if((e.which || e.keyCode) == 13) {
+					win.okButton.click();
+				}
+			}
+		}));
+		win.okButton = win.addObj(mkHTML("button", {
+			innerHTML: "Login",
+			style: "width: 100%; height: 50%;",
+			onclick: function(e) {
+				proceed(win.inputField.value, e.shiftKey);
+				win.close();
+			}
+		}));
+		const shiftEv = function(e) {
+			win.inputField.placeholder = e.shiftKey ? "Admin password" : "World password";
+			win.okButton.innerHTML = e.shiftKey ? "Login as admin" : "Login";
+		};
+		win.container.addEventListener('keydown', shiftEv);
+		win.container.addEventListener('keyup', shiftEv);
+		const ogCl = win.close.bind(win);
+		win.close = () => {
+			logoMakeRoom(false);
+			ogCl();
+		};
+	});
+
+	windowSys.addWindow(inputWindow);
+}
+
 export function retryingConnect(serverGetter, worldName, token) {
 	if (misc.connecting && !net.isConnected()) { /* We're already connected/trying to connect */
 		return;
 	}
 	misc.connecting = true;
+	let pwWin = windowSys.getWindow("Connect with password");
+	if (pwWin) {
+		pwWin.close();
+	}
 	var currentServer = serverGetter(false);
 	const tryConnect = (tryN) => {
 		if (tryN >= (currentServer.maxRetries || 3)) {
@@ -771,6 +1087,28 @@ export function retryingConnect(serverGetter, worldName, token) {
 			statusMsg(true, `Connecting to '${currentServer.title}'...`);
 			showLoadScr(true, false);
 		});
+		if (misc.cookiesEnabled && misc.storageEnabled) {
+			// tough luck if your password has ';'
+			if (misc.localStorage.adminlogin) {
+				document.cookie = "adminpass=" + misc.localStorage.adminlogin.replaceAll(";", "") + "; Secure";
+			}
+			else {
+				document.cookie = "adminpass=; expires=Thu, 01 Jan 1970 00:00:00 GMT; Secure";
+			}
+			if (misc.localStorage.modlogin) {
+				document.cookie = "modpass=" + misc.localStorage.modlogin.replaceAll(";", "") + "; Secure";
+			}
+			else {
+				document.cookie = "modpass=; expires=Thu, 01 Jan 1970 00:00:00 GMT; Secure";
+			}
+			let wname = worldName === "" ? options.defaultWorld : worldName;
+			if (misc.worldPasswords[wname]) {
+				document.cookie = "worldpass=" + misc.worldPasswords[wname].replaceAll(";", "") + "; Secure";
+			}
+			else {
+				document.cookie = "worldpass=; expires=Thu, 01 Jan 1970 00:00:00 GMT; Secure";
+			}
+		}
 		net.connect(currentServer, worldName, token);
 		const disconnected = () => {
 			++tryN;
@@ -1410,6 +1748,10 @@ function connect() {
 	retryingConnect(serverGetter, misc.urlWorldName);
 
 	elements.reconnectBtn.onclick = () => retryingConnect(serverGetter, misc.urlWorldName);
+	if (misc.storageEnabled && misc.cookiesEnabled) {
+		elements.reconnectWithPwBtn.onclick = () => askPwBeforeConnect(serverGetter, misc.urlWorldName);
+	}
+
 
 	misc.tickInterval = setInterval(tick, 1000 / options.tickSpeed);
 	//delete window.localStorage;
@@ -1488,7 +1830,7 @@ eventSys.on(e.net.world.setId, id => {
 		}
 	}
 
-	// Automatic login
+	// Automatic login, now passed through cookies on connection
 	let desiredRank = misc.localStorage.adminlogin ? RANK.ADMIN : misc.localStorage.modlogin ? RANK.MODERATOR : net.protocol.worldName in misc.worldPasswords ? RANK.USER : RANK.NONE;
 	if (desiredRank > RANK.NONE) {
 		var mightBeMod = false;
@@ -1531,7 +1873,7 @@ eventSys.on(e.net.world.setId, id => {
 		}
 		net.protocol.sendMessage(msg);
 	} else {
-		autoNick();
+	autoNick();
 	}
 });
 
@@ -1599,6 +1941,7 @@ window.addEventListener("load", () => {
 	elements.loadUl = document.getElementById("load-ul");
 	elements.loadOptions = document.getElementById("load-options");
 	elements.reconnectBtn = document.getElementById("reconnect-btn");
+	elements.reconnectWithPwBtn = document.getElementById("reconnect-pw-btn");
 	elements.spinner = document.getElementById("spinner");
 	elements.statusMsg = document.getElementById("status-msg");
 	elements.status = document.getElementById("status");
@@ -1647,6 +1990,12 @@ window.addEventListener("load", () => {
 
 	document.getElementById("kb-og").addEventListener("click", () => loadDefaultBindings("og"));
 	document.getElementById("kb-new").addEventListener("click", () => loadDefaultBindings("new"));
+
+	if (!misc.storageEnabled || !misc.cookiesEnabled) {
+		elements.reconnectWithPwBtn.disabled = true;
+		elements.reconnectWithPwBtn.title = "Can't work if cookies or localStorage is disabled.";
+		elements.reconnectWithPwBtn.classList.add("pushed");
+	}
 
 	var donateBtn = document.getElementById("donate-button");
 	elements.helpButton.addEventListener("click", function () {
