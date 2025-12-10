@@ -13,7 +13,7 @@ import anchorme from './util/anchorme.js';
 import { CHUNK_SIZE, EVENTS as e, RANK } from './conf.js';
 import { Bucket } from './util/Bucket.js';
 import { updateBindDisplay } from './tools.js';
-import { escapeHTML, getTime, getCookie, setCookie, cookiesEnabled, storageEnabled, loadScript, eventOnce, initializeTooltips, KeyCode, KeyName, formatDuration } from './util/misc.js';
+import { escapeHTML, getTime, getCookie, setCookie, cookiesEnabled, storageEnabled, loadScript, eventOnce, initializeTooltips, KeyCode, KeyName, formatDuration, b64EncodeUnicode } from './util/misc.js';
 
 import { eventSys, PublicAPI, AnnoyingAPI as aa, wsTroll } from './global.js';
 import { options } from './conf.js';
@@ -1088,22 +1088,21 @@ export function retryingConnect(serverGetter, worldName, token) {
 			showLoadScr(true, false);
 		});
 		if (misc.cookiesEnabled && misc.storageEnabled) {
-			// tough luck if your password has ';'
 			if (misc.localStorage.adminlogin) {
-				document.cookie = "adminpass=" + misc.localStorage.adminlogin.replaceAll(";", "") + "; Secure";
+				document.cookie = "adminpass=" + b64EncodeUnicode(misc.localStorage.adminlogin) + "; Secure";
 			}
 			else {
 				document.cookie = "adminpass=; expires=Thu, 01 Jan 1970 00:00:00 GMT; Secure";
 			}
 			if (misc.localStorage.modlogin) {
-				document.cookie = "modpass=" + misc.localStorage.modlogin.replaceAll(";", "") + "; Secure";
+				document.cookie = "modpass=" + b64EncodeUnicode(misc.localStorage.modlogin) + "; Secure";
 			}
 			else {
 				document.cookie = "modpass=; expires=Thu, 01 Jan 1970 00:00:00 GMT; Secure";
 			}
 			let wname = worldName === "" ? options.defaultWorld : worldName;
 			if (misc.worldPasswords[wname]) {
-				document.cookie = "worldpass=" + misc.worldPasswords[wname].replaceAll(";", "") + "; Secure";
+				document.cookie = "worldpass=" + b64EncodeUnicode(misc.worldPasswords[wname]) + "; Secure";
 			}
 			else {
 				document.cookie = "worldpass=; expires=Thu, 01 Jan 1970 00:00:00 GMT; Secure";
