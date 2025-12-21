@@ -31,7 +31,7 @@
     "@babel/runtime": "^7.27.1",
     "@discord/embedded-app-sdk": "^2.0.0",
     "copy-webpack-plugin": "^13.0.0",
-    "express": "^5.1.0",
+    "express": "^5.2.1",
     "npm-check-updates": "^18.0.1",
     "regenerator-runtime": "^0.14.1"
   }
