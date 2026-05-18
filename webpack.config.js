@@ -64,25 +64,25 @@ function genConfig(env) {
 				include: path.resolve(srcDir, 'js', 'polyfill'),
 				type: 'javascript/auto',
 				generator:{
-					filename: 'polyfill/[name].[ext]'
+					filename: 'polyfill/[name][ext]'
 				}
 			}, {
 				include: path.resolve(srcDir, 'img'),
 				type: 'asset/resource',
 				generator:{
-					filename: 'img/[name].[ext]'
+					filename: 'img/[name][ext]'
 				}
 			}, {
 				include: path.resolve(srcDir, 'audio'),
 				type: 'asset/resource',
 				generator:{
-					filename: 'audio/[name].[ext]'
+					filename: 'audio/[name][ext]'
 				}
 			}, {
 				include: path.resolve(srcDir, 'font'),
 				type: 'asset/resource',
 				generator:{
-					filename: 'font/[name].[ext]'
+					filename: 'font/[name][ext]'
 				}
 			}, {
 				include: path.resolve(srcDir, 'css'),
