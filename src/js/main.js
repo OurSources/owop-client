@@ -969,7 +969,9 @@ function showWorldUI(bool) {
 	elements.topLeftDisplays.classList[bool ? 'remove' : 'add']('hideui');
 	elements.helpButton.style.transform = bool ? "" : "translateY(120%) translateX(-120%)";
 	elements.paletteBg.style.transform = bool ? "" : "translateX(100%)";
-	elements.noticeDisplay.style.transform = bool ? 'inherit' : `translateY(-${elements.topLeftDisplays.getBoundingClientRect().height}px)`;
+	if (elements.noticeDisplay) {
+		elements.noticeDisplay.style.transform = bool ? 'inherit' : `translateY(-${elements.topLeftDisplays.getBoundingClientRect().height}px)`;
+	}
 	elements.pBucketDisplay.textContent = `Place bucket: ${net.protocol.placeBucket.allowance.toFixed(1)} (${net.protocol.placeBucket.rate}/${net.protocol.placeBucket.time}s).`;
 	// elements.paletteBg.classList[bool ? 'remove' : 'add']('hideui');
 }
@@ -1570,11 +1572,14 @@ function init() {
 		}
 	});
 	viewport.addEventListener("mousedown", event => {
+		let pageX = event.pageX - (elements.animCanvas.offsetLeft || 0);
+		let pageY = event.pageY - (elements.animCanvas.offsetTop || 0);
+
 		closeChat();
 		mouse.lastX = mouse.x;
 		mouse.lastY = mouse.y;
-		mouse.x = event.pageX;
-		mouse.y = event.pageY;
+		mouse.x = pageX;
+		mouse.y = pageY;
 		mouse.mouseDownWorldX = mouse.worldX;
 		mouse.mouseDownWorldY = mouse.worldY;
 		if ('buttons' in event) {
@@ -1617,7 +1622,10 @@ function init() {
 	});
 
 	window.addEventListener("mousemove", event => {
-		var cancelledButtons = updateMouse(event, 'mousemove', event.pageX, event.pageY);
+		let pageX = event.pageX - (elements.animCanvas.offsetLeft || 0);
+		let pageY = event.pageY - (elements.animCanvas.offsetTop || 0);
+
+		var cancelledButtons = updateMouse(event, 'mousemove', pageX, pageY);
 		var remainingButtons = mouse.buttons & ~cancelledButtons;
 		if (remainingButtons & 0b100) { /* If middle click was not used for anything */
 			moveCameraBy((mouse.mouseDownWorldX - mouse.worldX) / 16, (mouse.mouseDownWorldY - mouse.worldY) / 16);
@@ -1947,9 +1955,11 @@ window.addEventListener("load", () => {
 	elements.logo = document.getElementById("logo");
 
 	elements.noticeDisplay = document.getElementById("notice-display");
-	elements.noticeDisplay.noticeId = elements.noticeDisplay.getAttribute("notice-id") || 1;
-	if (misc.localStorage.dismissedId != elements.noticeDisplay.noticeId) elements.noticeDisplay.addEventListener("click", dismissNotice);
-	else elements.noticeDisplay.style.display = "none";
+	if (elements.noticeDisplay) {
+		elements.noticeDisplay.noticeId = elements.noticeDisplay.getAttribute("notice-id") || 1;
+		if (misc.localStorage.dismissedId != elements.noticeDisplay.noticeId) elements.noticeDisplay.addEventListener("click", dismissNotice);
+		else elements.noticeDisplay.style.display = "none";
+	}
 
 	elements.xyDisplay = document.getElementById("xy-display");
 	elements.pBucketDisplay = document.getElementById("pbucket-display");

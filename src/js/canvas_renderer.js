@@ -241,7 +241,7 @@ export function drawText(ctx, str, x, y, centered){
 }
 
 function isVisible(x, y, w, h) {
-	if(document.visibilityState === "hidden") return;
+	if(document.visibilityState === "hidden" && performance.now() > 3000) return;
 	var cx    = camera.x;
 	var cy    = camera.y;
 	var czoom = camera.zoom;
@@ -526,6 +526,10 @@ function onResize() {
 	onCameraMove();
 }
 
+function onVisibilityChange() {
+	requestRender(renderer.rendertype.FX);
+}
+
 function alignCamera() {
 	var zoom = cameraValues.zoom;
 	var alignedX = Math.round(cameraValues.x * zoom) / zoom;
@@ -658,6 +662,8 @@ eventSys.once(e.init, () => {
 	onResize();
 	camera.zoom = options.defaultZoom;
 	centerCameraTo(0, 0);
+
+	document.addEventListener("visibilitychange", onVisibilityChange);
 
 	const mkPatternFromUrl = (url, cb) => {
 		var patImg = new Image();
