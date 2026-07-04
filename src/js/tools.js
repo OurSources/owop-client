@@ -184,8 +184,11 @@ class Tool {
 export const toolsApi = PublicAPI.tools = {
 	class: Tool,
 	addToolObject: addTool,
+	allTools: tools,
+	toolsWindow,
+	updateToolWindow,
 	updateToolbar,
-	allTools: tools
+	showToolsWindow
 };
 
 eventSys.once(e.misc.toolsRendered, () => {
