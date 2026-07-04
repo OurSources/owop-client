@@ -470,6 +470,18 @@ button:focus {
 	pointer-events: none;
 }
 
+#palette-input {
+	font-size: 0;
+	width: 0;
+	height: 0;
+	border: 0;
+	pointer-events: none;
+	margin: 0;
+	padding: 0;
+	position: relative;
+	left: -5px;
+}
+
 #palette-opts {
 	display: flex;
 	flex-direction: column;
