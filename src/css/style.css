@@ -104,13 +104,17 @@ button.winframe:active {
 img,
 #tool-select,
 button[tooltip],
-#topleft-displays>span,
-#topright-displays>span,
-#windows>div,
+#topleft-displays span,
+#topright-displays span,
+#windows div,
 #palette,
 #help {
 	image-rendering: pixelated;
 	image-rendering: crisp-edges;
+}
+
+#windows button,
+button[tooltip] {
 	will-change: filter;
 }
 
