@@ -102,8 +102,16 @@ button.winframe:active {
 }
 
 img,
-#tool-select {
+#tool-select,
+button[tooltip],
+#topleft-displays>span,
+#topright-displays>span,
+#windows>div,
+#palette,
+#help {
 	image-rendering: pixelated;
+	image-rendering: crisp-edges;
+	will-change: filter;
 }
 
 #load-scr {
@@ -430,12 +438,6 @@ button:focus {
 	width: 40px;
 	height: 40px;
 	padding: 0;
-}
-
-.pixelated, button[tooltip], #help {
-	image-rendering: pixelated;
-	image-rendering: crisp-edges;
-	will-change: filter;
 }
 
 #toole-container>button.selected {

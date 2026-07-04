@@ -37,9 +37,9 @@
 				<script>document.getElementById('status').className='whitetext';</script>
 			</ul>
 		</div>
-		<div id="windows" class="pixelated"></div>
+		<div id="windows"></div>
 		<div id="palette-bg" class="hideui"></div>
-		<div id="palette" class="pixelated">
+		<div id="palette">
 			<div id="palette-opts">
 				<input type="color" id="palette-input">
 				<button id="palette-create" tooltip="Add color" class="generic-display"></button>
@@ -49,26 +49,26 @@
 			</div>
 			<div id="palette-colors"></div>
 		</div>
-		<span id="topleft-displays" class="hideui pixelated">
+		<span id="topleft-displays" class="hideui">
 			<span id="xy-display"></span>
 			<span id="pbucket-display"></span>
 		</span>
-		<span id="topright-displays" class="pixelated">
+		<span id="topright-displays">
 			<span id="dinfo-display" class="framed" data-pm="1"><span id="dinfo-hlp">?</span>
 				<span id="dinfo-hlp-box" class="framed">
 					<span>A generous donor has helped fund the site and gave everyone a paint speed boost!</span>
 					<span>Donate with the help button on the bottom left.</span>
 				</span>
 			</span>
-			<span id="playercount-display" class="pixelated"></span>
+			<span id="playercount-display"></span>
 		</span>
-		<div id="bottomleft-displays" class="pixelated">
+		<div id="bottomleft-displays">
 			<button id="help-button" tooltip="Help"><img src="<%=require('./img/help.png')%>" tooltip="Help"></button>
 			<div id="dev-chat" class="hide">
 				<ul id="dev-chat-messages"></ul>
 			</div>
 		</div>
-		<div id="bottomright-displays" class="pixelated">
+		<div id="bottomright-displays">
 			<div id="chat">
 				<ul id="chat-messages"></ul>
 				<textarea id="chat-input" draggable="false" type="text" maxlength="120" placeholder="Press [Enter] to chat!" disabled></textarea>
