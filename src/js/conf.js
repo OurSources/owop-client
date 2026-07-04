@@ -146,16 +146,10 @@ export const options = propertyDefaults(userOptions, {
 	noUi: false,
 	fool: shouldFool,
 	backgroundUrl: null,
-	/* Bug only affects Windows users with an old Intel graphics card driver */
-	chunkBugWorkaround: false, // navigator.userAgent.indexOf('Windows NT') !== -1
 	hexCoords: false,
 	showProtectionOutlines: true,
 	showPlayers: true
 });
-
-if (options.chunkBugWorkaround) {
-	console.debug('Chunk bug workaround enabled!');
-}
 
 PublicAPI.options = options;
 

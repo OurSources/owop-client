@@ -78,11 +78,12 @@ export class World {
 		this.pathUpdaterTimeout = -1;
 		this.pathFx = new Fx((fx, ctx, time) => {
 			var retval = 1;
+			var scale = window.devicePixelRatio || 1;
 			if (fx.extra.path && !options.noUi) {
 				ctx.strokeStyle = "#525252";
 				var l = ctx.lineWidth;
-				ctx.lineWidth = 3 / camera.zoom;
-				ctx.setTransform(camera.zoom, 0, 0, camera.zoom, -camera.x * camera.zoom, -camera.y * camera.zoom);
+				ctx.lineWidth = 3 / camera.zoom / scale;
+				ctx.setTransform(scale * camera.zoom, 0, 0, scale * camera.zoom, -camera.x * camera.zoom * scale, -camera.y * camera.zoom * scale);
 				if (time - fx.extra.placeTime < 1500) {
 					ctx.globalAlpha = (1 - (time - fx.extra.placeTime) / 1500) * 0.5;
 					ctx.fillStyle = renderer.patterns.unloaded;
@@ -93,7 +94,7 @@ export class World {
 				if (options.showProtectionOutlines) {
 					ctx.stroke(fx.extra.path);
 				}
-				ctx.setTransform(1, 0, 0, 1, 0, 0);
+				ctx.setTransform(scale, 0, 0, scale, 0, 0);
 				ctx.lineWidth = l;
 			}
 			return retval;

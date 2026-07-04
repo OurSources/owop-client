@@ -29,6 +29,7 @@ export const camera = {
 		if (z !== cameraValues.zoom) {
 			var center = getCenterPixel();
 			cameraValues.zoom = z;
+			setImageSmoothing(rendererValues.animContext, !shouldPixelate());
 			centerCameraTo(center[0], center[1]);
 			eventSys.emit(e.camera.zoom, z);
 		}
@@ -52,7 +53,8 @@ const rendererValues = {
 	updatedClusters: [], /* Clusters to render in the next frame */
 	clusters: {},
 	visibleClusters: [],
-	currentFontSize: -1
+	currentFontSize: -1,
+	lastPixelRatio: window.devicePixelRatio || 1,
 };
 
 PublicAPI.rendererValues = rendererValues;
@@ -84,9 +86,6 @@ PublicAPI.renderer = renderer;
 class BufView {
 	constructor(u32data, x, y, w, h, realw) {
 		this.data = u32data;
-		if (options.chunkBugWorkaround) {
-			this.changes = [];
-		}
 		this.offx = x;
 		this.offy = y;
 		this.realwidth = realw;
@@ -100,9 +99,6 @@ class BufView {
 
 	set(x, y, data) {
 		this.data[(this.offx + x) + (this.offy + y) * this.realwidth] = data;
-		if (options.chunkBugWorkaround) {
-			this.changes.push([0, x, y, data]);
-		}
 	}
 
 	fill(data) {
@@ -111,19 +107,12 @@ class BufView {
 				this.data[(this.offx + j) + (this.offy + i) * this.realwidth] = data;
 			}
 		}
-		if (options.chunkBugWorkaround) {
-			this.changes.push([1, 0, 0, data]);
-		}
 	}
 
 	fillFromBuf(u32buf) {
 		for (var i = 0; i < this.height; i++) {
 			for (var j = 0; j < this.width; j++) {
 				this.data[(this.offx + j) + (this.offy + i) * this.realwidth] = u32buf[j + i * this.width];
-				if (options.chunkBugWorkaround) {
-					/* Terrible */
-					this.changes.push([0, j, i, u32buf[j + i * this.width]]);
-				}
 			}
 		}
 	}
@@ -143,9 +132,6 @@ class ChunkCluster {
 		this.data = this.ctx.createImageData(this.canvas.width, this.canvas.height);
 		this.u32data = new Uint32Array(this.data.data.buffer);
 		this.chunks = [];
-		if (options.chunkBugWorkaround) {
-			this.currentColor = 0;
-		}
 	}
 
 	render() {
@@ -154,29 +140,8 @@ class ChunkCluster {
 			var c = this.chunks[i];
 			if (c.needsRedraw) {
 				c.needsRedraw = false;
-				if (options.chunkBugWorkaround) {
-					var arr = c.view.changes;
-					var s = protocol.chunkSize;
-					for (var j = 0; j < arr.length; j++) {
-						var current = arr[j];
-						if (this.currentColor !== current[3]) {
-							this.currentColor = current[3];
-							this.ctx.fillStyle = color.toHTML(current[3]);
-						}
-						switch (current[0]) {
-						case 0:
-							this.ctx.fillRect(c.view.offx + current[1], c.view.offy + current[2], 1, 1);
-							break;
-						case 1:
-							this.ctx.fillRect(c.view.offx, c.view.offy, s, s);
-							break;
-						}
-					}
-					c.view.changes = [];
-				} else {
-					this.ctx.putImageData(this.data, 0, 0,
-						c.view.offx, c.view.offy, c.view.width, c.view.height);
-				}
+				this.ctx.putImageData(this.data, 0, 0,
+					c.view.offx, c.view.offy, c.view.width, c.view.height);
 			}
 		}
 	}
@@ -245,10 +210,17 @@ function isVisible(x, y, w, h) {
 	var cx    = camera.x;
 	var cy    = camera.y;
 	var czoom = camera.zoom;
-	var cw    = window.innerWidth;
-	var ch    = window.innerHeight;
+	var cw    = document.body.clientWidth || window.innerWidth;
+	var ch    = document.body.clientHeight || window.innerHeight;
 	return x + w > cx && y + h > cy &&
 	       x <= cx + cw / czoom && y <= cy + ch / czoom;
+}
+
+function shouldPixelate() {
+	if (camera.zoom * window.devicePixelRatio < 2 && window.devicePixelRatio != 1) {
+		return false;
+	}
+	return true;
 }
 
 export function unloadFarClusters() { /* Slow? */
@@ -266,7 +238,6 @@ export function unloadFarClusters() { /* Slow? */
 			var dx = Math.abs(ctrx / s - c.x) | 0;
 			var dy = Math.abs(ctry / s - c.y) | 0;
 			var dist = dx + dy; /* no sqrt please */
-			//console.log(dist);
 			if (dist > options.unloadDistance) {
 				c.remove();
 			}
@@ -295,8 +266,8 @@ function render(type) {
 		var ctx = rendererValues.animContext;
 		var visible = rendererValues.visibleClusters;
 		var clusterCanvasSize = protocol.chunkSize * protocol.clusterChunkAmount;
-		var cwidth = window.innerWidth;
-		var cheight = window.innerHeight;
+		var cwidth = document.body.clientWidth || window.innerWidth;
+		var cheight = document.body.clientHeight || window.innerHeight;
 		var background = rendererValues.worldBackground;
 		var allChunksLoaded = misc.world.allChunksLoaded();
 
@@ -307,10 +278,13 @@ function render(type) {
 			if (rendererValues.unloadedPattern == null) {
 				ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 			} else {
+				let scale = window.devicePixelRatio || 1;
+				ctx.scale(1 / scale, 1 / scale);
 				ctx.translate(bggx, bggy);
 				ctx.fillStyle = rendererValues.unloadedPattern;
 				ctx.fillRect(-bggx, -bggy, ctx.canvas.width, ctx.canvas.height);
 				ctx.translate(-bggx, -bggy);
+				ctx.scale(scale, scale);
 			}
 		}
 
@@ -357,12 +331,21 @@ function render(type) {
 		}*/
 
 		if (rendererValues.gridShown && rendererValues.gridPattern) {
+			let scale = window.devicePixelRatio || 1;
+			let roundErrCorr = (16 * zoom * scale) / Math.round(16 * zoom * scale);
+
 			ctx.translate(bggx, bggy);
+			ctx.scale(1 / scale, 1 / scale);
+			ctx.scale(roundErrCorr, roundErrCorr);
 			ctx.fillStyle = rendererValues.gridPattern;
 			/*if (!allChunksLoaded) {
 				ctx.globalCompositeOperation = "source-atop";
 			}*/
-			ctx.fillRect(-bggx, -bggy, ctx.canvas.width, ctx.canvas.height);
+			setImageSmoothing(ctx, true);
+			ctx.fillRect(-bggx * scale, -bggy * scale, ctx.canvas.width, ctx.canvas.height);
+			setImageSmoothing(ctx, !shouldPixelate());
+			ctx.scale(1 / roundErrCorr, 1 / roundErrCorr);
+			ctx.scale(scale, scale);
 			ctx.translate(-bggx, -bggy);
 		}
 
@@ -461,8 +444,19 @@ function setGridVisibility(enabled) {
 function renderGrid(zoom) {
 	var tmpcanvas = document.createElement("canvas");
 	var ctx = tmpcanvas.getContext("2d");
-	var size = tmpcanvas.width = tmpcanvas.height = Math.round(16 * zoom);
-	ctx.setLineDash([1]);
+	var scale = window.devicePixelRatio || 1;
+	var size = tmpcanvas.width = tmpcanvas.height = Math.round(16 * zoom * scale);
+
+	ctx.scale(scale, scale);
+
+	var gridSize = 1;
+	// ensure the grid isn't too thick when zoomed out
+	if (zoom < 7 && scale > 1) {
+		gridSize = 0.5;
+	}
+
+	ctx.setLineDash([gridSize]);
+	ctx.lineWidth = gridSize;
 	ctx.globalAlpha = 0.2;
 	if (zoom >= 4) {
 		var fadeMult = Math.min(1, zoom - 4);
@@ -472,17 +466,18 @@ function renderGrid(zoom) {
 		ctx.beginPath();
 		for (var i = 16; --i;) {
 			ctx.moveTo(i * zoom + .5, 0);
-			ctx.lineTo(i * zoom + .5, size);
+			ctx.lineTo(i * zoom + .5, size / scale);
 			ctx.moveTo(0, i * zoom + .5);
-			ctx.lineTo(size, i * zoom + .5);
+			ctx.lineTo(size / scale, i * zoom + .5);
 		}
 		ctx.stroke();
 		ctx.globalAlpha = Math.max(0.2, 1 * fadeMult);
 	}
 	ctx.beginPath();
 	ctx.moveTo(0, 0);
-	ctx.lineTo(0, size);
-	ctx.lineTo(size, size);
+	ctx.lineTo(0, size / scale);
+	ctx.moveTo(0, 0);
+	ctx.lineTo(size / scale, 0);
 	ctx.stroke();
 	return ctx.createPattern(tmpcanvas, "repeat");
 }
@@ -513,21 +508,40 @@ function updateVisible() {
 	}
 };
 
+function setImageSmoothing(ctx, state) {
+	ctx.imageSmoothingEnabled = state;
+	ctx.webkitImageSmoothingEnabled = state;
+	ctx.mozImageSmoothingEnabled = state;
+	ctx.msImageSmoothingEnabled = state;
+	ctx.oImageSmoothingEnabled = state;
+}
+
 function onResize() {
-	elements.animCanvas.width = window.innerWidth;
-	elements.animCanvas.height = window.innerHeight;
+	let scale = window.devicePixelRatio;
+	let width = document.body.clientWidth || window.innerWidth;
+	let height = document.body.clientHeight || window.innerHeight;
+
+	elements.animCanvas.width = Math.round(width * scale);
+	elements.animCanvas.height = Math.round(height * scale);
+	elements.animCanvas.style.width = width + "px";
+	elements.animCanvas.style.height = height + "px";
+
 	var ctx = rendererValues.animContext;
-	ctx.imageSmoothingEnabled = false;
-	ctx.webkitImageSmoothingEnabled = false;
-	ctx.mozImageSmoothingEnabled = false;
-	ctx.msImageSmoothingEnabled = false;
-	ctx.oImageSmoothingEnabled = false;
+	setImageSmoothing(ctx, !shouldPixelate());
+
+	ctx.setTransform(scale, 0, 0, scale, 0, 0);
 	rendererValues.currentFontSize = -1;
+
+	if (rendererValues.lastPixelRatio != scale) {
+		setGridZoom(camera.zoom);
+		rendererValues.lastPixelRatio = scale;
+	}
+
 	onCameraMove();
 }
 
 function onVisibilityChange() {
-	requestRender(renderer.rendertype.FX);
+	onCameraMove();
 }
 
 function alignCamera() {
@@ -667,10 +681,13 @@ eventSys.once(e.init, () => {
 
 	const mkPatternFromUrl = (url, cb) => {
 		var patImg = new Image();
+		var patCanv = document.createElement("canvas");
+		var patCanvCtx = patCanv.getContext("2d");
 		patImg.onload = () => {
-			var pat = rendererValues.animContext.createPattern(patImg, "repeat");
-			pat.width = patImg.width;
-			pat.height = patImg.height;
+			patCanv.width = patImg.width;
+			patCanv.height = patImg.height;
+			patCanvCtx.drawImage(patImg, 0, 0);
+			var pat = patCanvCtx.createPattern(patCanv, "repeat");
 			cb(pat);
 		};
 		patImg.src = url;

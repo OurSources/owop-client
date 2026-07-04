@@ -432,6 +432,12 @@ button:focus {
 	padding: 0;
 }
 
+.pixelated, button[tooltip], #help {
+	image-rendering: pixelated;
+	image-rendering: crisp-edges;
+	will-change: filter;
+}
+
 #toole-container>button.selected {
 	background-color: #aaa;
 }
