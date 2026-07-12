@@ -654,17 +654,17 @@ eventSys.once(e.misc.toolsRendered, () => {
 		var end = null;
 		var queue = [];
 		function line(x1, y1, x2, y2, plot) {
-			var dx =  Math.abs(x2 - x1), sx = x1 < x2 ? 1 : -1;
-			var dy = -Math.abs(y2 - y1), sy = y1 < y2 ? 1 : -1;
-			var err = dx + dy,
-				e2;
+			var dx =  Math.abs(x2 - x1) + 1, sx = x1 < x2 ? 1 : -1;
+			var dy = -Math.abs(y2 - y1) - 1, sy = y1 < y2 ? 1 : -1;
+			var err = dx + dy;
+			err += Math.floor(err / 2);
+			var e2;
 
-			while(true) {
+			for (let i = 0; i < Math.max(dx, -dy); i++) {
 				plot(x1, y1);
-				if (x1 == x2 && y1 == y2) break;
 				e2 = 2 * err;
-				if (e2 >= dy) { err += dy; x1 += sx; }
-				if (e2 <= dx) { err += dx; y1 += sy; }
+				if (e2 > dy) { err += dy; x1 += sx; }
+				if (e2 < dx) { err += dx; y1 += sy; }
 			}
 		}
 		var defaultFx = PLAYERFX.RECT_SELECT_ALIGNED(1);
