@@ -117,6 +117,15 @@ function changedColor() {
 	somethingChanged = true;
 }
 
+function saveActivePalette() {
+	if (misc.storageEnabled) {
+		try {
+			misc.localStorage.activePalette = JSON.stringify(palette);
+			misc.localStorage.activePaletteIndex = String(paletteIndex);
+		} catch (e) {}
+	}
+}
+
 function updatePalette() {
 	var paletteColors = elements.paletteColors;
 	paletteColors.innerHTML = "";
@@ -159,6 +168,7 @@ function updatePalette() {
 		paletteColors.appendChild(element);
 	}
 	changedColor();
+	saveActivePalette();
 }
 
 function updatePaletteIndex() {

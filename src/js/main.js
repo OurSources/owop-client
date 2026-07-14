@@ -1304,6 +1304,28 @@ function init() {
 				misc.palettes = JSON.parse(misc.localStorage.palettes);
 			} catch (e) { };
 		}
+		if (!misc.palettes["Default"]) {
+			// ENDESGA 16 palette
+			misc.palettes["Default"] = [
+				[0xE4, 0xA6, 0x72], [0xB8, 0x6F, 0x50], [0x74, 0x3F, 0x39], [0x3F, 0x28, 0x32],
+				[0x9E, 0x28, 0x35], [0xE5, 0x3B, 0x44], [0xFB, 0x92, 0x2B], [0xFF, 0xE7, 0x62],
+				[0x63, 0xC6, 0x4D], [0x32, 0x73, 0x45], [0x19, 0x3D, 0x3F], [0x4F, 0x67, 0x81],
+				[0xAF, 0xBF, 0xD2], [0xFF, 0xFF, 0xFF], [0x2C, 0xE8, 0xF4], [0x04, 0x84, 0xD1]
+			];
+			savePalettes();
+		}
+		if (misc.localStorage.activePalette) {
+			try {
+				var savedPalette = JSON.parse(misc.localStorage.activePalette);
+				if (Array.isArray(savedPalette) && savedPalette.length > 0) {
+					player.palette = savedPalette;
+					var savedIndex = parseInt(misc.localStorage.activePaletteIndex, 10); // Restore previously selected index
+					if (!isNaN(savedIndex) && savedIndex >= 0 && savedIndex < player.palette.length) { // Bounds check
+						player.paletteIndex = savedIndex;
+					}
+				}
+			} catch (e) { };
+		}
 	}
 	updateBindDisplay();
 
@@ -2152,7 +2174,9 @@ window.addEventListener("load", () => {
 				let rw = 0;
 				const mw = 400;
 
-				for (let paletteName of Object.keys(misc.palettes)) {
+				// Make the "Default" palette show up first in the list
+				// (optional, I guess? I just figured it looked better.)
+				for (let paletteName of Object.keys(misc.palettes).sort((a, b) => a === "Default" ? -1 : b === "Default" ? 1 : a.localeCompare(b))) {
 					console.log(paletteName);
 					let palette = document.createElement('button');
 					palette.innerText = paletteName;
