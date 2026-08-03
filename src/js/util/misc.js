@@ -418,6 +418,13 @@ export function line(x1, y1, x2, y2, size, plot) {
 	}
 }
 
+export function isTouchSupported() {
+	var pointerCoarse = window.matchMedia && window.matchMedia("(pointer: coarse)").matches;
+	var touchStart = "ontouchstart" in window;
+	var maxTouchPoints = navigator.maxTouchPoints > 0;
+	return pointerCoarse || touchStart || maxTouchPoints;
+}
+
 PublicAPI.util = {
 	getTime,
 	cookiesEnabled,
@@ -434,6 +441,7 @@ PublicAPI.util = {
 	propertyDefaults,
 	htmlToElement,
 	decompress,
+	isTouchSupported,
 
 	KeyCode,
 	KeyName,

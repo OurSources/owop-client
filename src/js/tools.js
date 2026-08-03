@@ -1,7 +1,7 @@
 'use strict';
 import { PublicAPI, eventSys } from './global.js';
 import { EVENTS as e, protocol, options, RANK } from './conf.js';
-import { absMod, setTooltip, mkHTML, line, KeyName } from './util/misc.js';
+import { absMod, setTooltip, mkHTML, line, KeyName, isTouchSupported } from './util/misc.js';
 import { cursors } from './tool_renderer.js';
 import { net } from './networking.js';
 import { player } from './local_player.js';
@@ -742,6 +742,9 @@ eventSys.once(e.misc.toolsRendered, () => {
 	}));
 
 	addTool(new Tool('Protect', cursors.shield, PLAYERFX.RECT_SELECT_ALIGNED(16, "#000000"), RANK.MODERATOR, tool => {
+		var modeSelectorWnd;
+		var shouldProtectPrimary = true;
+
 		tool.setFxRenderer((fx, ctx, time) => {
 			var x = fx.extra.player.x;
 			var y = fx.extra.player.y;
@@ -761,19 +764,69 @@ eventSys.once(e.misc.toolsRendered, () => {
 			var chunkX = Math.floor(mouse.tileX / protocol.chunkSize);
 			var chunkY = Math.floor(mouse.tileY / protocol.chunkSize);
 			var chunk = misc.world.getChunkAt(chunkX, chunkY);
-			switch (mouse.buttons) {
-				case 0b1:
+
+			var tempProtectMode = true;
+			var isActive = false;
+
+			if (mouse.buttons == 0b01) {
+				tempProtectMode = shouldProtectPrimary;
+				isActive = true;
+			} else if (mouse.buttons == 0b10) {
+				tempProtectMode = !shouldProtectPrimary;
+				isActive = true;
+			}
+
+			if (isActive && chunk) {
+				if (tempProtectMode) { // protect
 					if (!chunk.locked) {
 						net.protocol.protectChunk(chunkX, chunkY, 1);
 					}
-					break;
-
-				case 0b10:
+				} else { // unprotect
 					if (chunk.locked) {
 						net.protocol.protectChunk(chunkX, chunkY, 0);
 					}
-					break;
+				}
 			}
+		});
+		tool.setEvent('select', () => {
+			if (isTouchSupported()) {
+				modeSelectorWnd = new GUIWindow('Protection mode', {}, wdow => {
+					let container = mkHTML("div", {
+						style: "display: flex; gap: 4px"
+					});
+					let protect = mkHTML("button", {
+						innerHTML: "Protect",
+						className: shouldProtectPrimary ? "pushed" : "",
+						onclick: () => {
+							shouldProtectPrimary = true;
+							protect.classList.add("pushed");
+							unprotect.classList.remove("pushed");
+						}
+					});
+					let unprotect = mkHTML("button", {
+						innerHTML: "Unprotect",
+						className: !shouldProtectPrimary ? "pushed" : "",
+						onclick: () => {
+							shouldProtectPrimary = false;
+							protect.classList.remove("pushed");
+							unprotect.classList.add("pushed");
+						}
+					});
+					container.appendChild(protect);
+					container.appendChild(unprotect);
+					wdow.addObj(container);
+				});
+				windowSys.addWindow(modeSelectorWnd);
+				let winWidth = modeSelectorWnd.frame.offsetWidth || 0;
+				modeSelectorWnd.move(Math.floor((window.innerWidth - winWidth) / 2), 30);
+			}
+		});
+		tool.setEvent('deselect', mouse => {
+			if (modeSelectorWnd) {
+				windowSys.delWindow(modeSelectorWnd);
+			}
+			modeSelectorWnd = null;
+			shouldProtectPrimary = true;
 		});
 	}));
 
