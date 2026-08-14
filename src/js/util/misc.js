@@ -345,6 +345,35 @@ export function waitFrames(n, cb) {
 	})
 }
 
+/* Decodes a chunk straight into a Uint32Array of 0xAABBGGRR pixels.
+   decompress() below produces an intermediate byte array that the caller then has to
+   walk a second time to build the u32 view; this does it in one pass with one
+   allocation, which matters when a batch delivers hundreds of chunks at once. */
+export function decompressToU32(u8arr, out) {
+	var numOfRepeats = u8arr[3] << 8 | u8arr[2];
+	var offset = numOfRepeats * 2 + 4;
+	var uptr = 0;
+	var cptr = offset;
+	for (var i = 0; i < numOfRepeats; i++) {
+		var currentRepeatLoc = (u8arr[4 + i * 2 + 1] << 8 | u8arr[4 + i * 2]) + offset;
+		while (cptr < currentRepeatLoc) {
+			out[uptr++] = 0xFF000000 | u8arr[cptr] | u8arr[cptr + 1] << 8 | u8arr[cptr + 2] << 16;
+			cptr += 3;
+		}
+		var repeatedNum = u8arr[cptr + 1] << 8 | u8arr[cptr];
+		var repeatedColor = 0xFF000000 | u8arr[cptr + 2] | u8arr[cptr + 3] << 8 | u8arr[cptr + 4] << 16;
+		cptr += 5;
+		while (repeatedNum--) {
+			out[uptr++] = repeatedColor;
+		}
+	}
+	while (cptr < u8arr.length) {
+		out[uptr++] = 0xFF000000 | u8arr[cptr] | u8arr[cptr + 1] << 8 | u8arr[cptr + 2] << 16;
+		cptr += 3;
+	}
+	return out;
+}
+
 export function decompress(u8arr) {
 	var originalLength = u8arr[1] << 8 | u8arr[0];
 	var u8decompressedarr = new Uint8Array(originalLength);

@@ -2,6 +2,7 @@
 import { protocol, EVENTS as e, options } from './conf.js';
 import { eventSys, PublicAPI } from './global.js';
 import { elements, misc } from './main.js';
+import { net } from './networking.js';
 import { player } from './local_player.js';
 import { activeFx } from './Fx.js';
 import { getTime } from './util/misc.js';
@@ -110,6 +111,16 @@ class BufView {
 	}
 
 	fillFromBuf(u32buf) {
+		/* Copy a row at a time - TypedArray.set is a memcpy, so this replaces
+		   width*height individual element writes with height bulk copies. */
+		if (u32buf.subarray) {
+			for (var i = 0; i < this.height; i++) {
+				this.data.set(u32buf.subarray(i * this.width, (i + 1) * this.width),
+					this.offx + (this.offy + i) * this.realwidth);
+			}
+			return;
+		}
+		/* plain arrays have no subarray, fall back to the element-wise path */
 		for (var i = 0; i < this.height; i++) {
 			for (var j = 0; j < this.width; j++) {
 				this.data[(this.offx + j) + (this.offy + i) * this.realwidth] = u32buf[j + i * this.width];
@@ -117,6 +128,19 @@ class BufView {
 		}
 	}
 }
+
+/* How many dirty chunks in one cluster before a single full-cluster upload is cheaper
+   than one dirty-rect upload per chunk. A cluster holds clusterChunkAmount^2 chunks,
+   so this trades a fixed 1024x1024 upload against this many small ones. */
+const fullClusterRedrawThreshold = 64;
+
+/* Regions whose coarse preview has already been asked for. Entries are dropped when the
+   cluster holding them goes away, since the preview pixels die with its canvas. */
+const lodRequested = new Set();
+/* Regions per cluster axis: a cluster is clusterChunkAmount chunks wide, a region 16. */
+const regionsPerCluster = 4;
+/* Above this many visible chunks, fetch coarse region previews before full detail. */
+const lodChunkThreshold = 2048;
 
 class ChunkCluster {
 	constructor(x, y) {
@@ -132,10 +156,38 @@ class ChunkCluster {
 		this.data = this.ctx.createImageData(this.canvas.width, this.canvas.height);
 		this.u32data = new Uint32Array(this.data.data.buffer);
 		this.chunks = [];
+		this.lodDirty = false; /* coarse preview painted, needs a full upload */
 	}
 
 	render() {
 		this.toUpdate = false;
+		var dirty = 0;
+		for (var i = this.chunks.length; i--;) {
+			if (this.chunks[i].needsRedraw) dirty++;
+		}
+		/* A coarse preview paints straight into the cluster buffer without belonging to
+		   any Chunk, so it can only be flushed as a whole-cluster upload. */
+		if (this.lodDirty) {
+			this.lodDirty = false;
+			for (var i = this.chunks.length; i--;) {
+				this.chunks[i].needsRedraw = false;
+			}
+			this.ctx.putImageData(this.data, 0, 0);
+			return;
+		}
+		if (dirty === 0) {
+			return;
+		}
+		/* putImageData costs mostly per call, not per pixel, so once enough chunks in
+		   this cluster changed - the normal case right after a batched load - a single
+		   upload of the whole cluster beats one small dirty-rect upload each. */
+		if (dirty >= fullClusterRedrawThreshold) {
+			for (var i = this.chunks.length; i--;) {
+				this.chunks[i].needsRedraw = false;
+			}
+			this.ctx.putImageData(this.data, 0, 0);
+			return;
+		}
 		for (var i = this.chunks.length; i--;) {
 			var c = this.chunks[i];
 			if (c.needsRedraw) {
@@ -148,6 +200,12 @@ class ChunkCluster {
 
 	remove() {
 		this.removed = true;
+		/* The coarse preview lived in this canvas, so forget it was ever fetched. */
+		for (var ry = this.y * regionsPerCluster; ry < (this.y + 1) * regionsPerCluster; ry++) {
+			for (var rx = this.x * regionsPerCluster; rx < (this.x + 1) * regionsPerCluster; rx++) {
+				lodRequested.delete(`${rx},${ry}`);
+			}
+		}
 		if (this.shown) {
 			var visiblecl = rendererValues.visibleClusters;
 			visiblecl.splice(visiblecl.indexOf(this), 1);
@@ -552,16 +610,163 @@ function alignCamera() {
 	cameraValues.y = alignedY;
 }
 
+/* Last chunk rect we scanned, so an unchanged view can skip the whole scan.
+   rescanAfter bounds how stale that decision can get, since chunks can go missing
+   without the camera moving (unloaded, or an expired request). */
+const lastScan = { x: 0, mx: 0, y: 0, my: 0, time: 0, valid: false };
+const rescanAfter = 1000;
+
+/* Throttle for unloadFarChunks - see onCameraMove. */
+let lastUnload = 0;
+const unloadInterval = 2000;
+
+/* Paints a region's coarse preview - one averaged colour per chunk - straight into the
+   cluster canvas. Chunks already held at full detail are left alone, and real chunks
+   arriving later simply overwrite these pixels. `rgb` is 768 bytes, one RGB triplet per
+   chunk in chunk-location order. */
+export function applyRegionLod(regionX, regionY, rgb) {
+	if (misc.world === null) {
+		return;
+	}
+	var chunkSize = protocol.chunkSize;
+	var clusterChunks = protocol.clusterChunkAmount;
+	var regionChunks = clusterChunks / regionsPerCluster; /* 16 */
+	var baseChunkX = regionX * regionChunks;
+	var baseChunkY = regionY * regionChunks;
+	/* A region never straddles two clusters, since regionChunks divides clusterChunks */
+	var clusterX = Math.floor(baseChunkX / clusterChunks);
+	var clusterY = Math.floor(baseChunkY / clusterChunks);
+	var key = `${clusterX},${clusterY}`;
+	var clusters = rendererValues.clusters;
+	var cluster = clusters[key];
+	if (!cluster) {
+		cluster = clusters[key] = new ChunkCluster(clusterX, clusterY);
+		updateVisible();
+	}
+	var data = cluster.u32data;
+	var realWidth = clusterChunks * chunkSize;
+	var originX = (baseChunkX - clusterX * clusterChunks) * chunkSize;
+	var originY = (baseChunkY - clusterY * clusterChunks) * chunkSize;
+	var worldChunks = misc.world.chunks;
+	var painted = 0;
+	for (var ly = 0; ly < regionChunks; ly++) {
+		for (var lx = 0; lx < regionChunks; lx++) {
+			if (worldChunks[`${baseChunkX + lx},${baseChunkY + ly}`]) {
+				continue; /* real detail already here, don't coarsen it */
+			}
+			var o = (ly * regionChunks + lx) * 3;
+			var color = 0xFF000000 | rgb[o + 2] << 16 | rgb[o + 1] << 8 | rgb[o];
+			var px = originX + lx * chunkSize;
+			var py = originY + ly * chunkSize;
+			for (var row = 0; row < chunkSize; row++) {
+				var start = px + (py + row) * realWidth;
+				data.fill(color, start, start + chunkSize);
+			}
+			painted++;
+		}
+	}
+	if (!painted) {
+		return;
+	}
+	cluster.lodDirty = true;
+	if (!cluster.toUpdate) {
+		cluster.toUpdate = true;
+		rendererValues.updatedClusters.push(cluster);
+	}
+	requestRender(renderer.rendertype.WORLD | renderer.rendertype.FX);
+}
+
+/* Asks for coarse previews covering the visible area, but only for regions not already
+   fetched. While panning that is normally just the strip coming into view. */
+function requestVisibleLod(x0, y0, x1, y1) {
+	var regionChunks = protocol.clusterChunkAmount / regionsPerCluster;
+	var r0x = Math.floor(x0 / regionChunks);
+	var r1x = Math.floor(x1 / regionChunks);
+	var r0y = Math.floor(y0 / regionChunks);
+	var r1y = Math.floor(y1 / regionChunks);
+	var minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+	for (var ry = r0y; ry <= r1y; ry++) {
+		for (var rx = r0x; rx <= r1x; rx++) {
+			if (lodRequested.has(`${rx},${ry}`)) {
+				continue;
+			}
+			if (rx < minX) minX = rx;
+			if (rx > maxX) maxX = rx;
+			if (ry < minY) minY = ry;
+			if (ry > maxY) maxY = ry;
+		}
+	}
+	if (minX > maxX) {
+		return;
+	}
+	for (var ry2 = minY; ry2 <= maxY; ry2++) {
+		for (var rx2 = minX; rx2 <= maxX; rx2++) {
+			lodRequested.add(`${rx2},${ry2}`);
+		}
+	}
+	net.protocol.requestRegionLod(minX, minY, maxX - minX + 1, maxY - minY + 1);
+}
+
 function requestMissingChunks() { /* TODO: move this to World */
 	var x = camera.x / protocol.chunkSize - 2 | 0;
 	var mx = camera.x / protocol.chunkSize + window.innerWidth / camera.zoom / protocol.chunkSize | 0;
 	var cy = camera.y / protocol.chunkSize - 2 | 0;
 	var my = camera.y / protocol.chunkSize + window.innerHeight / camera.zoom / protocol.chunkSize | 0;
-	while (++x <= mx) {
-		var y = cy;
-		while (++y <= my) {
-			misc.world.loadChunk(x, y);
+	/* This is called from onCameraMove, so it runs on every mousemove while dragging.
+	   The visible chunk rect is usually identical to last time, and rescanning it
+	   allocates a coordinate array plus a string key per visible chunk to reach the
+	   same conclusion - which at low zoom is tens of thousands of allocations a frame. */
+	var now = Date.now();
+	if (lastScan.valid && lastScan.x === x && lastScan.mx === mx
+		&& lastScan.y === cy && lastScan.my === my && now - lastScan.time < rescanAfter) {
+		return;
+	}
+	lastScan.x = x;
+	lastScan.mx = mx;
+	lastScan.y = cy;
+	lastScan.my = my;
+	lastScan.time = now;
+	lastScan.valid = true;
+	/* Gather the visible rect and ask for it in one go - one packet for the screen
+	   instead of one per chunk, which matters a lot when zoomed out.
+	   Chunks are collected in expanding rings around the middle of the view so the
+	   area being looked at is requested first. That ordering is what the in-flight cap
+	   in requestChunks relies on: when a view is too large to request at once, the part
+	   nearest the centre is the part that gets sent. */
+	var x0 = x + 1, y0 = cy + 1;
+	if (x0 > mx || y0 > my) {
+		return;
+	}
+	/* Too many chunks to fetch at full detail promptly, so get a coarse pass first.
+	   It costs 768 bytes per region against roughly 200KB of chunks, which is what
+	   makes a zoomed-out view appear at all quickly. */
+	if ((mx - x0 + 1) * (my - y0 + 1) > lodChunkThreshold && net.isConnected()) {
+		requestVisibleLod(x0, y0, mx, my);
+	}
+	var midX = (x0 + mx) >> 1;
+	var midY = (y0 + my) >> 1;
+	var maxRing = Math.max(midX - x0, mx - midX, midY - y0, my - midY);
+	var coords = [];
+	var push = (cx2, cy2) => {
+		if (cx2 >= x0 && cx2 <= mx && cy2 >= y0 && cy2 <= my) {
+			coords.push(cx2, cy2);
 		}
+	};
+	push(midX, midY);
+	for (var r = 1; r <= maxRing; r++) {
+		for (var i = -r; i <= r; i++) {
+			push(midX + i, midY - r); /* top edge */
+			push(midX + i, midY + r); /* bottom edge */
+		}
+		for (var j = -r + 1; j <= r - 1; j++) {
+			push(midX - r, midY + j); /* left edge */
+			push(midX + r, midY + j); /* right edge */
+		}
+	}
+	if (coords.length && misc.world.loadChunks(coords) === false) {
+		/* Hit the in-flight cap, so part of the view is still unrequested. Force the
+		   next call to rescan instead of taking the unchanged-view shortcut. */
+		lastScan.valid = false;
 	}
 }
 
@@ -571,6 +776,13 @@ function onCameraMove() {
 	updateVisible();
 	if (misc.world !== null) {
 		requestMissingChunks();
+		/* Free chunks that have moved far off screen. Throttled because it walks the
+		   whole chunk map, and this runs on every mousemove while dragging. */
+		var now = Date.now();
+		if (now - lastUnload > unloadInterval) {
+			lastUnload = now;
+			misc.world.unloadFarChunks();
+		}
 	}
 	requestRender(renderer.rendertype.FX);
 }
@@ -633,6 +845,17 @@ eventSys.on(e.renderer.addChunk, chunk => {
 	var size = protocol.chunkSize;
 	if (cluster.toUpdate || isVisible(chunk.x * size, chunk.y * size, size, size)) {
 		requestRender(renderer.rendertype.WORLD | renderer.rendertype.FX);
+	}
+});
+
+/* When a wave of chunks finishes, ask for the next one. A view too large to request
+   at once is filled in successive waves, and this is what drives them while the camera
+   sits still. Terminates on its own: once nothing is missing no request is made, so
+   waitingForChunks never returns to zero again and this stops firing. */
+eventSys.on(e.net.chunk.allLoaded, () => {
+	if (misc.world !== null) {
+		lastScan.valid = false;
+		requestMissingChunks();
 	}
 });
 

@@ -155,6 +155,10 @@ function getNewWorldApi() {
 	defProp('setPixel');
 	defProp('undo');
 	defProp('unloadFarChunks');
+	defProp('loadChunk');
+	defProp('loadChunks');
+	defProp('getChunkRGB');
+	defProp('getAreaRGB');
 	return obj;
 }
 

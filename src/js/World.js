@@ -57,6 +57,23 @@ export class Chunk {
 		this.needsRedraw = true;
 	}
 
+	/* True if this chunk already holds exactly the given pixels. Used to recognise a
+	   redundant redelivery, which otherwise looks indistinguishable from a paste. */
+	matches(u32data) {
+		if (!this.view) {
+			return false;
+		}
+		var s = protocol.chunkSize;
+		for (var y = 0, i = 0; y < s; y++) {
+			for (var x = 0; x < s; x++) {
+				if (this.view.get(x, y) !== u32data[i++]) {
+					return false;
+				}
+			}
+		}
+		return true;
+	}
+
 	remove() { /* Can be called when manually unloading too */
 		eventSys.emit(e.net.chunk.unload, this);
 	}
@@ -244,6 +261,26 @@ export class World {
 		}
 	}
 
+	/* Batched form of loadChunk. `coords` is a flat [x0, y0, x1, y1, ...] array;
+	   chunks already held locally are dropped before hitting the network. */
+	loadChunks(coords) {
+		if (!net.isConnected()) {
+			return true;
+		}
+		var missing = [];
+		for (var i = 0; i < coords.length; i += 2) {
+			var key = `${coords[i]},${coords[i + 1]}`;
+			if (!this.chunks[key]) {
+				missing.push(coords[i], coords[i + 1]);
+			}
+		}
+		if (!missing.length) {
+			return true;
+		}
+		/* false means the in-flight cap stopped it short and more remain to request */
+		return net.protocol.requestChunks(missing) !== false;
+	}
+
 	allChunksLoaded() {
 		return net.protocol.allChunksLoaded();
 	}
@@ -375,6 +412,61 @@ export class World {
 		return null;
 	}
 
+	/* Bulk RGB access for scripts and bots.
+	   Returns a Uint8Array of packed RGB triplets (3 bytes per pixel, row-major) for
+	   one chunk, or null if that chunk is not loaded. Saves callers from unpacking the
+	   0xAABBGGRR words the renderer stores internally. */
+	getChunkRGB(chunkX, chunkY) {
+		var chunk = this.chunks[`${chunkX},${chunkY}`];
+		if (!chunk || !chunk.view) {
+			return null;
+		}
+		var size = protocol.chunkSize;
+		var out = new Uint8Array(size * size * 3);
+		for (var y = 0, i = 0; y < size; y++) {
+			for (var x = 0; x < size; x++) {
+				var clr = chunk.view.get(x, y);
+				out[i++] = clr & 0xFF;
+				out[i++] = clr >> 8 & 0xFF;
+				out[i++] = clr >> 16 & 0xFF;
+			}
+		}
+		return out;
+	}
+
+	/* Same packing as getChunkRGB but for an arbitrary pixel rectangle, spanning as
+	   many chunks as needed. Pixels in chunks that aren't loaded are left as 0 and
+	   their positions are reported in the returned `missing` list. */
+	getAreaRGB(x, y, width, height) {
+		var size = protocol.chunkSize;
+		var out = new Uint8Array(width * height * 3);
+		var missing = [];
+		var seen = {};
+		for (var j = 0; j < height; j++) {
+			for (var i = 0; i < width; i++) {
+				var px = x + i;
+				var py = y + j;
+				var cx = Math.floor(px / size);
+				var cy = Math.floor(py / size);
+				var chunk = this.chunks[`${cx},${cy}`];
+				if (!chunk || !chunk.view) {
+					var mk = `${cx},${cy}`;
+					if (!seen[mk]) {
+						seen[mk] = true;
+						missing.push([cx, cy]);
+					}
+					continue;
+				}
+				var clr = chunk.get(px, py);
+				var o = (i + j * width) * 3;
+				out[o] = clr & 0xFF;
+				out[o + 1] = clr >> 8 & 0xFF;
+				out[o + 2] = clr >> 16 & 0xFF;
+			}
+		}
+		return { width: width, height: height, data: out, missing: missing };
+	}
+
 	validMousePos(tileX, tileY) {
 		return this.getPixel(tileX, tileY) !== null;
 	}
@@ -421,6 +513,31 @@ export class World {
 			chunk.set(data);
 			eventSys.emit(e.renderer.updateChunk, chunk);
 		}
+	}
+
+	/* Drops chunks that are further than options.unloadDistance chunks outside the
+	   visible area. This was referenced by the public API and by options.unloadDistance
+	   but never actually existed, so nothing ever freed a chunk while playing and both
+	   the chunk map and the cluster canvases grew without bound as you panned. */
+	unloadFarChunks() {
+		const chunkSize = protocol.chunkSize;
+		const margin = options.unloadDistance;
+		const minX = camera.x / chunkSize - margin;
+		const minY = camera.y / chunkSize - margin;
+		const maxX = camera.x / chunkSize + window.innerWidth / camera.zoom / chunkSize + margin;
+		const maxY = camera.y / chunkSize + window.innerHeight / camera.zoom / chunkSize + margin;
+		/* collect first - remove() mutates this.chunks through the unload event */
+		const far = [];
+		for (const key in this.chunks) {
+			const chunk = this.chunks[key];
+			if (chunk.x < minX || chunk.x > maxX || chunk.y < minY || chunk.y > maxY) {
+				far.push(chunk);
+			}
+		}
+		for (let i = 0; i < far.length; i++) {
+			far[i].remove();
+		}
+		return far.length;
 	}
 
 	unloadAllChunks() {
