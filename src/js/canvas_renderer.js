@@ -2,6 +2,7 @@
 import { protocol, EVENTS as e, options } from './conf.js';
 import { eventSys, PublicAPI } from './global.js';
 import { elements, misc } from './main.js';
+import { net } from './networking.js';
 import { player } from './local_player.js';
 import { activeFx } from './Fx.js';
 import { getTime } from './util/misc.js';
@@ -110,6 +111,15 @@ class BufView {
 	}
 
 	fillFromBuf(u32buf) {
+		/* row at a time, TypedArray.set is a memcpy */
+		if (u32buf.subarray) {
+			for (var i = 0; i < this.height; i++) {
+				this.data.set(u32buf.subarray(i * this.width, (i + 1) * this.width),
+					this.offx + (this.offy + i) * this.realwidth);
+			}
+			return;
+		}
+		/* plain arrays have no subarray */
 		for (var i = 0; i < this.height; i++) {
 			for (var j = 0; j < this.width; j++) {
 				this.data[(this.offx + j) + (this.offy + i) * this.realwidth] = u32buf[j + i * this.width];
@@ -117,6 +127,15 @@ class BufView {
 		}
 	}
 }
+
+/* Dirty chunks in a cluster before one full upload beats one per chunk */
+const fullClusterRedrawThreshold = 64;
+
+/* Regions whose LOD was already requested, cleared when their cluster goes */
+const lodRequested = new Set();
+const regionsPerCluster = 4;
+/* Above this many visible chunks, fetch region LOD before full detail */
+const lodChunkThreshold = 2048;
 
 class ChunkCluster {
 	constructor(x, y) {
@@ -132,10 +151,36 @@ class ChunkCluster {
 		this.data = this.ctx.createImageData(this.canvas.width, this.canvas.height);
 		this.u32data = new Uint32Array(this.data.data.buffer);
 		this.chunks = [];
+		this.lodDirty = false;
 	}
 
 	render() {
 		this.toUpdate = false;
+		var dirty = 0;
+		for (var i = this.chunks.length; i--;) {
+			if (this.chunks[i].needsRedraw) dirty++;
+		}
+		/* LOD paints into the buffer without belonging to a Chunk, so it can only
+		   be flushed as a whole-cluster upload */
+		if (this.lodDirty) {
+			this.lodDirty = false;
+			for (var i = this.chunks.length; i--;) {
+				this.chunks[i].needsRedraw = false;
+			}
+			this.ctx.putImageData(this.data, 0, 0);
+			return;
+		}
+		if (dirty === 0) {
+			return;
+		}
+		/* putImageData costs mostly per call, so past a point one upload wins */
+		if (dirty >= fullClusterRedrawThreshold) {
+			for (var i = this.chunks.length; i--;) {
+				this.chunks[i].needsRedraw = false;
+			}
+			this.ctx.putImageData(this.data, 0, 0);
+			return;
+		}
 		for (var i = this.chunks.length; i--;) {
 			var c = this.chunks[i];
 			if (c.needsRedraw) {
@@ -148,6 +193,12 @@ class ChunkCluster {
 
 	remove() {
 		this.removed = true;
+		/* the LOD pixels lived in this canvas, so forget they were fetched */
+		for (var ry = this.y * regionsPerCluster; ry < (this.y + 1) * regionsPerCluster; ry++) {
+			for (var rx = this.x * regionsPerCluster; rx < (this.x + 1) * regionsPerCluster; rx++) {
+				lodRequested.delete(`${rx},${ry}`);
+			}
+		}
 		if (this.shown) {
 			var visiblecl = rendererValues.visibleClusters;
 			visiblecl.splice(visiblecl.indexOf(this), 1);
@@ -552,16 +603,149 @@ function alignCamera() {
 	cameraValues.y = alignedY;
 }
 
+/* Last rect scanned, so an unchanged view skips the scan. rescanAfter bounds how
+   stale that can get, since chunks go missing without the camera moving. */
+const lastScan = { x: 0, mx: 0, y: 0, my: 0, time: 0, valid: false };
+const rescanAfter = 1000;
+
+let lastUnload = 0;
+const unloadInterval = 2000;
+
+/* Paints a region's LOD into the cluster canvas. `rgb` is 768 bytes, one triplet
+   per chunk in chunk-location order. Chunks held at full detail are left alone. */
+export function applyRegionLod(regionX, regionY, rgb) {
+	if (misc.world === null) {
+		return;
+	}
+	var chunkSize = protocol.chunkSize;
+	var clusterChunks = protocol.clusterChunkAmount;
+	var regionChunks = clusterChunks / regionsPerCluster;
+	var baseChunkX = regionX * regionChunks;
+	var baseChunkY = regionY * regionChunks;
+	/* a region never straddles two clusters, regionChunks divides clusterChunks */
+	var clusterX = Math.floor(baseChunkX / clusterChunks);
+	var clusterY = Math.floor(baseChunkY / clusterChunks);
+	var key = `${clusterX},${clusterY}`;
+	var clusters = rendererValues.clusters;
+	var cluster = clusters[key];
+	if (!cluster) {
+		cluster = clusters[key] = new ChunkCluster(clusterX, clusterY);
+		updateVisible();
+	}
+	var data = cluster.u32data;
+	var realWidth = clusterChunks * chunkSize;
+	var originX = (baseChunkX - clusterX * clusterChunks) * chunkSize;
+	var originY = (baseChunkY - clusterY * clusterChunks) * chunkSize;
+	var worldChunks = misc.world.chunks;
+	var painted = 0;
+	for (var ly = 0; ly < regionChunks; ly++) {
+		for (var lx = 0; lx < regionChunks; lx++) {
+			if (worldChunks[`${baseChunkX + lx},${baseChunkY + ly}`]) {
+				continue; /* real detail here, don't coarsen it */
+			}
+			var o = (ly * regionChunks + lx) * 3;
+			var color = 0xFF000000 | rgb[o + 2] << 16 | rgb[o + 1] << 8 | rgb[o];
+			var px = originX + lx * chunkSize;
+			var py = originY + ly * chunkSize;
+			for (var row = 0; row < chunkSize; row++) {
+				var start = px + (py + row) * realWidth;
+				data.fill(color, start, start + chunkSize);
+			}
+			painted++;
+		}
+	}
+	if (!painted) {
+		return;
+	}
+	cluster.lodDirty = true;
+	if (!cluster.toUpdate) {
+		cluster.toUpdate = true;
+		rendererValues.updatedClusters.push(cluster);
+	}
+	requestRender(renderer.rendertype.WORLD | renderer.rendertype.FX);
+}
+
+/* Requests LOD for visible regions not already fetched, normally just the strip
+   coming into view. */
+function requestVisibleLod(x0, y0, x1, y1) {
+	var regionChunks = protocol.clusterChunkAmount / regionsPerCluster;
+	var r0x = Math.floor(x0 / regionChunks);
+	var r1x = Math.floor(x1 / regionChunks);
+	var r0y = Math.floor(y0 / regionChunks);
+	var r1y = Math.floor(y1 / regionChunks);
+	var minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+	for (var ry = r0y; ry <= r1y; ry++) {
+		for (var rx = r0x; rx <= r1x; rx++) {
+			if (lodRequested.has(`${rx},${ry}`)) {
+				continue;
+			}
+			if (rx < minX) minX = rx;
+			if (rx > maxX) maxX = rx;
+			if (ry < minY) minY = ry;
+			if (ry > maxY) maxY = ry;
+		}
+	}
+	if (minX > maxX) {
+		return;
+	}
+	for (var ry2 = minY; ry2 <= maxY; ry2++) {
+		for (var rx2 = minX; rx2 <= maxX; rx2++) {
+			lodRequested.add(`${rx2},${ry2}`);
+		}
+	}
+	net.protocol.requestRegionLod(minX, minY, maxX - minX + 1, maxY - minY + 1);
+}
+
 function requestMissingChunks() { /* TODO: move this to World */
 	var x = camera.x / protocol.chunkSize - 2 | 0;
 	var mx = camera.x / protocol.chunkSize + window.innerWidth / camera.zoom / protocol.chunkSize | 0;
 	var cy = camera.y / protocol.chunkSize - 2 | 0;
 	var my = camera.y / protocol.chunkSize + window.innerHeight / camera.zoom / protocol.chunkSize | 0;
-	while (++x <= mx) {
-		var y = cy;
-		while (++y <= my) {
-			misc.world.loadChunk(x, y);
+	/* runs on every mousemove while dragging, and the rect is usually unchanged */
+	var now = Date.now();
+	if (lastScan.valid && lastScan.x === x && lastScan.mx === mx
+		&& lastScan.y === cy && lastScan.my === my && now - lastScan.time < rescanAfter) {
+		return;
+	}
+	lastScan.x = x;
+	lastScan.mx = mx;
+	lastScan.y = cy;
+	lastScan.my = my;
+	lastScan.time = now;
+	lastScan.valid = true;
+	/* Collected in expanding rings from the middle so the area being looked at is
+	   requested first, which is what the in-flight cap in requestChunks relies on. */
+	var x0 = x + 1, y0 = cy + 1;
+	if (x0 > mx || y0 > my) {
+		return;
+	}
+	/* too many to fetch at full detail promptly, get a coarse pass first */
+	if ((mx - x0 + 1) * (my - y0 + 1) > lodChunkThreshold && net.isConnected()) {
+		requestVisibleLod(x0, y0, mx, my);
+	}
+	var midX = (x0 + mx) >> 1;
+	var midY = (y0 + my) >> 1;
+	var maxRing = Math.max(midX - x0, mx - midX, midY - y0, my - midY);
+	var coords = [];
+	var push = (cx2, cy2) => {
+		if (cx2 >= x0 && cx2 <= mx && cy2 >= y0 && cy2 <= my) {
+			coords.push(cx2, cy2);
 		}
+	};
+	push(midX, midY);
+	for (var r = 1; r <= maxRing; r++) {
+		for (var i = -r; i <= r; i++) {
+			push(midX + i, midY - r);
+			push(midX + i, midY + r);
+		}
+		for (var j = -r + 1; j <= r - 1; j++) {
+			push(midX - r, midY + j);
+			push(midX + r, midY + j);
+		}
+	}
+	if (coords.length && misc.world.loadChunks(coords) === false) {
+		/* hit the in-flight cap, force the next call to rescan */
+		lastScan.valid = false;
 	}
 }
 
@@ -571,6 +755,12 @@ function onCameraMove() {
 	updateVisible();
 	if (misc.world !== null) {
 		requestMissingChunks();
+		/* throttled, it walks the whole chunk map */
+		var now = Date.now();
+		if (now - lastUnload > unloadInterval) {
+			lastUnload = now;
+			misc.world.unloadFarChunks();
+		}
 	}
 	requestRender(renderer.rendertype.FX);
 }
@@ -633,6 +823,15 @@ eventSys.on(e.renderer.addChunk, chunk => {
 	var size = protocol.chunkSize;
 	if (cluster.toUpdate || isVisible(chunk.x * size, chunk.y * size, size, size)) {
 		requestRender(renderer.rendertype.WORLD | renderer.rendertype.FX);
+	}
+});
+
+/* Drives the next wave while the camera sits still. Self-terminating: once nothing
+   is missing no request is made, so waitingForChunks never returns to zero. */
+eventSys.on(e.net.chunk.allLoaded, () => {
+	if (misc.world !== null) {
+		lastScan.valid = false;
+		requestMissingChunks();
 	}
 });
 

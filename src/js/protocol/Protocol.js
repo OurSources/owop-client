@@ -43,6 +43,13 @@ export class Protocol {
 
     }
 
+    /* Flat [x0, y0, x1, y1, ...] array. */
+    requestChunks(coords) {
+        for (var i = 0; i < coords.length; i += 2) {
+            this.requestChunk(coords[i], coords[i + 1]);
+        }
+    }
+
     updatePixel(x, y, rgb) {
 
     }

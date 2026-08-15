@@ -4,12 +4,12 @@ import { EVENTS as e, RANK, options } from './../conf.js';
 import { eventSys, PublicAPI } from './../global.js';
 import { Chunk } from './../World.js';
 import { Bucket } from './../util/Bucket.js';
-import { decompress } from './../util/misc.js';
+import { decompress, decompressToU32 } from './../util/misc.js';
 import { loadAndRequestCaptcha } from './../captcha.js';
 import { colorUtils as color } from './../util/color.js';
 import { player, shouldUpdate, networkRankVerification } from './../local_player.js';
-import { camera } from './../canvas_renderer.js';
-import { mouse, elements } from './../main.js';
+import { camera, applyRegionLod } from './../canvas_renderer.js';
+import { mouse, elements, misc } from './../main.js';
 import { retryingConnect } from './../main.js';
 
 export const captchaState = {
@@ -73,9 +73,25 @@ export const OldProtocol = {
 			setPQuota: 6,
 			chunkProtected: 7,
 			maxCount: 8,
-			donUntil: 9
+			donUntil: 9,
+			chunkBatch: 11,
+			regionLod: 12
 		}
-	}
+	},
+	/* Region LOD: one averaged colour per chunk, 768 bytes per region. */
+	regionLodGuard: 25566,
+	regionChunkAmount: 16,
+	maxLodRegionsPerRequest: 1024,
+	/* Batched chunk request: [u16 guard][u16 count][u16 reserved] + count * (i32 x, i32 y) */
+	chunkBatchGuard: 25565,
+	/* Server frame cap is 32768 bytes, so at most (32768 - 6) / 8 = 4095 per packet */
+	maxChunkBatchCount: 2048,
+	/* How long a chunk may sit in chunksLoading before it counts as lost */
+	chunkRequestTimeout: 10000,
+	/* Chunks must have stopped arriving this long before stale ones are swept */
+	chunkStallTimeout: 3000,
+	/* Upper bound on chunks awaiting a reply */
+	maxInFlightChunks: 4096
 };
 
 for (const id in OldProtocol.tools) {
@@ -110,6 +126,7 @@ class OldProtocolImpl extends Protocol {
 		this.worldName = worldName ? worldName : options.defaultWorld;
 		this.players = {};
 		this.chunksLoading = {}; /* duplicate */
+		this.lastChunkTime = Date.now();
 		this.waitingForChunks = 0;
 		this.pendingEdits = {};
 		this.id = null;
@@ -271,34 +288,32 @@ class OldProtocolImpl extends Protocol {
 				break;
 
 			case oc.chunkLoad: // Get chunk
-				var chunkX = dv.getInt32(1, true);
-				var chunkY = dv.getInt32(5, true);
-				var locked = dv.getUint8(9);
-				var u8data = new Uint8Array(message, 10, message.byteLength - 10);
-				//console.log(u8data);
-				u8data = decompress(u8data);
-				var key = `${chunkX},${chunkY}`;
-				var u32data = new Uint32Array(OldProtocol.chunkSize * OldProtocol.chunkSize);
-				for (var i = 0, u = 0; i < u8data.length; i += 3) { /* Need to make a copy ;-; */
-					var color = u8data[i + 2] << 16
-						| u8data[i + 1] << 8
-						| u8data[i]
-					u32data[u++] = 0xFF000000 | color;
-				}
-				if (!this.chunksLoading[key]) {
-					eventSys.emit(e.net.chunk.set, chunkX, chunkY, u32data);
-				} else {
-					delete this.chunksLoading[key];
-					if (--this.waitingForChunks == 0) {
-						clearTimeout(this.clet);
-						this.clet = setTimeout(() => {
-							eventSys.emit(e.net.chunk.allLoaded);
-						}, 100);
-					}
-					var chunk = new Chunk(chunkX, chunkY, u32data, locked);
-					eventSys.emit(e.net.chunk.load, chunk);
+				this.processChunkPacket(message, 0, message.byteLength);
+				break;
+
+			case oc.regionLod: { // Coarse region previews: one colour per chunk
+				var lodCount = dv.getUint16(1, true);
+				var lodOffset = 3;
+				for (var lr = 0; lr < lodCount; lr++) {
+					var regionX = dv.getInt32(lodOffset, true);
+					var regionY = dv.getInt32(lodOffset + 4, true);
+					applyRegionLod(regionX, regionY, new Uint8Array(message, lodOffset + 8, 768));
+					lodOffset += 776;
 				}
 				break;
+			}
+
+			case oc.chunkBatch: { // Get many chunks in one message
+				var batchCount = dv.getUint16(1, true);
+				var batchOffset = 3;
+				for (var b = 0; b < batchCount; b++) {
+					var partLen = dv.getUint16(batchOffset, true);
+					batchOffset += 2;
+					this.processChunkPacket(message, batchOffset, partLen);
+					batchOffset += partLen;
+				}
+				break;
+			}
 
 			case oc.teleport: // Teleport
 				let x = dv.getInt32(1, true);
@@ -382,19 +397,142 @@ class OldProtocolImpl extends Protocol {
 		return nstr[1];
 	}
 
+	/* `offset`/`length` locate the packet, so batched and standalone share this. */
+	processChunkPacket(buffer, offset, length) {
+		var dv = new DataView(buffer, offset, length);
+		var chunkX = dv.getInt32(1, true);
+		var chunkY = dv.getInt32(5, true);
+		var locked = dv.getUint8(9);
+		var u8data = new Uint8Array(buffer, offset + 10, length - 10);
+		var key = `${chunkX},${chunkY}`;
+		var u32data = decompressToU32(u8data, new Uint32Array(OldProtocol.chunkSize * OldProtocol.chunkSize));
+		this.lastChunkTime = Date.now();
+		if (this.chunksLoading[key]) {
+			delete this.chunksLoading[key];
+			if (--this.waitingForChunks == 0) {
+				clearTimeout(this.clet);
+				this.clet = setTimeout(() => {
+					eventSys.emit(e.net.chunk.allLoaded);
+				}, 100);
+			}
+			eventSys.emit(e.net.chunk.load, new Chunk(chunkX, chunkY, u32data, locked));
+			return;
+		}
+		/* Not in flight. A chunk we already hold is a real update (paste/erase);
+		   one we don't is unexpected data, adopted as a plain load. */
+		var held = misc.world ? misc.world.chunks[key] : null;
+		if (held) {
+			/* identical redelivery, don't repaint or fire the paste effect */
+			if (!held.matches(u32data)) {
+				eventSys.emit(e.net.chunk.set, chunkX, chunkY, u32data);
+			}
+		} else {
+			eventSys.emit(e.net.chunk.load, new Chunk(chunkX, chunkY, u32data, locked));
+		}
+	}
+
 	requestChunk(x, y) {
 		let wb = OldProtocol.worldBorder;
 		var key = `${x},${y}`;
 		if (x > wb || y > wb || x < ~wb || y < ~wb || this.chunksLoading[key]) {
 			return;
 		}
-		this.chunksLoading[key] = true;
+		this.chunksLoading[key] = Date.now();
 		this.waitingForChunks++;
 		var array = new ArrayBuffer(8);
 		var dv = new DataView(array);
 		dv.setInt32(0, x, true);
 		dv.setInt32(4, y, true);
 		this.ws.send(array);
+	}
+
+	/* One 16-byte packet per rectangle, split into bands under the server's cap. */
+	requestRegionLod(regionX, regionY, width, height) {
+		if (width <= 0 || height <= 0) {
+			return;
+		}
+		var maxRegions = OldProtocol.maxLodRegionsPerRequest;
+		var bandHeight = Math.max(1, Math.floor(maxRegions / width));
+		for (var y = 0; y < height; y += bandHeight) {
+			var h = Math.min(bandHeight, height - y);
+			var array = new ArrayBuffer(16);
+			var dv = new DataView(array);
+			dv.setUint16(0, OldProtocol.regionLodGuard, true);
+			dv.setUint16(2, 0, true); /* reserved */
+			dv.setInt32(4, regionX, true);
+			dv.setInt32(8, regionY + y, true);
+			dv.setUint16(12, width, true);
+			dv.setUint16(14, h, true);
+			this.ws.send(array);
+		}
+	}
+
+	/* Flat [x0, y0, x1, y1, ...] array. Pending and out-of-bounds are dropped. */
+	requestChunks(coords) {
+		let wb = OldProtocol.worldBorder;
+		var wanted = [];
+		/* Expire requests that never got an answer, else a lost chunk stays a
+		   permanent hole. Only swept once nothing has arrived for a while, so a
+		   slow but healthy load is not mistaken for a stall. */
+		var now = Date.now();
+		if (now - this.lastChunkTime > OldProtocol.chunkStallTimeout) {
+			for (var stale in this.chunksLoading) {
+				if (now - this.chunksLoading[stale] > OldProtocol.chunkRequestTimeout) {
+					delete this.chunksLoading[stale];
+					if (this.waitingForChunks > 0) {
+						this.waitingForChunks--;
+					}
+				}
+			}
+		}
+		/* Bound how many are in flight. `coords` arrives nearest-first, so truncating
+		   keeps what is being looked at; the rest is picked up by a later scan. */
+		var budget = OldProtocol.maxInFlightChunks - this.waitingForChunks;
+		var truncated = false;
+		for (var i = 0; i < coords.length; i += 2) {
+			var x = coords[i];
+			var y = coords[i + 1];
+			var key = `${x},${y}`;
+			if (x > wb || y > wb || x < ~wb || y < ~wb || this.chunksLoading[key]) {
+				continue;
+			}
+			if (budget <= 0) {
+				truncated = true;
+				break;
+			}
+			budget--;
+			/* must be a timestamp, the sweep above subtracts it from Date.now() */
+			this.chunksLoading[key] = now;
+			this.waitingForChunks++;
+			wanted.push(x, y);
+		}
+		if (!wanted.length) {
+			return !truncated;
+		}
+		/* one chunk is cheaper through the original 8-byte packet */
+		if (wanted.length === 2) {
+			var single = new ArrayBuffer(8);
+			var sdv = new DataView(single);
+			sdv.setInt32(0, wanted[0], true);
+			sdv.setInt32(4, wanted[1], true);
+			this.ws.send(single);
+			return !truncated;
+		}
+		var max = OldProtocol.maxChunkBatchCount;
+		for (var sent = 0; sent < wanted.length; sent += max * 2) {
+			var count = Math.min(max, (wanted.length - sent) / 2);
+			var array = new ArrayBuffer(6 + count * 8);
+			var dv = new DataView(array);
+			dv.setUint16(0, OldProtocol.chunkBatchGuard, true);
+			dv.setUint16(2, count, true);
+			dv.setUint16(4, 0, true); /* reserved */
+			for (var j = 0; j < count; j++) {
+				dv.setInt32(6 + j * 8, wanted[sent + j * 2], true);
+				dv.setInt32(6 + j * 8 + 4, wanted[sent + j * 2 + 1], true);
+			}
+			this.ws.send(array);
+		}
+		return !truncated;
 	}
 
 	allChunksLoaded() {
