@@ -345,10 +345,7 @@ export function waitFrames(n, cb) {
 	})
 }
 
-/* Decodes a chunk straight into a Uint32Array of 0xAABBGGRR pixels.
-   decompress() below produces an intermediate byte array that the caller then has to
-   walk a second time to build the u32 view; this does it in one pass with one
-   allocation, which matters when a batch delivers hundreds of chunks at once. */
+/* Like decompress(), but writes 0xAABBGGRR pixels straight into `out` in one pass. */
 export function decompressToU32(u8arr, out) {
 	var numOfRepeats = u8arr[3] << 8 | u8arr[2];
 	var offset = numOfRepeats * 2 + 4;

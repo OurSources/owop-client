@@ -422,10 +422,8 @@ eventSys.once(e.misc.toolsRendered, () => {
 				}
 			});
 
-			/* getPixel returns null for any chunk that isn't loaded, so exporting a
-			   selection larger than what has actually been viewed silently produced
-			   blank areas. Pull in every chunk the selection covers first.
-			   Resolves with how many chunks are still missing: 0 means complete. */
+			/* Loads every chunk the selection covers, since getPixel returns null for
+			   unloaded ones. Resolves with how many are still missing. */
 			function ensureAreaLoaded(x, y, w, h, stallTimeout) {
 				return new Promise(resolve => {
 					var cs = protocol.chunkSize;

@@ -78,28 +78,19 @@ export const OldProtocol = {
 			regionLod: 12
 		}
 	},
-	/* Region level-of-detail: one averaged colour per chunk, so a 16x16-chunk region
-	   costs 768 bytes instead of the ~200KB its chunks cost at full detail. Requested
-	   when the view is too wide to fetch in detail promptly. */
+	/* Region LOD: one averaged colour per chunk, 768 bytes per region. */
 	regionLodGuard: 25566,
 	regionChunkAmount: 16,
 	maxLodRegionsPerRequest: 1024,
-	/* Batched chunk requests: [u16 guard][u16 count][u16 reserved] + count * (i32 x, i32 y).
-	   The guard doubles as a marker so the server can tell these apart from the
-	   fixed-length packets it dispatches on byte length. */
+	/* Batched chunk request: [u16 guard][u16 count][u16 reserved] + count * (i32 x, i32 y) */
 	chunkBatchGuard: 25565,
-	/* The server caps incoming frames at 32768 bytes (uWS maxPayloadLength), so a
-	   request packet can hold at most (32768 - 6) / 8 = 4095 chunks. Stay well under
-	   that and split larger screens across several packets. */
+	/* Server frame cap is 32768 bytes, so at most (32768 - 6) / 8 = 4095 per packet */
 	maxChunkBatchCount: 2048,
-	/* How long a chunk may stay in chunksLoading before it is considered lost and
-	   becomes eligible to be requested again. */
+	/* How long a chunk may sit in chunksLoading before it counts as lost */
 	chunkRequestTimeout: 10000,
-	/* Chunks must have stopped arriving for this long before stale requests are swept,
-	   so a slow but healthy load is never mistaken for a stall. */
+	/* Chunks must have stopped arriving this long before stale ones are swept */
 	chunkStallTimeout: 3000,
-	/* Upper bound on chunks awaiting a reply. Caps how much of a very zoomed-out view
-	   is committed to at once, so the stream stays responsive to camera movement. */
+	/* Upper bound on chunks awaiting a reply */
 	maxInFlightChunks: 4096
 };
 
@@ -135,7 +126,7 @@ class OldProtocolImpl extends Protocol {
 		this.worldName = worldName ? worldName : options.defaultWorld;
 		this.players = {};
 		this.chunksLoading = {}; /* duplicate */
-		this.lastChunkTime = Date.now(); /* when a chunk last arrived, for stall detection */
+		this.lastChunkTime = Date.now();
 		this.waitingForChunks = 0;
 		this.pendingEdits = {};
 		this.id = null;
@@ -406,8 +397,7 @@ class OldProtocolImpl extends Protocol {
 		return nstr[1];
 	}
 
-	/* Decodes one chunk packet. `offset`/`length` let this read a packet embedded in a
-	   batch message as well as a standalone one, so both paths share this code. */
+	/* `offset`/`length` locate the packet, so batched and standalone share this. */
 	processChunkPacket(buffer, offset, length) {
 		var dv = new DataView(buffer, offset, length);
 		var chunkX = dv.getInt32(1, true);
@@ -415,8 +405,6 @@ class OldProtocolImpl extends Protocol {
 		var locked = dv.getUint8(9);
 		var u8data = new Uint8Array(buffer, offset + 10, length - 10);
 		var key = `${chunkX},${chunkY}`;
-		/* Single pass straight to pixels - no intermediate byte array to allocate and
-		   re-walk, which is the difference between one and two allocations per chunk. */
 		var u32data = decompressToU32(u8data, new Uint32Array(OldProtocol.chunkSize * OldProtocol.chunkSize));
 		this.lastChunkTime = Date.now();
 		if (this.chunksLoading[key]) {
@@ -430,15 +418,11 @@ class OldProtocolImpl extends Protocol {
 			eventSys.emit(e.net.chunk.load, new Chunk(chunkX, chunkY, u32data, locked));
 			return;
 		}
-		/* Not marked in flight. If we already hold this chunk it really is an update
-		   (a paste or erase), so let chunk.set run and show its effect. If we don't
-		   hold it, this is just chunk data we didn't expect - adopt it as a plain load
-		   rather than dropping it, and without the paste effect firing. */
+		/* Not in flight. A chunk we already hold is a real update (paste/erase);
+		   one we don't is unexpected data, adopted as a plain load. */
 		var held = misc.world ? misc.world.chunks[key] : null;
 		if (held) {
-			/* A redundant redelivery carries pixels we already have. Emitting chunk.set
-			   for it would repaint the chunk and fire the paste fade for no visible
-			   change, so only treat it as an update if something actually differs. */
+			/* identical redelivery, don't repaint or fire the paste effect */
 			if (!held.matches(u32data)) {
 				eventSys.emit(e.net.chunk.set, chunkX, chunkY, u32data);
 			}
@@ -453,7 +437,7 @@ class OldProtocolImpl extends Protocol {
 		if (x > wb || y > wb || x < ~wb || y < ~wb || this.chunksLoading[key]) {
 			return;
 		}
-		this.chunksLoading[key] = Date.now(); /* timestamp so stale requests can expire */
+		this.chunksLoading[key] = Date.now();
 		this.waitingForChunks++;
 		var array = new ArrayBuffer(8);
 		var dv = new DataView(array);
@@ -462,9 +446,7 @@ class OldProtocolImpl extends Protocol {
 		this.ws.send(array);
 	}
 
-	/* Asks for coarse previews of a rectangle of regions. One 16-byte packet covers the
-	   whole rectangle; large rectangles are split into horizontal bands to stay under
-	   the server's per-request region cap. */
+	/* One 16-byte packet per rectangle, split into bands under the server's cap. */
 	requestRegionLod(regionX, regionY, width, height) {
 		if (width <= 0 || height <= 0) {
 			return;
@@ -485,21 +467,15 @@ class OldProtocolImpl extends Protocol {
 		}
 	}
 
-	/* Requests many chunks with a single packet instead of one packet each.
-	   `coords` is a flat [x0, y0, x1, y1, ...] array; already-pending and
-	   out-of-bounds chunks are dropped here so the server never sees them. */
+	/* Flat [x0, y0, x1, y1, ...] array. Pending and out-of-bounds are dropped. */
 	requestChunks(coords) {
 		let wb = OldProtocol.worldBorder;
 		var wanted = [];
-		/* Expire in-flight requests that never got an answer. Without this a single
-		   lost chunk is a permanent hole: the chunk is absent from the world so it
-		   keeps getting picked up as missing, but chunksLoading still claims it is
-		   on its way, so it is filtered out and never asked for again. */
+		/* Expire requests that never got an answer, else a lost chunk stays a
+		   permanent hole. Only swept once nothing has arrived for a while, so a
+		   slow but healthy load is not mistaken for a stall. */
 		var now = Date.now();
 		if (now - this.lastChunkTime > OldProtocol.chunkStallTimeout) {
-			/* Only sweep when nothing has arrived for a while. A big load legitimately
-			   keeps chunks queued for seconds, and sweeping during one would re-request
-			   chunks that are simply still on their way. */
 			for (var stale in this.chunksLoading) {
 				if (now - this.chunksLoading[stale] > OldProtocol.chunkRequestTimeout) {
 					delete this.chunksLoading[stale];
@@ -509,12 +485,8 @@ class OldProtocolImpl extends Protocol {
 				}
 			}
 		}
-		/* Keep only a bounded number of chunks in flight. Zoomed far out one screen can
-		   be tens of thousands of chunks and tens of megabytes, taking many seconds to
-		   stream; committing to all of it up front means the server keeps sending chunks
-		   for where the camera used to be. `coords` arrives nearest-first, so truncating
-		   here keeps the part actually being looked at and the rest is picked up by a
-		   later scan as chunks land. */
+		/* Bound how many are in flight. `coords` arrives nearest-first, so truncating
+		   keeps what is being looked at; the rest is picked up by a later scan. */
 		var budget = OldProtocol.maxInFlightChunks - this.waitingForChunks;
 		var truncated = false;
 		for (var i = 0; i < coords.length; i += 2) {
@@ -529,8 +501,7 @@ class OldProtocolImpl extends Protocol {
 				break;
 			}
 			budget--;
-			/* Must be a timestamp, not `true` - the sweep above subtracts this from
-			   Date.now(), and `true` coerces to 1, making every entry look ancient. */
+			/* must be a timestamp, the sweep above subtracts it from Date.now() */
 			this.chunksLoading[key] = now;
 			this.waitingForChunks++;
 			wanted.push(x, y);
@@ -538,7 +509,7 @@ class OldProtocolImpl extends Protocol {
 		if (!wanted.length) {
 			return !truncated;
 		}
-		/* A single chunk is cheaper to send through the original 8-byte packet. */
+		/* one chunk is cheaper through the original 8-byte packet */
 		if (wanted.length === 2) {
 			var single = new ArrayBuffer(8);
 			var sdv = new DataView(single);
