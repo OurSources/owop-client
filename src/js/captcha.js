@@ -6,7 +6,7 @@ import { windowSys, GUIWindow, UtilDialog } from './windowsys.js';
 import { misc } from './main.js';
 
 // Cloudflare Turnstile site key
-const SITEKEY = "1x00000000000000000000AA";
+const SITEKEY = "0x4AAAAAAFN9CvUSRcovi0IT";
 
 function loadCaptcha(onload) {
 	if (!window.turnstile) {
