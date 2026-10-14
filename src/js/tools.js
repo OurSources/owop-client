@@ -422,24 +422,81 @@ eventSys.once(e.misc.toolsRendered, () => {
 				}
 			});
 
+			/* Loads every chunk the selection covers, since getPixel returns null for
+			   unloaded ones. Resolves with how many are still missing. */
+			function ensureAreaLoaded(x, y, w, h, stallTimeout) {
+				return new Promise(resolve => {
+					var cs = protocol.chunkSize;
+					var cx0 = Math.floor(x / cs), cx1 = Math.floor((x + w - 1) / cs);
+					var cy0 = Math.floor(y / cs), cy1 = Math.floor((y + h - 1) / cs);
+					var total = (cx1 - cx0 + 1) * (cy1 - cy0 + 1);
+					var lastMissing = -1;
+					var lastProgress = Date.now();
+					var tick = () => {
+						if (misc.world === null || !net.isConnected()) {
+							PublicAPI.statusMsg(false, null);
+							return resolve(-1);
+						}
+						var missing = [];
+						for (var cy = cy0; cy <= cy1; cy++) {
+							for (var cx = cx0; cx <= cx1; cx++) {
+								if (!misc.world.chunks[`${cx},${cy}`]) {
+									missing.push(cx, cy);
+								}
+							}
+						}
+						var left = missing.length / 2;
+						if (left === 0) {
+							PublicAPI.statusMsg(false, null);
+							return resolve(0);
+						}
+						if (left !== lastMissing) {
+							lastMissing = left;
+							lastProgress = Date.now();
+						} else if (Date.now() - lastProgress > stallTimeout) {
+							/* nothing has arrived for a while, stop waiting */
+							PublicAPI.statusMsg(false, null);
+							return resolve(left);
+						}
+						PublicAPI.statusMsg(true, `Downloading area to export: ${total - left}/${total} chunks`);
+						/* loadChunks bounds how many are in flight, so calling it
+						   repeatedly refills the queue as chunks land */
+						misc.world.loadChunks(missing);
+						setTimeout(tick, 150);
+					};
+					tick();
+				});
+			}
+
 			function dlarea(x, y, w, h, onblob){
-				var c = document.createElement('canvas');
-				c.width = w;
-				c.height = h;
-				var ctx = c.getContext('2d');
-				var d = ctx.createImageData(w, h);
-				for(var i = y; i < y + h; i++){
-				  for(var j = x; j < x + w; j++){
-					var pix = misc.world.getPixel(j, i);
-					if (!pix) continue;
-					d.data[4*((i - y)*w + (j - x))] = pix[0];
-					d.data[4*((i - y)*w + (j - x)) + 1] = pix[1];
-					d.data[4*((i - y)*w + (j - x)) + 2] = pix[2];
-					d.data[4*((i - y)*w + (j - x)) + 3] = 255;
-				  }
-				}
-				ctx.putImageData(d, 0, 0);
-				c.toBlob(onblob);
+				ensureAreaLoaded(x, y, w, h, 15000).then(missing => {
+					if (missing > 0) {
+						eventSys.emit(e.net.chat, JSON.stringify({
+							sender: 'server',
+							type: 'error',
+							data: {
+								message: `[Export] ${missing} chunk(s) could not be loaded and are blank in the image.`
+							}
+						}));
+					}
+					var c = document.createElement('canvas');
+					c.width = w;
+					c.height = h;
+					var ctx = c.getContext('2d');
+					var d = ctx.createImageData(w, h);
+					for(var i = y; i < y + h; i++){
+					  for(var j = x; j < x + w; j++){
+						var pix = misc.world.getPixel(j, i);
+						if (!pix) continue;
+						d.data[4*((i - y)*w + (j - x))] = pix[0];
+						d.data[4*((i - y)*w + (j - x)) + 1] = pix[1];
+						d.data[4*((i - y)*w + (j - x)) + 2] = pix[2];
+						d.data[4*((i - y)*w + (j - x)) + 3] = 255;
+					  }
+					}
+					ctx.putImageData(d, 0, 0);
+					c.toBlob(onblob);
+				});
 			  }
 
 			tool.extra.start = null;
