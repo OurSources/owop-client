@@ -1008,6 +1008,7 @@ function inGameDisconnected() {
 	showWorldUI(false);
 	showLoadScr(true, true);
 	statusMsg(false, "Lost connection with the server.");
+	logoMakeRoom(false);
 	misc.world = null;
 	elements.chat.style.transform = "initial";
 	elements.chatInput.style.display = "";
