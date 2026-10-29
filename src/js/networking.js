@@ -17,7 +17,7 @@ function isConnected() {
 
 function connect(server, worldName, captcha) {
 	eventSys.emit(e.net.connecting, server);
-	net.connection = new aa.ws("ws://192.168.0.145:8081/?chat=v2");
+	net.connection = new aa.ws(server.url);
 	net.connection.binaryType = "arraybuffer";
 	net.currentServer = server;
 	net.protocol = new server.proto.class(net.connection, worldName, captcha);
