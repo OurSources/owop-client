@@ -187,12 +187,11 @@ button[tooltip] {
 	/* Frame */
 	position: absolute;
 	pointer-events: initial;
-	background-color: #8b08bf;
-	border: 11px #8b08bf solid;
+	background-color: #aba389;
 	border: 11px #aba389 solid;
 	border-width: 11px;
 	border-image: url(../img/window_out.png) 11 repeat;
-	border-image-outset: 4px;
+	border-image-outset: 1px;
 	box-shadow: 0px 0px 5px #000;
 }
 
@@ -201,8 +200,8 @@ button[tooltip] {
 	display: block;
 	pointer-events: none;
 	margin-top: -7px;
-	text-shadow: 1px 1px #421754;
-	color: #e4951a;
+	text-shadow: 1px 1px #4d313b;
+	color: #7e635c;
 	margin-bottom: 3px;
 	min-width: 100%;
 	text-align: center;
@@ -234,8 +233,8 @@ button.windowCloseButton:active {
 	/* width: 0;  Older browsers fix */
 	height: 100%;
 	margin: 0 -5px -5px -5px;
-	background-color: #5e038f;
-	border: 5px #5e038f solid;
+	background-color: #7e635c;
+	border: 5px #7e635c solid;
 	border-width: 5px;
 	border-image: url(../img/window_in.png) 5 repeat;
 }
@@ -255,9 +254,9 @@ button.windowCloseButton:active {
 }
 
 button {
-	border: 6px #8b08bf outset;
+	border: 6px #aba389 outset;
 	border-image: url(../img/button.png) 6 repeat;
-	background-color: #8b08bf;
+	background-color: #aba389;
 	transition: filter 0.125s;
 }
 
@@ -415,7 +414,7 @@ button:focus {
 	border: 5px #aba389 solid;
 	border-image: url(../img/small_border.png) 5 repeat;
 	border-image-outset: 1px;
-	background-color: #5e038f;
+	background-color: #7e635c;
 	box-shadow: 0px 0px 5px #000;
 }
 
@@ -446,7 +445,7 @@ button:focus {
 }
 
 #toole-container>button.selected {
-	background-color: #9e4ec7;
+	background-color: #aaa;
 }
 
 #tool-select>button>div {
@@ -655,8 +654,8 @@ button:focus {
 	width: 80%;
 	max-width: 800px;
 
-	background-color: #8b08bf;
-	border: 11px #8b08bf solid;
+	background-color: #aba389;
+	border: 11px #aba389 solid;
 	border-width: 11px;
 	border-image: url(../img/window_out.png) 11 repeat;
 	border-image-outset: 1px;
@@ -672,8 +671,8 @@ button:focus {
 	display: block;
 	pointer-events: none;
 	margin-top: -7px;
-	text-shadow: 1px 1px #421754;
-	color: #e4951a;
+	text-shadow: 1px 1px #4d313b;
+	color: #7e635c;
 	margin-bottom: 3px;
 	min-width: 100%;
 	text-align: center;
@@ -687,8 +686,8 @@ button:focus {
 	/* width: 0;  Older browsers fix */
 	height: 100%;
 	margin: 0 -5px -5px -5px;
-	background-color: #5e038f;
-	border: 5px #5e038f solid;
+	background-color: #7e635c;
+	border: 5px #7e635c solid;
 	border-width: 5px;
 	border-image: url(../img/window_in.png) 5 repeat;
 }
